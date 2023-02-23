@@ -17,7 +17,7 @@ import (
 	"github.com/druid-io/druid-operator/apis/druid/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -254,7 +254,7 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEm
 		if nodeSpec.PodDisruptionBudgetSpec != nil {
 			if _, err := sdkCreateOrUpdateAsNeeded(sdk,
 				func() (object, error) { return makePodDisruptionBudget(&nodeSpec, m, lm, nodeSpecUniqueStr) },
-				func() object { return &v1beta1.PodDisruptionBudget{} },
+				func() object { return &policyv1.PodDisruptionBudget{} },
 				alwaysTrueIsEqualsFn, noopUpdaterFn, m, podDisruptionBudgetNames, emitEvents); err != nil {
 				return err
 			}
@@ -344,9 +344,9 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEm
 	sort.Strings(updatedStatus.Ingress)
 
 	updatedStatus.PodDisruptionBudgets = deleteUnusedResources(sdk, m, podDisruptionBudgetNames, ls,
-		func() objectList { return &v1beta1.PodDisruptionBudgetList{} },
+		func() objectList { return &policyv1.PodDisruptionBudgetList{} },
 		func(listObj runtime.Object) []object {
-			items := listObj.(*v1beta1.PodDisruptionBudgetList).Items
+			items := listObj.(*policyv1.PodDisruptionBudgetList).Items
 			result := make([]object, len(items))
 			for i := 0; i < len(items); i++ {
 				result[i] = &items[i]
@@ -1366,13 +1366,13 @@ func updateDefaultPortInProbe(probe *v1.Probe, defaultPort int32) *v1.Probe {
 	return probe
 }
 
-func makePodDisruptionBudget(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[string]string, nodeSpecUniqueStr string) (*v1beta1.PodDisruptionBudget, error) {
+func makePodDisruptionBudget(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[string]string, nodeSpecUniqueStr string) (*policyv1.PodDisruptionBudget, error) {
 	pdbSpec := *nodeSpec.PodDisruptionBudgetSpec
 	pdbSpec.Selector = &metav1.LabelSelector{MatchLabels: ls}
 
-	pdb := &v1beta1.PodDisruptionBudget{
+	pdb := &policyv1.PodDisruptionBudget{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "policy/v1beta1",
+			APIVersion: "policy/v1",
 			Kind:       "PodDisruptionBudget",
 		},
 
