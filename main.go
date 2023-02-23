@@ -13,8 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	druidv1alpha1 "github.com/druid-io/druid-operator/apis/druid/v1alpha1"
-	"github.com/druid-io/druid-operator/controllers/druid"
+	druidv1alpha1 "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
+	"github.com/datainfrahq/druid-operator/controllers/druid"
 	// +kubebuilder:scaffold:imports
 )
 
