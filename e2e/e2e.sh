@@ -24,7 +24,7 @@ make helm-minio-install
 # hack for minio pod to get started
 sleep 60
 # wait for minio pods
-kubectl rollout status sts $MINIO_STS_NAME -n ${NAMESPACE}  --timeout=60s
+kubectl rollout status sts $MINIO_STS_NAME -n ${NAMESPACE}  --timeout=120s
 # output pods
 kubectl get pods -n ${NAMESPACE}
 # apply druid cr

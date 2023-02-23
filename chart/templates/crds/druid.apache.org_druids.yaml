@@ -226,6 +226,27 @@ spec:
                     resources:
                       description: 'Optional: CPU/Memory Resources'
                       properties:
+                        claims:
+                          description: "Claims lists the names of resources, defined
+                            in spec.resourceClaims, that are used by this container.
+                            \n This is an alpha field and requires enabling the DynamicResourceAllocation
+                            feature gate. \n This field is immutable."
+                          items:
+                            description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                            properties:
+                              name:
+                                description: Name must match the name of one entry
+                                  in pod.spec.resourceClaims of the Pod where this
+                                  field is used. It makes that resource available
+                                  inside a container.
+                                type: string
+                            required:
+                            - name
+                            type: object
+                          type: array
+                          x-kubernetes-list-map-keys:
+                          - name
+                          x-kubernetes-list-type: map
                         limits:
                           additionalProperties:
                             anyOf:
@@ -3055,649 +3076,11 @@ spec:
                     hpAutoscaler:
                       description: Optional
                       properties:
-                        behavior:
-                          description: behavior configures the scaling behavior of
-                            the target in both Up and Down directions (scaleUp and
-                            scaleDown fields respectively). If not set, the default
-                            HPAScalingRules for scale up and scale down are used.
-                          properties:
-                            scaleDown:
-                              description: scaleDown is scaling policy for scaling
-                                Down. If not set, the default value is to allow to
-                                scale down to minReplicas pods, with a 300 second
-                                stabilization window (i.e., the highest recommendation
-                                for the last 300sec is used).
-                              properties:
-                                policies:
-                                  description: policies is a list of potential scaling
-                                    polices which can be used during scaling. At least
-                                    one policy must be specified, otherwise the HPAScalingRules
-                                    will be discarded as invalid
-                                  items:
-                                    description: HPAScalingPolicy is a single policy
-                                      which must hold true for a specified past interval.
-                                    properties:
-                                      periodSeconds:
-                                        description: PeriodSeconds specifies the window
-                                          of time for which the policy should hold
-                                          true. PeriodSeconds must be greater than
-                                          zero and less than or equal to 1800 (30
-                                          min).
-                                        format: int32
-                                        type: integer
-                                      type:
-                                        description: Type is used to specify the scaling
-                                          policy.
-                                        type: string
-                                      value:
-                                        description: Value contains the amount of
-                                          change which is permitted by the policy.
-                                          It must be greater than zero
-                                        format: int32
-                                        type: integer
-                                    required:
-                                    - periodSeconds
-                                    - type
-                                    - value
-                                    type: object
-                                  type: array
-                                selectPolicy:
-                                  description: selectPolicy is used to specify which
-                                    policy should be used. If not set, the default
-                                    value MaxPolicySelect is used.
-                                  type: string
-                                stabilizationWindowSeconds:
-                                  description: 'StabilizationWindowSeconds is the
-                                    number of seconds for which past recommendations
-                                    should be considered while scaling up or scaling
-                                    down. StabilizationWindowSeconds must be greater
-                                    than or equal to zero and less than or equal to
-                                    3600 (one hour). If not set, use the default values:
-                                    - For scale up: 0 (i.e. no stabilization is done).
-                                    - For scale down: 300 (i.e. the stabilization
-                                    window is 300 seconds long).'
-                                  format: int32
-                                  type: integer
-                              type: object
-                            scaleUp:
-                              description: 'scaleUp is scaling policy for scaling
-                                Up. If not set, the default value is the higher of:
-                                * increase no more than 4 pods per 60 seconds * double
-                                the number of pods per 60 seconds No stabilization
-                                is used.'
-                              properties:
-                                policies:
-                                  description: policies is a list of potential scaling
-                                    polices which can be used during scaling. At least
-                                    one policy must be specified, otherwise the HPAScalingRules
-                                    will be discarded as invalid
-                                  items:
-                                    description: HPAScalingPolicy is a single policy
-                                      which must hold true for a specified past interval.
-                                    properties:
-                                      periodSeconds:
-                                        description: PeriodSeconds specifies the window
-                                          of time for which the policy should hold
-                                          true. PeriodSeconds must be greater than
-                                          zero and less than or equal to 1800 (30
-                                          min).
-                                        format: int32
-                                        type: integer
-                                      type:
-                                        description: Type is used to specify the scaling
-                                          policy.
-                                        type: string
-                                      value:
-                                        description: Value contains the amount of
-                                          change which is permitted by the policy.
-                                          It must be greater than zero
-                                        format: int32
-                                        type: integer
-                                    required:
-                                    - periodSeconds
-                                    - type
-                                    - value
-                                    type: object
-                                  type: array
-                                selectPolicy:
-                                  description: selectPolicy is used to specify which
-                                    policy should be used. If not set, the default
-                                    value MaxPolicySelect is used.
-                                  type: string
-                                stabilizationWindowSeconds:
-                                  description: 'StabilizationWindowSeconds is the
-                                    number of seconds for which past recommendations
-                                    should be considered while scaling up or scaling
-                                    down. StabilizationWindowSeconds must be greater
-                                    than or equal to zero and less than or equal to
-                                    3600 (one hour). If not set, use the default values:
-                                    - For scale up: 0 (i.e. no stabilization is done).
-                                    - For scale down: 300 (i.e. the stabilization
-                                    window is 300 seconds long).'
-                                  format: int32
-                                  type: integer
-                              type: object
-                          type: object
                         maxReplicas:
-                          description: maxReplicas is the upper limit for the number
-                            of replicas to which the autoscaler can scale up. It cannot
-                            be less that minReplicas.
+                          description: upper limit for the number of pods that can
+                            be set by the autoscaler; cannot be smaller than MinReplicas.
                           format: int32
                           type: integer
-                        metrics:
-                          description: metrics contains the specifications for which
-                            to use to calculate the desired replica count (the maximum
-                            replica count across all metrics will be used).  The desired
-                            replica count is calculated multiplying the ratio between
-                            the target value and the current value by the current
-                            number of pods.  Ergo, metrics used must decrease as the
-                            pod count is increased, and vice-versa.  See the individual
-                            metric source types for more information about how each
-                            type of metric must respond. If not set, the default metric
-                            will be set to 80% average CPU utilization.
-                          items:
-                            description: MetricSpec specifies how to scale based on
-                              a single metric (only `type` and one other matching
-                              field should be set at once).
-                            properties:
-                              containerResource:
-                                description: container resource refers to a resource
-                                  metric (such as those specified in requests and
-                                  limits) known to Kubernetes describing a single
-                                  container in each pod of the current scale target
-                                  (e.g. CPU or memory). Such metrics are built in
-                                  to Kubernetes, and have special scaling options
-                                  on top of those available to normal per-pod metrics
-                                  using the "pods" source. This is an alpha feature
-                                  and can be enabled by the HPAContainerMetrics feature
-                                  flag.
-                                properties:
-                                  container:
-                                    description: container is the name of the container
-                                      in the pods of the scaling target
-                                    type: string
-                                  name:
-                                    description: name is the name of the resource
-                                      in question.
-                                    type: string
-                                  target:
-                                    description: target specifies the target value
-                                      for the given metric
-                                    properties:
-                                      averageUtilization:
-                                        description: averageUtilization is the target
-                                          value of the average of the resource metric
-                                          across all relevant pods, represented as
-                                          a percentage of the requested value of the
-                                          resource for the pods. Currently only valid
-                                          for Resource metric source type
-                                        format: int32
-                                        type: integer
-                                      averageValue:
-                                        anyOf:
-                                        - type: integer
-                                        - type: string
-                                        description: averageValue is the target value
-                                          of the average of the metric across all
-                                          relevant pods (as a quantity)
-                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                                        x-kubernetes-int-or-string: true
-                                      type:
-                                        description: type represents whether the metric
-                                          type is Utilization, Value, or AverageValue
-                                        type: string
-                                      value:
-                                        anyOf:
-                                        - type: integer
-                                        - type: string
-                                        description: value is the target value of
-                                          the metric (as a quantity).
-                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                                        x-kubernetes-int-or-string: true
-                                    required:
-                                    - type
-                                    type: object
-                                required:
-                                - container
-                                - name
-                                - target
-                                type: object
-                              external:
-                                description: external refers to a global metric that
-                                  is not associated with any Kubernetes object. It
-                                  allows autoscaling based on information coming from
-                                  components running outside of cluster (for example
-                                  length of queue in cloud messaging service, or QPS
-                                  from loadbalancer running outside of cluster).
-                                properties:
-                                  metric:
-                                    description: metric identifies the target metric
-                                      by name and selector
-                                    properties:
-                                      name:
-                                        description: name is the name of the given
-                                          metric
-                                        type: string
-                                      selector:
-                                        description: selector is the string-encoded
-                                          form of a standard kubernetes label selector
-                                          for the given metric When set, it is passed
-                                          as an additional parameter to the metrics
-                                          server for more specific metrics scoping.
-                                          When unset, just the metricName will be
-                                          used to gather metrics.
-                                        properties:
-                                          matchExpressions:
-                                            description: matchExpressions is a list
-                                              of label selector requirements. The
-                                              requirements are ANDed.
-                                            items:
-                                              description: A label selector requirement
-                                                is a selector that contains values,
-                                                a key, and an operator that relates
-                                                the key and values.
-                                              properties:
-                                                key:
-                                                  description: key is the label key
-                                                    that the selector applies to.
-                                                  type: string
-                                                operator:
-                                                  description: operator represents
-                                                    a key's relationship to a set
-                                                    of values. Valid operators are
-                                                    In, NotIn, Exists and DoesNotExist.
-                                                  type: string
-                                                values:
-                                                  description: values is an array
-                                                    of string values. If the operator
-                                                    is In or NotIn, the values array
-                                                    must be non-empty. If the operator
-                                                    is Exists or DoesNotExist, the
-                                                    values array must be empty. This
-                                                    array is replaced during a strategic
-                                                    merge patch.
-                                                  items:
-                                                    type: string
-                                                  type: array
-                                              required:
-                                              - key
-                                              - operator
-                                              type: object
-                                            type: array
-                                          matchLabels:
-                                            additionalProperties:
-                                              type: string
-                                            description: matchLabels is a map of {key,value}
-                                              pairs. A single {key,value} in the matchLabels
-                                              map is equivalent to an element of matchExpressions,
-                                              whose key field is "key", the operator
-                                              is "In", and the values array contains
-                                              only "value". The requirements are ANDed.
-                                            type: object
-                                        type: object
-                                        x-kubernetes-map-type: atomic
-                                    required:
-                                    - name
-                                    type: object
-                                  target:
-                                    description: target specifies the target value
-                                      for the given metric
-                                    properties:
-                                      averageUtilization:
-                                        description: averageUtilization is the target
-                                          value of the average of the resource metric
-                                          across all relevant pods, represented as
-                                          a percentage of the requested value of the
-                                          resource for the pods. Currently only valid
-                                          for Resource metric source type
-                                        format: int32
-                                        type: integer
-                                      averageValue:
-                                        anyOf:
-                                        - type: integer
-                                        - type: string
-                                        description: averageValue is the target value
-                                          of the average of the metric across all
-                                          relevant pods (as a quantity)
-                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                                        x-kubernetes-int-or-string: true
-                                      type:
-                                        description: type represents whether the metric
-                                          type is Utilization, Value, or AverageValue
-                                        type: string
-                                      value:
-                                        anyOf:
-                                        - type: integer
-                                        - type: string
-                                        description: value is the target value of
-                                          the metric (as a quantity).
-                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                                        x-kubernetes-int-or-string: true
-                                    required:
-                                    - type
-                                    type: object
-                                required:
-                                - metric
-                                - target
-                                type: object
-                              object:
-                                description: object refers to a metric describing
-                                  a single kubernetes object (for example, hits-per-second
-                                  on an Ingress object).
-                                properties:
-                                  describedObject:
-                                    description: CrossVersionObjectReference contains
-                                      enough information to let you identify the referred
-                                      resource.
-                                    properties:
-                                      apiVersion:
-                                        description: API version of the referent
-                                        type: string
-                                      kind:
-                                        description: 'Kind of the referent; More info:
-                                          https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"'
-                                        type: string
-                                      name:
-                                        description: 'Name of the referent; More info:
-                                          http://kubernetes.io/docs/user-guide/identifiers#names'
-                                        type: string
-                                    required:
-                                    - kind
-                                    - name
-                                    type: object
-                                  metric:
-                                    description: metric identifies the target metric
-                                      by name and selector
-                                    properties:
-                                      name:
-                                        description: name is the name of the given
-                                          metric
-                                        type: string
-                                      selector:
-                                        description: selector is the string-encoded
-                                          form of a standard kubernetes label selector
-                                          for the given metric When set, it is passed
-                                          as an additional parameter to the metrics
-                                          server for more specific metrics scoping.
-                                          When unset, just the metricName will be
-                                          used to gather metrics.
-                                        properties:
-                                          matchExpressions:
-                                            description: matchExpressions is a list
-                                              of label selector requirements. The
-                                              requirements are ANDed.
-                                            items:
-                                              description: A label selector requirement
-                                                is a selector that contains values,
-                                                a key, and an operator that relates
-                                                the key and values.
-                                              properties:
-                                                key:
-                                                  description: key is the label key
-                                                    that the selector applies to.
-                                                  type: string
-                                                operator:
-                                                  description: operator represents
-                                                    a key's relationship to a set
-                                                    of values. Valid operators are
-                                                    In, NotIn, Exists and DoesNotExist.
-                                                  type: string
-                                                values:
-                                                  description: values is an array
-                                                    of string values. If the operator
-                                                    is In or NotIn, the values array
-                                                    must be non-empty. If the operator
-                                                    is Exists or DoesNotExist, the
-                                                    values array must be empty. This
-                                                    array is replaced during a strategic
-                                                    merge patch.
-                                                  items:
-                                                    type: string
-                                                  type: array
-                                              required:
-                                              - key
-                                              - operator
-                                              type: object
-                                            type: array
-                                          matchLabels:
-                                            additionalProperties:
-                                              type: string
-                                            description: matchLabels is a map of {key,value}
-                                              pairs. A single {key,value} in the matchLabels
-                                              map is equivalent to an element of matchExpressions,
-                                              whose key field is "key", the operator
-                                              is "In", and the values array contains
-                                              only "value". The requirements are ANDed.
-                                            type: object
-                                        type: object
-                                        x-kubernetes-map-type: atomic
-                                    required:
-                                    - name
-                                    type: object
-                                  target:
-                                    description: target specifies the target value
-                                      for the given metric
-                                    properties:
-                                      averageUtilization:
-                                        description: averageUtilization is the target
-                                          value of the average of the resource metric
-                                          across all relevant pods, represented as
-                                          a percentage of the requested value of the
-                                          resource for the pods. Currently only valid
-                                          for Resource metric source type
-                                        format: int32
-                                        type: integer
-                                      averageValue:
-                                        anyOf:
-                                        - type: integer
-                                        - type: string
-                                        description: averageValue is the target value
-                                          of the average of the metric across all
-                                          relevant pods (as a quantity)
-                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                                        x-kubernetes-int-or-string: true
-                                      type:
-                                        description: type represents whether the metric
-                                          type is Utilization, Value, or AverageValue
-                                        type: string
-                                      value:
-                                        anyOf:
-                                        - type: integer
-                                        - type: string
-                                        description: value is the target value of
-                                          the metric (as a quantity).
-                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                                        x-kubernetes-int-or-string: true
-                                    required:
-                                    - type
-                                    type: object
-                                required:
-                                - describedObject
-                                - metric
-                                - target
-                                type: object
-                              pods:
-                                description: pods refers to a metric describing each
-                                  pod in the current scale target (for example, transactions-processed-per-second).  The
-                                  values will be averaged together before being compared
-                                  to the target value.
-                                properties:
-                                  metric:
-                                    description: metric identifies the target metric
-                                      by name and selector
-                                    properties:
-                                      name:
-                                        description: name is the name of the given
-                                          metric
-                                        type: string
-                                      selector:
-                                        description: selector is the string-encoded
-                                          form of a standard kubernetes label selector
-                                          for the given metric When set, it is passed
-                                          as an additional parameter to the metrics
-                                          server for more specific metrics scoping.
-                                          When unset, just the metricName will be
-                                          used to gather metrics.
-                                        properties:
-                                          matchExpressions:
-                                            description: matchExpressions is a list
-                                              of label selector requirements. The
-                                              requirements are ANDed.
-                                            items:
-                                              description: A label selector requirement
-                                                is a selector that contains values,
-                                                a key, and an operator that relates
-                                                the key and values.
-                                              properties:
-                                                key:
-                                                  description: key is the label key
-                                                    that the selector applies to.
-                                                  type: string
-                                                operator:
-                                                  description: operator represents
-                                                    a key's relationship to a set
-                                                    of values. Valid operators are
-                                                    In, NotIn, Exists and DoesNotExist.
-                                                  type: string
-                                                values:
-                                                  description: values is an array
-                                                    of string values. If the operator
-                                                    is In or NotIn, the values array
-                                                    must be non-empty. If the operator
-                                                    is Exists or DoesNotExist, the
-                                                    values array must be empty. This
-                                                    array is replaced during a strategic
-                                                    merge patch.
-                                                  items:
-                                                    type: string
-                                                  type: array
-                                              required:
-                                              - key
-                                              - operator
-                                              type: object
-                                            type: array
-                                          matchLabels:
-                                            additionalProperties:
-                                              type: string
-                                            description: matchLabels is a map of {key,value}
-                                              pairs. A single {key,value} in the matchLabels
-                                              map is equivalent to an element of matchExpressions,
-                                              whose key field is "key", the operator
-                                              is "In", and the values array contains
-                                              only "value". The requirements are ANDed.
-                                            type: object
-                                        type: object
-                                        x-kubernetes-map-type: atomic
-                                    required:
-                                    - name
-                                    type: object
-                                  target:
-                                    description: target specifies the target value
-                                      for the given metric
-                                    properties:
-                                      averageUtilization:
-                                        description: averageUtilization is the target
-                                          value of the average of the resource metric
-                                          across all relevant pods, represented as
-                                          a percentage of the requested value of the
-                                          resource for the pods. Currently only valid
-                                          for Resource metric source type
-                                        format: int32
-                                        type: integer
-                                      averageValue:
-                                        anyOf:
-                                        - type: integer
-                                        - type: string
-                                        description: averageValue is the target value
-                                          of the average of the metric across all
-                                          relevant pods (as a quantity)
-                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                                        x-kubernetes-int-or-string: true
-                                      type:
-                                        description: type represents whether the metric
-                                          type is Utilization, Value, or AverageValue
-                                        type: string
-                                      value:
-                                        anyOf:
-                                        - type: integer
-                                        - type: string
-                                        description: value is the target value of
-                                          the metric (as a quantity).
-                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                                        x-kubernetes-int-or-string: true
-                                    required:
-                                    - type
-                                    type: object
-                                required:
-                                - metric
-                                - target
-                                type: object
-                              resource:
-                                description: resource refers to a resource metric
-                                  (such as those specified in requests and limits)
-                                  known to Kubernetes describing each pod in the current
-                                  scale target (e.g. CPU or memory). Such metrics
-                                  are built in to Kubernetes, and have special scaling
-                                  options on top of those available to normal per-pod
-                                  metrics using the "pods" source.
-                                properties:
-                                  name:
-                                    description: name is the name of the resource
-                                      in question.
-                                    type: string
-                                  target:
-                                    description: target specifies the target value
-                                      for the given metric
-                                    properties:
-                                      averageUtilization:
-                                        description: averageUtilization is the target
-                                          value of the average of the resource metric
-                                          across all relevant pods, represented as
-                                          a percentage of the requested value of the
-                                          resource for the pods. Currently only valid
-                                          for Resource metric source type
-                                        format: int32
-                                        type: integer
-                                      averageValue:
-                                        anyOf:
-                                        - type: integer
-                                        - type: string
-                                        description: averageValue is the target value
-                                          of the average of the metric across all
-                                          relevant pods (as a quantity)
-                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                                        x-kubernetes-int-or-string: true
-                                      type:
-                                        description: type represents whether the metric
-                                          type is Utilization, Value, or AverageValue
-                                        type: string
-                                      value:
-                                        anyOf:
-                                        - type: integer
-                                        - type: string
-                                        description: value is the target value of
-                                          the metric (as a quantity).
-                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                                        x-kubernetes-int-or-string: true
-                                    required:
-                                    - type
-                                    type: object
-                                required:
-                                - name
-                                - target
-                                type: object
-                              type:
-                                description: 'type is the type of metric source.  It
-                                  should be one of "ContainerResource", "External",
-                                  "Object", "Pods" or "Resource", each mapping to
-                                  a matching field in the object. Note: "ContainerResource"
-                                  type is available on when the feature-gate HPAContainerMetrics
-                                  is enabled'
-                                type: string
-                            required:
-                            - type
-                            type: object
-                          type: array
                         minReplicas:
                           description: minReplicas is the lower limit for the number
                             of replicas to which the autoscaler can scale down.  It
@@ -3708,16 +3091,16 @@ spec:
                           format: int32
                           type: integer
                         scaleTargetRef:
-                          description: scaleTargetRef points to the target resource
-                            to scale, and is used to the pods for which metrics should
-                            be collected, as well as to actually change the replica
-                            count.
+                          description: reference to scaled resource; horizontal pod
+                            autoscaler will learn the current resource consumption
+                            and will set the desired number of pods by using its Scale
+                            subresource.
                           properties:
                             apiVersion:
                               description: API version of the referent
                               type: string
                             kind:
-                              description: 'Kind of the referent; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"'
+                              description: 'Kind of the referent; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                               type: string
                             name:
                               description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
@@ -3726,6 +3109,13 @@ spec:
                           - kind
                           - name
                           type: object
+                          x-kubernetes-map-type: atomic
+                        targetCPUUtilizationPercentage:
+                          description: target average CPU utilization (represented
+                            as a percentage of requested CPU) over all the pods; if
+                            not specified the default autoscaling policy will be used.
+                          format: int32
+                          type: integer
                       required:
                       - maxReplicas
                       - scaleTargetRef
@@ -3818,18 +3208,19 @@ spec:
                               type: object
                           type: object
                         ingressClassName:
-                          description: IngressClassName is the name of the IngressClass
-                            cluster resource. The associated IngressClass defines
-                            which controller will implement the resource. This replaces
-                            the deprecated `kubernetes.io/ingress.class` annotation.
-                            For backwards compatibility, when that annotation is set,
-                            it must be given precedence over this field. The controller
-                            may emit a warning if the field and annotation have different
-                            values. Implementations of this API should ignore Ingresses
-                            without a class specified. An IngressClass resource may
-                            be marked as default, which can be used to set a default
-                            value for this field. For more information, refer to the
-                            IngressClass documentation.
+                          description: IngressClassName is the name of an IngressClass
+                            cluster resource. Ingress controller implementations use
+                            this field to know whether they should be serving this
+                            Ingress resource, by a transitive connection (controller
+                            -> IngressClass -> Ingress resource). Although the `kubernetes.io/ingress.class`
+                            annotation (simple constant name) was never formally defined,
+                            it was widely supported by Ingress controllers to create
+                            a direct binding between Ingress controller and Ingress
+                            resources. Newly created Ingress resources should prefer
+                            using the field. However, even though the annotation is
+                            officially deprecated, for backwards compatibility reasons,
+                            ingress controllers should still honor that annotation
+                            if present.
                           type: string
                         rules:
                           description: A list of host rules used to configure the
@@ -4472,9 +3863,12 @@ spec:
                                   provisioner or an external controller can support
                                   the specified data source, it will create a new
                                   volume based on the contents of the specified data
-                                  source. If the AnyVolumeDataSource feature gate
-                                  is enabled, this field will always have the same
-                                  contents as the DataSourceRef field.'
+                                  source. When the AnyVolumeDataSource feature gate
+                                  is enabled, dataSource contents will be copied to
+                                  dataSourceRef, and dataSourceRef contents will be
+                                  copied to dataSource when dataSourceRef.namespace
+                                  is not specified. If the namespace is specified,
+                                  then dataSourceRef will not be copied to dataSource.'
                                 properties:
                                   apiGroup:
                                     description: APIGroup is the group for the resource
@@ -4499,27 +3893,33 @@ spec:
                               dataSourceRef:
                                 description: 'dataSourceRef specifies the object from
                                   which to populate the volume with data, if a non-empty
-                                  volume is desired. This may be any local object
-                                  from a non-empty API group (non core object) or
-                                  a PersistentVolumeClaim object. When this field
-                                  is specified, volume binding will only succeed if
-                                  the type of the specified object matches some installed
-                                  volume populator or dynamic provisioner. This field
-                                  will replace the functionality of the DataSource
-                                  field and as such if both fields are non-empty,
-                                  they must have the same value. For backwards compatibility,
-                                  both fields (DataSource and DataSourceRef) will
-                                  be set to the same value automatically if one of
-                                  them is empty and the other is non-empty. There
-                                  are two important differences between DataSource
-                                  and DataSourceRef: * While DataSource only allows
-                                  two specific types of objects, DataSourceRef allows
+                                  volume is desired. This may be any object from a
+                                  non-empty API group (non core object) or a PersistentVolumeClaim
+                                  object. When this field is specified, volume binding
+                                  will only succeed if the type of the specified object
+                                  matches some installed volume populator or dynamic
+                                  provisioner. This field will replace the functionality
+                                  of the dataSource field and as such if both fields
+                                  are non-empty, they must have the same value. For
+                                  backwards compatibility, when namespace isn''t specified
+                                  in dataSourceRef, both fields (dataSource and dataSourceRef)
+                                  will be set to the same value automatically if one
+                                  of them is empty and the other is non-empty. When
+                                  namespace is specified in dataSourceRef, dataSource
+                                  isn''t set to the same value and must be empty.
+                                  There are three important differences between dataSource
+                                  and dataSourceRef: * While dataSource only allows
+                                  two specific types of objects, dataSourceRef allows
                                   any non-core object, as well as PersistentVolumeClaim
-                                  objects. * While DataSource ignores disallowed values
-                                  (dropping them), DataSourceRef preserves all values,
+                                  objects. * While dataSource ignores disallowed values
+                                  (dropping them), dataSourceRef preserves all values,
                                   and generates an error if a disallowed value is
-                                  specified. (Beta) Using this field requires the
-                                  AnyVolumeDataSource feature gate to be enabled.'
+                                  specified. * While dataSource only allows local
+                                  objects, dataSourceRef allows objects in any namespaces.
+                                  (Beta) Using this field requires the AnyVolumeDataSource
+                                  feature gate to be enabled. (Alpha) Using the namespace
+                                  field of dataSourceRef requires the CrossNamespaceVolumeDataSource
+                                  feature gate to be enabled.'
                                 properties:
                                   apiGroup:
                                     description: APIGroup is the group for the resource
@@ -4536,11 +3936,21 @@ spec:
                                     description: Name is the name of resource being
                                       referenced
                                     type: string
+                                  namespace:
+                                    description: Namespace is the namespace of resource
+                                      being referenced Note that when a namespace
+                                      is specified, a gateway.networking.k8s.io/ReferenceGrant
+                                      object is required in the referent namespace
+                                      to allow that namespace's owner to accept the
+                                      reference. See the ReferenceGrant documentation
+                                      for details. (Alpha) This field requires the
+                                      CrossNamespaceVolumeDataSource feature gate
+                                      to be enabled.
+                                    type: string
                                 required:
                                 - kind
                                 - name
                                 type: object
-                                x-kubernetes-map-type: atomic
                               resources:
                                 description: 'resources represents the minimum resources
                                   the volume should have. If RecoverVolumeExpansionFailure
@@ -4549,6 +3959,29 @@ spec:
                                   value but must still be higher than capacity recorded
                                   in the status field of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                                 properties:
+                                  claims:
+                                    description: "Claims lists the names of resources,
+                                      defined in spec.resourceClaims, that are used
+                                      by this container. \n This is an alpha field
+                                      and requires enabling the DynamicResourceAllocation
+                                      feature gate. \n This field is immutable."
+                                    items:
+                                      description: ResourceClaim references one entry
+                                        in PodSpec.ResourceClaims.
+                                      properties:
+                                        name:
+                                          description: Name must match the name of
+                                            one entry in pod.spec.resourceClaims of
+                                            the Pod where this field is used. It makes
+                                            that resource available inside a container.
+                                          type: string
+                                      required:
+                                      - name
+                                      type: object
+                                    type: array
+                                    x-kubernetes-list-map-keys:
+                                    - name
+                                    x-kubernetes-list-type: map
                                   limits:
                                     additionalProperties:
                                       anyOf:
@@ -4817,6 +4250,32 @@ spec:
                               type: object
                           type: object
                           x-kubernetes-map-type: atomic
+                        unhealthyPodEvictionPolicy:
+                          description: "UnhealthyPodEvictionPolicy defines the criteria
+                            for when unhealthy pods should be considered for eviction.
+                            Current implementation considers healthy pods, as pods
+                            that have status.conditions item with type=\"Ready\",status=\"True\".
+                            \n Valid policies are IfHealthyBudget and AlwaysAllow.
+                            If no policy is specified, the default behavior will be
+                            used, which corresponds to the IfHealthyBudget policy.
+                            \n IfHealthyBudget policy means that running pods (status.phase=\"Running\"),
+                            but not yet healthy can be evicted only if the guarded
+                            application is not disrupted (status.currentHealthy is
+                            at least equal to status.desiredHealthy). Healthy pods
+                            will be subject to the PDB for eviction. \n AlwaysAllow
+                            policy means that all running pods (status.phase=\"Running\"),
+                            but not yet healthy are considered disrupted and can be
+                            evicted regardless of whether the criteria in a PDB is
+                            met. This means perspective running pods of a disrupted
+                            application might not get a chance to become healthy.
+                            Healthy pods will be subject to the PDB for eviction.
+                            \n Additional policies may be added in the future. Clients
+                            making eviction decisions should disallow eviction of
+                            unhealthy pods if they encounter an unrecognized policy
+                            in this field. \n This field is alpha-level. The eviction
+                            API uses this field when the feature gate PDBUnhealthyPodEvictionPolicy
+                            is enabled (disabled by default)."
+                          type: string
                       type: object
                     podLabels:
                       additionalProperties:
@@ -5019,6 +4478,27 @@ spec:
                     resources:
                       description: 'Optional: CPU/Memory Resources'
                       properties:
+                        claims:
+                          description: "Claims lists the names of resources, defined
+                            in spec.resourceClaims, that are used by this container.
+                            \n This is an alpha field and requires enabling the DynamicResourceAllocation
+                            feature gate. \n This field is immutable."
+                          items:
+                            description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                            properties:
+                              name:
+                                description: Name must match the name of one entry
+                                  in pod.spec.resourceClaims of the Pod where this
+                                  field is used. It makes that resource available
+                                  inside a container.
+                                type: string
+                            required:
+                            - name
+                            type: object
+                          type: array
+                          x-kubernetes-list-map-keys:
+                          - name
+                          x-kubernetes-list-type: map
                         limits:
                           additionalProperties:
                             anyOf:
@@ -5154,9 +4634,14 @@ spec:
                         supplementalGroups:
                           description: A list of groups applied to the first process
                             run in each container, in addition to the container's
-                            primary GID.  If unspecified, no groups will be added
-                            to any container. Note that this field cannot be set when
-                            spec.os.name is windows.
+                            primary GID, the fsGroup (if specified), and group memberships
+                            defined in the container image for the uid of the container
+                            process. If unspecified, no additional groups are added
+                            to any container. Note that group memberships defined
+                            in the container image for the uid of the container process
+                            are still effective, even if they are not included in
+                            this list. Note that this field cannot be set when spec.os.name
+                            is windows.
                           items:
                             format: int64
                             type: integer
@@ -5352,14 +4837,25 @@ spec:
                                   requires `type` to be "ExternalName".
                                 type: string
                               externalTrafficPolicy:
-                                description: externalTrafficPolicy denotes if this
-                                  Service desires to route external traffic to node-local
-                                  or cluster-wide endpoints. "Local" preserves the
-                                  client source IP and avoids a second hop for LoadBalancer
-                                  and Nodeport type services, but risks potentially
-                                  imbalanced traffic spreading. "Cluster" obscures
-                                  the client source IP and may cause a second hop
-                                  to another node, but should have good overall load-spreading.
+                                description: externalTrafficPolicy describes how nodes
+                                  distribute service traffic they receive on one of
+                                  the Service's "externally-facing" addresses (NodePorts,
+                                  ExternalIPs, and LoadBalancer IPs). If set to "Local",
+                                  the proxy will configure the service in a way that
+                                  assumes that external load balancers will take care
+                                  of balancing the service traffic between nodes,
+                                  and so each node will deliver traffic only to the
+                                  node-local endpoints of the service, without masquerading
+                                  the client source IP. (Traffic mistakenly sent to
+                                  a node with no endpoints will be dropped.) The default
+                                  value, "Cluster", uses the standard behavior of
+                                  routing to all endpoints evenly (possibly modified
+                                  by topology and other features). Note that traffic
+                                  sent to an External IP or LoadBalancer IP from within
+                                  the cluster will always get "Cluster" semantics,
+                                  but clients sending to a NodePort from within the
+                                  cluster may need to take traffic policy into account
+                                  when picking a node.
                                 type: string
                               healthCheckNodePort:
                                 description: healthCheckNodePort specifies the healthcheck
@@ -5374,17 +4870,19 @@ spec:
                                   when creating a Service which does not need it,
                                   creation will fail. This field will be wiped when
                                   updating a Service to no longer need it (e.g. changing
-                                  type).
+                                  type). This field cannot be updated once set.
                                 format: int32
                                 type: integer
                               internalTrafficPolicy:
-                                description: InternalTrafficPolicy specifies if the
-                                  cluster internal traffic should be routed to all
-                                  endpoints or node-local endpoints only. "Cluster"
-                                  routes internal traffic to a Service to all endpoints.
-                                  "Local" routes traffic to node-local endpoints only,
-                                  traffic is dropped if no node-local endpoints are
-                                  ready. The default value is "Cluster".
+                                description: InternalTrafficPolicy describes how nodes
+                                  distribute service traffic they receive on the ClusterIP.
+                                  If set to "Local", the proxy will assume that pods
+                                  only want to talk to endpoints of the service on
+                                  the same node as the pod, dropping the traffic if
+                                  there are no local endpoints. The default value,
+                                  "Cluster", uses the standard behavior of routing
+                                  to all endpoints evenly (possibly modified by topology
+                                  and other features).
                                 type: string
                               ipFamilies:
                                 description: "IPFamilies is a list of IP families
@@ -5629,7 +5127,7 @@ spec:
                                     aspect of the current state of this API Resource.
                                     --- This struct is intended for direct use as
                                     an array at the field path .status.conditions.
-                                    \ For example, type FooStatus struct{ // Represents
+                                    \ For example, \n type FooStatus struct{ // Represents
                                     the observations of a foo's current state. //
                                     Known .status.conditions.type are: \"Available\",
                                     \"Progressing\", and \"Degraded\" // +patchMergeKey=type
@@ -6029,6 +5527,19 @@ spec:
                                 type: object
                             type: object
                             x-kubernetes-map-type: atomic
+                          matchLabelKeys:
+                            description: MatchLabelKeys is a set of pod label keys
+                              to select the pods over which spreading will be calculated.
+                              The keys are used to lookup values from the incoming
+                              pod labels, those key-value labels are ANDed with labelSelector
+                              to select the group of existing pods over which spreading
+                              will be calculated for the incoming pod. Keys that don't
+                              exist in the incoming pod labels will be ignored. A
+                              null or empty list means only match against labelSelector.
+                            items:
+                              type: string
+                            type: array
+                            x-kubernetes-list-type: atomic
                           maxSkew:
                             description: 'MaxSkew describes the degree to which pods
                               may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
@@ -6073,10 +5584,33 @@ spec:
                               same labelSelector cannot be scheduled, because computed
                               skew will be 3(3 - 0) if new Pod is scheduled to any
                               of the three zones, it will violate MaxSkew. \n This
-                              is an alpha field and requires enabling MinDomainsInPodTopologySpread
-                              feature gate."
+                              is a beta field and requires the MinDomainsInPodTopologySpread
+                              feature gate to be enabled (enabled by default)."
                             format: int32
                             type: integer
+                          nodeAffinityPolicy:
+                            description: "NodeAffinityPolicy indicates how we will
+                              treat Pod's nodeAffinity/nodeSelector when calculating
+                              pod topology spread skew. Options are: - Honor: only
+                              nodes matching nodeAffinity/nodeSelector are included
+                              in the calculations. - Ignore: nodeAffinity/nodeSelector
+                              are ignored. All nodes are included in the calculations.
+                              \n If this value is nil, the behavior is equivalent
+                              to the Honor policy. This is a beta-level feature default
+                              enabled by the NodeInclusionPolicyInPodTopologySpread
+                              feature flag."
+                            type: string
+                          nodeTaintsPolicy:
+                            description: "NodeTaintsPolicy indicates how we will treat
+                              node taints when calculating pod topology spread skew.
+                              Options are: - Honor: nodes without taints, along with
+                              tainted nodes for which the incoming pod has a toleration,
+                              are included. - Ignore: node taints are ignored. All
+                              nodes are included. \n If this value is nil, the behavior
+                              is equivalent to the Ignore policy. This is a beta-level
+                              feature default enabled by the NodeInclusionPolicyInPodTopologySpread
+                              feature flag."
+                            type: string
                           topologyKey:
                             description: TopologyKey is the key of node labels. Nodes
                               that have a label with this key and identical values
@@ -6084,9 +5618,10 @@ spec:
                               each <key, value> as a "bucket", and try to put balanced
                               number of pods into each bucket. We define a domain
                               as a particular instance of a topology. Also, we define
-                              an eligible domain as a domain whose nodes match the
-                              node selector. e.g. If TopologyKey is "kubernetes.io/hostname",
-                              each Node is a domain of that topology. And, if TopologyKey
+                              an eligible domain as a domain whose nodes meet the
+                              requirements of nodeAffinityPolicy and nodeTaintsPolicy.
+                              e.g. If TopologyKey is "kubernetes.io/hostname", each
+                              Node is a domain of that topology. And, if TopologyKey
                               is "topology.kubernetes.io/zone", each zone is a domain
                               of that topology. It's a required field.
                             type: string
@@ -6210,9 +5745,12 @@ spec:
                                   provisioner or an external controller can support
                                   the specified data source, it will create a new
                                   volume based on the contents of the specified data
-                                  source. If the AnyVolumeDataSource feature gate
-                                  is enabled, this field will always have the same
-                                  contents as the DataSourceRef field.'
+                                  source. When the AnyVolumeDataSource feature gate
+                                  is enabled, dataSource contents will be copied to
+                                  dataSourceRef, and dataSourceRef contents will be
+                                  copied to dataSource when dataSourceRef.namespace
+                                  is not specified. If the namespace is specified,
+                                  then dataSourceRef will not be copied to dataSource.'
                                 properties:
                                   apiGroup:
                                     description: APIGroup is the group for the resource
@@ -6237,27 +5775,33 @@ spec:
                               dataSourceRef:
                                 description: 'dataSourceRef specifies the object from
                                   which to populate the volume with data, if a non-empty
-                                  volume is desired. This may be any local object
-                                  from a non-empty API group (non core object) or
-                                  a PersistentVolumeClaim object. When this field
-                                  is specified, volume binding will only succeed if
-                                  the type of the specified object matches some installed
-                                  volume populator or dynamic provisioner. This field
-                                  will replace the functionality of the DataSource
-                                  field and as such if both fields are non-empty,
-                                  they must have the same value. For backwards compatibility,
-                                  both fields (DataSource and DataSourceRef) will
-                                  be set to the same value automatically if one of
-                                  them is empty and the other is non-empty. There
-                                  are two important differences between DataSource
-                                  and DataSourceRef: * While DataSource only allows
-                                  two specific types of objects, DataSourceRef allows
+                                  volume is desired. This may be any object from a
+                                  non-empty API group (non core object) or a PersistentVolumeClaim
+                                  object. When this field is specified, volume binding
+                                  will only succeed if the type of the specified object
+                                  matches some installed volume populator or dynamic
+                                  provisioner. This field will replace the functionality
+                                  of the dataSource field and as such if both fields
+                                  are non-empty, they must have the same value. For
+                                  backwards compatibility, when namespace isn''t specified
+                                  in dataSourceRef, both fields (dataSource and dataSourceRef)
+                                  will be set to the same value automatically if one
+                                  of them is empty and the other is non-empty. When
+                                  namespace is specified in dataSourceRef, dataSource
+                                  isn''t set to the same value and must be empty.
+                                  There are three important differences between dataSource
+                                  and dataSourceRef: * While dataSource only allows
+                                  two specific types of objects, dataSourceRef allows
                                   any non-core object, as well as PersistentVolumeClaim
-                                  objects. * While DataSource ignores disallowed values
-                                  (dropping them), DataSourceRef preserves all values,
+                                  objects. * While dataSource ignores disallowed values
+                                  (dropping them), dataSourceRef preserves all values,
                                   and generates an error if a disallowed value is
-                                  specified. (Beta) Using this field requires the
-                                  AnyVolumeDataSource feature gate to be enabled.'
+                                  specified. * While dataSource only allows local
+                                  objects, dataSourceRef allows objects in any namespaces.
+                                  (Beta) Using this field requires the AnyVolumeDataSource
+                                  feature gate to be enabled. (Alpha) Using the namespace
+                                  field of dataSourceRef requires the CrossNamespaceVolumeDataSource
+                                  feature gate to be enabled.'
                                 properties:
                                   apiGroup:
                                     description: APIGroup is the group for the resource
@@ -6274,11 +5818,21 @@ spec:
                                     description: Name is the name of resource being
                                       referenced
                                     type: string
+                                  namespace:
+                                    description: Namespace is the namespace of resource
+                                      being referenced Note that when a namespace
+                                      is specified, a gateway.networking.k8s.io/ReferenceGrant
+                                      object is required in the referent namespace
+                                      to allow that namespace's owner to accept the
+                                      reference. See the ReferenceGrant documentation
+                                      for details. (Alpha) This field requires the
+                                      CrossNamespaceVolumeDataSource feature gate
+                                      to be enabled.
+                                    type: string
                                 required:
                                 - kind
                                 - name
                                 type: object
-                                x-kubernetes-map-type: atomic
                               resources:
                                 description: 'resources represents the minimum resources
                                   the volume should have. If RecoverVolumeExpansionFailure
@@ -6287,6 +5841,29 @@ spec:
                                   value but must still be higher than capacity recorded
                                   in the status field of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                                 properties:
+                                  claims:
+                                    description: "Claims lists the names of resources,
+                                      defined in spec.resourceClaims, that are used
+                                      by this container. \n This is an alpha field
+                                      and requires enabling the DynamicResourceAllocation
+                                      feature gate. \n This field is immutable."
+                                    items:
+                                      description: ResourceClaim references one entry
+                                        in PodSpec.ResourceClaims.
+                                      properties:
+                                        name:
+                                          description: Name must match the name of
+                                            one entry in pod.spec.resourceClaims of
+                                            the Pod where this field is used. It makes
+                                            that resource available inside a container.
+                                          type: string
+                                      required:
+                                      - name
+                                      type: object
+                                    type: array
+                                    x-kubernetes-list-map-keys:
+                                    - name
+                                    x-kubernetes-list-type: map
                                   limits:
                                     additionalProperties:
                                       anyOf:
@@ -7021,10 +6598,13 @@ spec:
                                           If the provisioner or an external controller
                                           can support the specified data source, it
                                           will create a new volume based on the contents
-                                          of the specified data source. If the AnyVolumeDataSource
-                                          feature gate is enabled, this field will
-                                          always have the same contents as the DataSourceRef
-                                          field.'
+                                          of the specified data source. When the AnyVolumeDataSource
+                                          feature gate is enabled, dataSource contents
+                                          will be copied to dataSourceRef, and dataSourceRef
+                                          contents will be copied to dataSource when
+                                          dataSourceRef.namespace is not specified.
+                                          If the namespace is specified, then dataSourceRef
+                                          will not be copied to dataSource.'
                                         properties:
                                           apiGroup:
                                             description: APIGroup is the group for
@@ -7051,30 +6631,39 @@ spec:
                                         description: 'dataSourceRef specifies the
                                           object from which to populate the volume
                                           with data, if a non-empty volume is desired.
-                                          This may be any local object from a non-empty
+                                          This may be any object from a non-empty
                                           API group (non core object) or a PersistentVolumeClaim
                                           object. When this field is specified, volume
                                           binding will only succeed if the type of
                                           the specified object matches some installed
                                           volume populator or dynamic provisioner.
                                           This field will replace the functionality
-                                          of the DataSource field and as such if both
+                                          of the dataSource field and as such if both
                                           fields are non-empty, they must have the
                                           same value. For backwards compatibility,
-                                          both fields (DataSource and DataSourceRef)
+                                          when namespace isn''t specified in dataSourceRef,
+                                          both fields (dataSource and dataSourceRef)
                                           will be set to the same value automatically
                                           if one of them is empty and the other is
-                                          non-empty. There are two important differences
-                                          between DataSource and DataSourceRef: *
-                                          While DataSource only allows two specific
-                                          types of objects, DataSourceRef allows any
-                                          non-core object, as well as PersistentVolumeClaim
-                                          objects. * While DataSource ignores disallowed
-                                          values (dropping them), DataSourceRef preserves
+                                          non-empty. When namespace is specified in
+                                          dataSourceRef, dataSource isn''t set to
+                                          the same value and must be empty. There
+                                          are three important differences between
+                                          dataSource and dataSourceRef: * While dataSource
+                                          only allows two specific types of objects,
+                                          dataSourceRef allows any non-core object,
+                                          as well as PersistentVolumeClaim objects.
+                                          * While dataSource ignores disallowed values
+                                          (dropping them), dataSourceRef preserves
                                           all values, and generates an error if a
-                                          disallowed value is specified. (Beta) Using
-                                          this field requires the AnyVolumeDataSource
-                                          feature gate to be enabled.'
+                                          disallowed value is specified. * While dataSource
+                                          only allows local objects, dataSourceRef
+                                          allows objects in any namespaces. (Beta)
+                                          Using this field requires the AnyVolumeDataSource
+                                          feature gate to be enabled. (Alpha) Using
+                                          the namespace field of dataSourceRef requires
+                                          the CrossNamespaceVolumeDataSource feature
+                                          gate to be enabled.'
                                         properties:
                                           apiGroup:
                                             description: APIGroup is the group for
@@ -7092,11 +6681,21 @@ spec:
                                             description: Name is the name of resource
                                               being referenced
                                             type: string
+                                          namespace:
+                                            description: Namespace is the namespace
+                                              of resource being referenced Note that
+                                              when a namespace is specified, a gateway.networking.k8s.io/ReferenceGrant
+                                              object is required in the referent namespace
+                                              to allow that namespace's owner to accept
+                                              the reference. See the ReferenceGrant
+                                              documentation for details. (Alpha) This
+                                              field requires the CrossNamespaceVolumeDataSource
+                                              feature gate to be enabled.
+                                            type: string
                                         required:
                                         - kind
                                         - name
                                         type: object
-                                        x-kubernetes-map-type: atomic
                                       resources:
                                         description: 'resources represents the minimum
                                           resources the volume should have. If RecoverVolumeExpansionFailure
@@ -7106,6 +6705,31 @@ spec:
                                           than capacity recorded in the status field
                                           of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                                         properties:
+                                          claims:
+                                            description: "Claims lists the names of
+                                              resources, defined in spec.resourceClaims,
+                                              that are used by this container. \n
+                                              This is an alpha field and requires
+                                              enabling the DynamicResourceAllocation
+                                              feature gate. \n This field is immutable."
+                                            items:
+                                              description: ResourceClaim references
+                                                one entry in PodSpec.ResourceClaims.
+                                              properties:
+                                                name:
+                                                  description: Name must match the
+                                                    name of one entry in pod.spec.resourceClaims
+                                                    of the Pod where this field is
+                                                    used. It makes that resource available
+                                                    inside a container.
+                                                  type: string
+                                              required:
+                                              - name
+                                              type: object
+                                            type: array
+                                            x-kubernetes-list-map-keys:
+                                            - name
+                                            x-kubernetes-list-type: map
                                           limits:
                                             additionalProperties:
                                               anyOf:
@@ -8429,9 +8053,14 @@ spec:
                     type: object
                   supplementalGroups:
                     description: A list of groups applied to the first process run
-                      in each container, in addition to the container's primary GID.  If
-                      unspecified, no groups will be added to any container. Note
-                      that this field cannot be set when spec.os.name is windows.
+                      in each container, in addition to the container's primary GID,
+                      the fsGroup (if specified), and group memberships defined in
+                      the container image for the uid of the container process. If
+                      unspecified, no additional groups are added to any container.
+                      Note that group memberships defined in the container image for
+                      the uid of the container process are still effective, even if
+                      they are not included in this list. Note that this field cannot
+                      be set when spec.os.name is windows.
                     items:
                       format: int64
                       type: integer
@@ -8619,14 +8248,23 @@ spec:
                             and requires `type` to be "ExternalName".
                           type: string
                         externalTrafficPolicy:
-                          description: externalTrafficPolicy denotes if this Service
-                            desires to route external traffic to node-local or cluster-wide
-                            endpoints. "Local" preserves the client source IP and
-                            avoids a second hop for LoadBalancer and Nodeport type
-                            services, but risks potentially imbalanced traffic spreading.
-                            "Cluster" obscures the client source IP and may cause
-                            a second hop to another node, but should have good overall
-                            load-spreading.
+                          description: externalTrafficPolicy describes how nodes distribute
+                            service traffic they receive on one of the Service's "externally-facing"
+                            addresses (NodePorts, ExternalIPs, and LoadBalancer IPs).
+                            If set to "Local", the proxy will configure the service
+                            in a way that assumes that external load balancers will
+                            take care of balancing the service traffic between nodes,
+                            and so each node will deliver traffic only to the node-local
+                            endpoints of the service, without masquerading the client
+                            source IP. (Traffic mistakenly sent to a node with no
+                            endpoints will be dropped.) The default value, "Cluster",
+                            uses the standard behavior of routing to all endpoints
+                            evenly (possibly modified by topology and other features).
+                            Note that traffic sent to an External IP or LoadBalancer
+                            IP from within the cluster will always get "Cluster" semantics,
+                            but clients sending to a NodePort from within the cluster
+                            may need to take traffic policy into account when picking
+                            a node.
                           type: string
                         healthCheckNodePort:
                           description: healthCheckNodePort specifies the healthcheck
@@ -8640,16 +8278,18 @@ spec:
                             field is specified when creating a Service which does
                             not need it, creation will fail. This field will be wiped
                             when updating a Service to no longer need it (e.g. changing
-                            type).
+                            type). This field cannot be updated once set.
                           format: int32
                           type: integer
                         internalTrafficPolicy:
-                          description: InternalTrafficPolicy specifies if the cluster
-                            internal traffic should be routed to all endpoints or
-                            node-local endpoints only. "Cluster" routes internal traffic
-                            to a Service to all endpoints. "Local" routes traffic
-                            to node-local endpoints only, traffic is dropped if no
-                            node-local endpoints are ready. The default value is "Cluster".
+                          description: InternalTrafficPolicy describes how nodes distribute
+                            service traffic they receive on the ClusterIP. If set
+                            to "Local", the proxy will assume that pods only want
+                            to talk to endpoints of the service on the same node as
+                            the pod, dropping the traffic if there are no local endpoints.
+                            The default value, "Cluster", uses the standard behavior
+                            of routing to all endpoints evenly (possibly modified
+                            by topology and other features).
                           type: string
                         ipFamilies:
                           description: "IPFamilies is a list of IP families (e.g.
@@ -8876,12 +8516,12 @@ spec:
                             description: "Condition contains details for one aspect
                               of the current state of this API Resource. --- This
                               struct is intended for direct use as an array at the
-                              field path .status.conditions.  For example, type FooStatus
-                              struct{ // Represents the observations of a foo's current
-                              state. // Known .status.conditions.type are: \"Available\",
-                              \"Progressing\", and \"Degraded\" // +patchMergeKey=type
-                              // +patchStrategy=merge // +listType=map // +listMapKey=type
-                              Conditions []metav1.Condition `json:\"conditions,omitempty\"
+                              field path .status.conditions.  For example, \n type
+                              FooStatus struct{ // Represents the observations of
+                              a foo's current state. // Known .status.conditions.type
+                              are: \"Available\", \"Progressing\", and \"Degraded\"
+                              // +patchMergeKey=type // +patchStrategy=merge // +listType=map
+                              // +listMapKey=type Conditions []metav1.Condition `json:\"conditions,omitempty\"
                               patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`
                               \n // other fields }"
                             properties:
@@ -9294,9 +8934,12 @@ spec:
                             * An existing PVC (PersistentVolumeClaim) If the provisioner
                             or an external controller can support the specified data
                             source, it will create a new volume based on the contents
-                            of the specified data source. If the AnyVolumeDataSource
-                            feature gate is enabled, this field will always have the
-                            same contents as the DataSourceRef field.'
+                            of the specified data source. When the AnyVolumeDataSource
+                            feature gate is enabled, dataSource contents will be copied
+                            to dataSourceRef, and dataSourceRef contents will be copied
+                            to dataSource when dataSourceRef.namespace is not specified.
+                            If the namespace is specified, then dataSourceRef will
+                            not be copied to dataSource.'
                           properties:
                             apiGroup:
                               description: APIGroup is the group for the resource
@@ -9318,25 +8961,31 @@ spec:
                         dataSourceRef:
                           description: 'dataSourceRef specifies the object from which
                             to populate the volume with data, if a non-empty volume
-                            is desired. This may be any local object from a non-empty
-                            API group (non core object) or a PersistentVolumeClaim
-                            object. When this field is specified, volume binding will
-                            only succeed if the type of the specified object matches
-                            some installed volume populator or dynamic provisioner.
-                            This field will replace the functionality of the DataSource
+                            is desired. This may be any object from a non-empty API
+                            group (non core object) or a PersistentVolumeClaim object.
+                            When this field is specified, volume binding will only
+                            succeed if the type of the specified object matches some
+                            installed volume populator or dynamic provisioner. This
+                            field will replace the functionality of the dataSource
                             field and as such if both fields are non-empty, they must
-                            have the same value. For backwards compatibility, both
-                            fields (DataSource and DataSourceRef) will be set to the
-                            same value automatically if one of them is empty and the
-                            other is non-empty. There are two important differences
-                            between DataSource and DataSourceRef: * While DataSource
-                            only allows two specific types of objects, DataSourceRef
-                            allows any non-core object, as well as PersistentVolumeClaim
-                            objects. * While DataSource ignores disallowed values
-                            (dropping them), DataSourceRef preserves all values, and
-                            generates an error if a disallowed value is specified.
-                            (Beta) Using this field requires the AnyVolumeDataSource
-                            feature gate to be enabled.'
+                            have the same value. For backwards compatibility, when
+                            namespace isn''t specified in dataSourceRef, both fields
+                            (dataSource and dataSourceRef) will be set to the same
+                            value automatically if one of them is empty and the other
+                            is non-empty. When namespace is specified in dataSourceRef,
+                            dataSource isn''t set to the same value and must be empty.
+                            There are three important differences between dataSource
+                            and dataSourceRef: * While dataSource only allows two
+                            specific types of objects, dataSourceRef allows any non-core
+                            object, as well as PersistentVolumeClaim objects. * While
+                            dataSource ignores disallowed values (dropping them),
+                            dataSourceRef preserves all values, and generates an error
+                            if a disallowed value is specified. * While dataSource
+                            only allows local objects, dataSourceRef allows objects
+                            in any namespaces. (Beta) Using this field requires the
+                            AnyVolumeDataSource feature gate to be enabled. (Alpha)
+                            Using the namespace field of dataSourceRef requires the
+                            CrossNamespaceVolumeDataSource feature gate to be enabled.'
                           properties:
                             apiGroup:
                               description: APIGroup is the group for the resource
@@ -9350,11 +8999,20 @@ spec:
                             name:
                               description: Name is the name of resource being referenced
                               type: string
+                            namespace:
+                              description: Namespace is the namespace of resource
+                                being referenced Note that when a namespace is specified,
+                                a gateway.networking.k8s.io/ReferenceGrant object
+                                is required in the referent namespace to allow that
+                                namespace's owner to accept the reference. See the
+                                ReferenceGrant documentation for details. (Alpha)
+                                This field requires the CrossNamespaceVolumeDataSource
+                                feature gate to be enabled.
+                              type: string
                           required:
                           - kind
                           - name
                           type: object
-                          x-kubernetes-map-type: atomic
                         resources:
                           description: 'resources represents the minimum resources
                             the volume should have. If RecoverVolumeExpansionFailure
@@ -9363,6 +9021,29 @@ spec:
                             still be higher than capacity recorded in the status field
                             of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                           properties:
+                            claims:
+                              description: "Claims lists the names of resources, defined
+                                in spec.resourceClaims, that are used by this container.
+                                \n This is an alpha field and requires enabling the
+                                DynamicResourceAllocation feature gate. \n This field
+                                is immutable."
+                              items:
+                                description: ResourceClaim references one entry in
+                                  PodSpec.ResourceClaims.
+                                properties:
+                                  name:
+                                    description: Name must match the name of one entry
+                                      in pod.spec.resourceClaims of the Pod where
+                                      this field is used. It makes that resource available
+                                      inside a container.
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                              type: array
+                              x-kubernetes-list-map-keys:
+                              - name
+                              x-kubernetes-list-type: map
                             limits:
                               additionalProperties:
                                 anyOf:
@@ -10050,9 +9731,12 @@ spec:
                                     provisioner or an external controller can support
                                     the specified data source, it will create a new
                                     volume based on the contents of the specified
-                                    data source. If the AnyVolumeDataSource feature
-                                    gate is enabled, this field will always have the
-                                    same contents as the DataSourceRef field.'
+                                    data source. When the AnyVolumeDataSource feature
+                                    gate is enabled, dataSource contents will be copied
+                                    to dataSourceRef, and dataSourceRef contents will
+                                    be copied to dataSource when dataSourceRef.namespace
+                                    is not specified. If the namespace is specified,
+                                    then dataSourceRef will not be copied to dataSource.'
                                   properties:
                                     apiGroup:
                                       description: APIGroup is the group for the resource
@@ -10078,27 +9762,35 @@ spec:
                                   description: 'dataSourceRef specifies the object
                                     from which to populate the volume with data, if
                                     a non-empty volume is desired. This may be any
-                                    local object from a non-empty API group (non core
-                                    object) or a PersistentVolumeClaim object. When
-                                    this field is specified, volume binding will only
-                                    succeed if the type of the specified object matches
-                                    some installed volume populator or dynamic provisioner.
+                                    object from a non-empty API group (non core object)
+                                    or a PersistentVolumeClaim object. When this field
+                                    is specified, volume binding will only succeed
+                                    if the type of the specified object matches some
+                                    installed volume populator or dynamic provisioner.
                                     This field will replace the functionality of the
-                                    DataSource field and as such if both fields are
+                                    dataSource field and as such if both fields are
                                     non-empty, they must have the same value. For
-                                    backwards compatibility, both fields (DataSource
-                                    and DataSourceRef) will be set to the same value
+                                    backwards compatibility, when namespace isn''t
+                                    specified in dataSourceRef, both fields (dataSource
+                                    and dataSourceRef) will be set to the same value
                                     automatically if one of them is empty and the
-                                    other is non-empty. There are two important differences
-                                    between DataSource and DataSourceRef: * While
-                                    DataSource only allows two specific types of objects,
-                                    DataSourceRef allows any non-core object, as well
-                                    as PersistentVolumeClaim objects. * While DataSource
-                                    ignores disallowed values (dropping them), DataSourceRef
-                                    preserves all values, and generates an error if
-                                    a disallowed value is specified. (Beta) Using
-                                    this field requires the AnyVolumeDataSource feature
-                                    gate to be enabled.'
+                                    other is non-empty. When namespace is specified
+                                    in dataSourceRef, dataSource isn''t set to the
+                                    same value and must be empty. There are three
+                                    important differences between dataSource and dataSourceRef:
+                                    * While dataSource only allows two specific types
+                                    of objects, dataSourceRef allows any non-core
+                                    object, as well as PersistentVolumeClaim objects.
+                                    * While dataSource ignores disallowed values (dropping
+                                    them), dataSourceRef preserves all values, and
+                                    generates an error if a disallowed value is specified.
+                                    * While dataSource only allows local objects,
+                                    dataSourceRef allows objects in any namespaces.
+                                    (Beta) Using this field requires the AnyVolumeDataSource
+                                    feature gate to be enabled. (Alpha) Using the
+                                    namespace field of dataSourceRef requires the
+                                    CrossNamespaceVolumeDataSource feature gate to
+                                    be enabled.'
                                   properties:
                                     apiGroup:
                                       description: APIGroup is the group for the resource
@@ -10115,11 +9807,21 @@ spec:
                                       description: Name is the name of resource being
                                         referenced
                                       type: string
+                                    namespace:
+                                      description: Namespace is the namespace of resource
+                                        being referenced Note that when a namespace
+                                        is specified, a gateway.networking.k8s.io/ReferenceGrant
+                                        object is required in the referent namespace
+                                        to allow that namespace's owner to accept
+                                        the reference. See the ReferenceGrant documentation
+                                        for details. (Alpha) This field requires the
+                                        CrossNamespaceVolumeDataSource feature gate
+                                        to be enabled.
+                                      type: string
                                   required:
                                   - kind
                                   - name
                                   type: object
-                                  x-kubernetes-map-type: atomic
                                 resources:
                                   description: 'resources represents the minimum resources
                                     the volume should have. If RecoverVolumeExpansionFailure
@@ -10128,6 +9830,30 @@ spec:
                                     value but must still be higher than capacity recorded
                                     in the status field of the claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
                                   properties:
+                                    claims:
+                                      description: "Claims lists the names of resources,
+                                        defined in spec.resourceClaims, that are used
+                                        by this container. \n This is an alpha field
+                                        and requires enabling the DynamicResourceAllocation
+                                        feature gate. \n This field is immutable."
+                                      items:
+                                        description: ResourceClaim references one
+                                          entry in PodSpec.ResourceClaims.
+                                        properties:
+                                          name:
+                                            description: Name must match the name
+                                              of one entry in pod.spec.resourceClaims
+                                              of the Pod where this field is used.
+                                              It makes that resource available inside
+                                              a container.
+                                            type: string
+                                        required:
+                                        - name
+                                        type: object
+                                      type: array
+                                      x-kubernetes-list-map-keys:
+                                      - name
+                                      x-kubernetes-list-type: map
                                     limits:
                                       additionalProperties:
                                         anyOf:
