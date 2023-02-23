@@ -13,12 +13,18 @@
 - Refer to [Documentation](./docs/README.md) for getting started.
 - Join Kubernetes slack and join [druid-operator](https://kubernetes.slack.com/archives/C04F4M6HT2L)
 
+### Talks and Blogs on Druid Operator
+- [Dok Community](https://www.youtube.com/live/X4A3lWJRGHk?feature=share)
+- [Druid Summit](https://youtu.be/UqPrttXRBDg)
+- [Druid Operator Blog](https://www.cloudnatively.com/apache-druid-on-kubernetes/)
+- [Druid On K8s Without ZK](https://youtu.be/TRYOvkz5Wuw)
+
 ### Supported CR
 - The operator supports CR of type ```Druid```.
 - ```Druid``` CR belongs to api Group ```druid.apache.org``` and version ```v1alpha1```
 
 ### Notifications
-- Users may experience HPA issues with druid-operator with release 0.0.5, as described in the [issue]( https://github.com/druid-io/druid-operator/issues/160).
+- Users may experience HPA issues with druid-operator with release 0.0.5, as described in the [issue](https://github.com/druid-io/druid-operator/issues/160).
 - The latest release 0.0.6 has fixes for the above issue.
 - The operator has moved from HPA apiVersion autoscaling/v2beta1 to autoscaling/v2beta2 API users will need to update there HPA Specs according v2beta2 api in order to work with the latest druid-operator release.
 - Users may experience pvc deletion [issue](https://github.com/druid-io/druid-operator/issues/186) in release 0.0.6, this issue has been fixed in patch release 0.0.6.1.
