@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	druidv1alpha1 "github.com/druid-io/druid-operator/apis/druid/v1alpha1"
+	druidv1alpha1 "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 )
 
 // DruidReconciler reconciles a Druid object

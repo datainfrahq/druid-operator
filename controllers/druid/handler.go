@@ -14,7 +14,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	storage "k8s.io/api/storage/v1"
 
-	"github.com/druid-io/druid-operator/apis/druid/v1alpha1"
+	"github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -471,7 +471,7 @@ func deleteOrphanPVC(sdk client.Client, drd *v1alpha1.Druid, emitEvents EventEmi
 		return err
 	}
 
-	// Fix: https://github.com/druid-io/druid-operator/issues/149
+	// Fix: https://github.com/datainfrahq/druid-operator/issues/149
 	for _, pod := range podList {
 		if pod.(*v1.Pod).Status.Phase != v1.PodRunning {
 			return nil
@@ -1220,7 +1220,7 @@ func makeStatefulSet(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map
 
 func statefulSetIsEquals(obj1, obj2 object) bool {
 
-	// This used to match replica counts, but was reverted to fix https://github.com/druid-io/druid-operator/issues/160
+	// This used to match replica counts, but was reverted to fix https://github.com/datainfrahq/druid-operator/issues/160
 	// because it is legitimate for HPA to change replica counts and operator shouldn't reset those.
 
 	return true
@@ -1244,7 +1244,7 @@ func makeDeployment(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[
 
 func deploymentIsEquals(obj1, obj2 object) bool {
 
-	// This used to match replica counts, but was reverted to fix https://github.com/druid-io/druid-operator/issues/160
+	// This used to match replica counts, but was reverted to fix https://github.com/datainfrahq/druid-operator/issues/160
 	// because it is legitimate for HPA to change replica counts and operator shouldn't reset those.
 
 	return true
@@ -1393,7 +1393,7 @@ func makeHorizontalPodAutoscaler(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.D
 
 	hpa := &autoscalev2beta2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "autoscaling/v2beta1",
+			APIVersion: "autoscaling/v2beta2",
 			Kind:       "HorizontalPodAutoscaler",
 		},
 		ObjectMeta: metav1.ObjectMeta{
