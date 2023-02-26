@@ -196,4 +196,3 @@ helm-minio-install:
 	--create-namespace \
   	${NAMESPACE_DRUID}-minio minio/tenant \
 	-f e2e/configs/minio-tenant-override.yaml
-
