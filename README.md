@@ -23,6 +23,10 @@
 - The operator supports CR of type ```Druid```.
 - ```Druid``` CR belongs to api Group ```druid.apache.org``` and version ```v1alpha1```
 
+### Druid Operator Architecture
+
+![Druid Operator](docs/images/druid-operator.png?raw=true "Druid Operator")
+
 ### Notifications
 - Users may experience HPA issues with druid-operator with release 0.0.5, as described in the [issue](https://github.com/druid-io/druid-operator/issues/160).
 - The latest release 0.0.6 has fixes for the above issue.
