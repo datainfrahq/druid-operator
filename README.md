@@ -3,7 +3,7 @@
 
 # Kubernetes Operator for Apache Druid
 
-![Build Status](https://github.com/datainfrahq/druid-operator/actions/workflows/docker-image.yml/badge.svg) ![Docker pull](https://img.shields.io/docker/pulls/datainfrahq/druid-operator.svg) [![Latest Version](https://img.shields.io/github/tag/datainfrahq/druid-operator)](https://github.com/datainfrahq/druid-operator/releases)
+![Build Status](https://github.com/datainfrahq/druid-operator/actions/workflows/docker-image.yml/badge.svg) ![Docker pull](https://img.shields.io/docker/pulls/datainfrahq/druid-operator.svg) [![Latest Version](https://img.shields.io/github/tag/datainfrahq/druid-operator)](https://github.com/datainfrahq/druid-operator/releases)  
 
 - druid-operator provisions and manages [Apache Druid](https://druid.apache.org/) cluster on kubernetes.
 - druid-operator is designed to provision and manage [Apache Druid](https://druid.apache.org/) in distributed mode only.
@@ -22,6 +22,10 @@
 ### Supported CR
 - The operator supports CR of type ```Druid```.
 - ```Druid``` CR belongs to api Group ```druid.apache.org``` and version ```v1alpha1```
+
+### Druid Operator Architecture
+
+![Druid Operator](docs/images/druid-operator.png?raw=true "Druid Operator")
 
 ### Notifications
 - Users may experience HPA issues with druid-operator with release 0.0.5, as described in the [issue](https://github.com/druid-io/druid-operator/issues/160).
