@@ -1,5 +1,7 @@
 ## Install the operator
 
+![Druid Operator](images/druid-operator.png?raw=true "Druid Operator")
+
 - Register the `Druid` custom resource definition (CRD).
 
 ```
