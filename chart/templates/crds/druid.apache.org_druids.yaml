@@ -4417,12 +4417,12 @@ spec:
                       type: string
                     maxSurge:
                       description: 'Optional: maxSurge for deployment object, only
-                        applicable if kind=Deployment'
+                        applicable if kind=Deployment, by default set to 25%'
                       format: int32
                       type: integer
                     maxUnavailable:
                       description: 'Optional: maxUnavailable for deployment object,
-                        only applicable if kind=Deployment'
+                        only applicable if kind=Deployment, by default set to 25%'
                       format: int32
                       type: integer
                     nodeConfigMountPath:

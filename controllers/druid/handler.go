@@ -1190,14 +1190,7 @@ func getRollingUpdateStrategy(nodeSpec *v1alpha1.DruidNodeSpec) *appsv1.RollingU
 			},
 		}
 	}
-	return &appsv1.RollingUpdateDeployment{
-		MaxUnavailable: &intstr.IntOrString{
-			IntVal: int32(25),
-		},
-		MaxSurge: &intstr.IntOrString{
-			IntVal: int32(25),
-		},
-	}
+	return &appsv1.RollingUpdateDeployment{}
 
 }
 
