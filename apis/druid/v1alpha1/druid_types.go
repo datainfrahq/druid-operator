@@ -273,10 +273,10 @@ type DruidNodeSpec struct {
 	// Optional: By default it is set to "parallel"
 	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy,omitempty"`
 
-	// Optional: maxSurge for deployment object, only applicable if kind=Deployment
+	// Optional: maxSurge for deployment object, only applicable if kind=Deployment, by default set to 25%
 	MaxSurge *int32 `json:"maxSurge,omitempty"`
 
-	// Optional: maxUnavailable for deployment object, only applicable if kind=Deployment
+	// Optional: maxUnavailable for deployment object, only applicable if kind=Deployment, by default set to 25%
 	MaxUnavailable *int32 `json:"maxUnavailable,omitempty"`
 
 	// Optional
