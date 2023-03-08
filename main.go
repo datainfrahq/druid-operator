@@ -67,7 +67,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (ingestion.NewDruidReconciler(mgr)).SetupWithManager(mgr); err != nil {
+	if err = (ingestion.NewDruidIngestionReconciler(mgr)).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Ingestion")
 		os.Exit(1)
 	}

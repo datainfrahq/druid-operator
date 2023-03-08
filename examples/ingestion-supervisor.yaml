@@ -39,7 +39,7 @@ spec:
               "type":"kafka"
             },
             "dataSchema":{
-              "dataSource":"new5",
+              "dataSource":"new7",
               "timestampSpec":{
                   "column":"timestamp",
                   "format":"posix"

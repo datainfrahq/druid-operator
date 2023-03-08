@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
+	"github.com/datainfrahq/druid-operator/pkg/common"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -175,7 +176,7 @@ func (f WriterFuncs) Delete(ctx context.Context, sdk client.Client, drd *v1alpha
 func (f ReaderFuncs) Get(ctx context.Context, sdk client.Client, nodeSpecUniqueStr string, drd *v1alpha1.Druid, emptyObjFn func() object, emitEvent EventEmitter) (object, error) {
 	obj := emptyObjFn()
 
-	if err := sdk.Get(ctx, *namespacedName(nodeSpecUniqueStr, drd.Namespace), obj); err != nil {
+	if err := sdk.Get(ctx, *common.NamespacedName(nodeSpecUniqueStr, drd.Namespace), obj); err != nil {
 		emitEvent.EmitEventOnGetError(drd, obj, err)
 		return nil, err
 	}

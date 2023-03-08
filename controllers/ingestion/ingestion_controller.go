@@ -26,12 +26,12 @@ type IngestionReconciler struct {
 	Recorder      record.EventRecorder
 }
 
-func NewDruidReconciler(mgr ctrl.Manager) *IngestionReconciler {
+func NewDruidIngestionReconciler(mgr ctrl.Manager) *IngestionReconciler {
 	return &IngestionReconciler{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("controllers").WithName("Ingestion"),
 		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("druid-operator"),
+		Recorder: mgr.GetEventRecorderFor("druid-ingestion"),
 	}
 }
 
@@ -55,7 +55,7 @@ func (r *IngestionReconciler) Reconcile(ctx context.Context, request reconcile.R
 		return ctrl.Result{}, err
 	}
 
-	if err := deployDruidIngestion(r.Client, instance, nil); err != nil {
+	if err := deployDruidIngestion(r.Client, instance); err != nil {
 		return ctrl.Result{}, err
 	} else {
 		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
