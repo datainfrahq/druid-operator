@@ -2,7 +2,6 @@ package http
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -30,6 +29,7 @@ func (c *Client) Do() (respBody []byte, err error) {
 		return nil, err
 	}
 
+	req.Header.Add("Content-Type", "application/json")
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -42,8 +42,6 @@ func (c *Client) Do() (respBody []byte, err error) {
 		return nil, err
 	}
 
-	fmt.Println(responseBody)
-
-	return respBody, nil
+	return responseBody, nil
 
 }

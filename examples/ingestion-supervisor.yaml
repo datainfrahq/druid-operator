@@ -3,66 +3,84 @@ kind: "DruidIngestion"
 metadata:
   name: sample-druid-spec
 spec:
-  clusterRef: mydruid
+  routerUrl: localhost:8088
   suspend: false
-  supervisorSpec: |-
+  ingestionSpec:
+    type: kafka
+    supervisorSpec: |-
       {
-      "type": "kafka",
-      "spec": {
-        "dataSchema": {
-          "dataSource": "metrics-kafka",
-          "timestampSpec": {
-            "column": "timestamp",
-            "format": "auto"
-          },
-          "dimensionsSpec": {
-            "dimensions": [],
-            "dimensionExclusions": [
-              "timestamp",
-              "value"
-             ]
-           },
-          "metricsSpec": [
-            {
-              "name": "count",
-              "type": "count"
+        "type":"kafka",
+        "spec":{
+            "ioConfig":{
+              "type":"kafka",
+              "consumerProperties":{
+                  "bootstrap.servers":"localhost:9092"
+              },
+              "topic":"wiki-edits",
+              "inputFormat":{
+                  "type":"kafka",
+                  "headerLabelPrefix":"kafka.header.",
+                  "timestampColumnName":"kafka.timestamp",
+                  "keyColumnName":"kafka.key",
+                  "headerFormat":{
+                    "type":"string"
+                  },
+                  "keyFormat":{
+                    "type":"json"
+                  },
+                  "valueFormat":{
+                    "type":"json"
+                  },
+                  "findColumnsFromHeader":false
+              },
+              "useEarliestOffset":true
             },
-            {
-              "name": "value_sum",
-              "fieldName": "value",
-              "type": "doubleSum"
+            "tuningConfig":{
+              "type":"kafka"
             },
-            {
-              "name": "value_min",
-              "fieldName": "value",
-             "type": "doubleMin"
-            },
-            {
-              "name": "value_max",
-              "fieldName": "value",
-              "type": "doubleMax"
-           }
-          ],
-          "granularitySpec": {
-            "type": "uniform",
-            "segmentGranularity": "HOUR",
-            "queryGranularity": "NONE"
-          }
+            "dataSchema":{
+              "dataSource":"new5",
+              "timestampSpec":{
+                  "column":"timestamp",
+                  "format":"posix"
+              },
+              "dimensionsSpec":{
+                  "dimensions":[
+                    {
+                        "type":"string",
+                        "name":"kafka.key"
+                    },
+                    {
+                        "type":"string",
+                        "name":"kafka.timestamp"
+                    },
+                    {
+                        "type":"string",
+                        "name":"kafka.header.environment"
+                    },
+                    "$schema",
+                    {
+                        "type":"long",
+                        "name":"id"
+                    },
+                    "type",
+                    {
+                        "type":"long",
+                        "name":"namespace"
+                    },
+                    "title",
+                    "comment",
+                    "user"
+                  ]
+              },
+              "granularitySpec":{
+                  "queryGranularity":"none",
+                  "rollup":false,
+                  "segmentGranularity":"day"
+              }
+            }
         },
-        "ioConfig": {
-          "topic": "metrics",
-          "inputFormat": {
-            "type": "json"
-          },
-          "consumerProperties": {
-            "bootstrap.servers": "localhost:9092"
-          },
-          "taskCount": 1,
-          "replicas": 1,
-          "taskDuration": "PT1H"
-        },
-        "tuningConfig": {
-          "type": "kafka",
-          "maxRowsPerSegment": 5000000
+        "tuningConfig":{
+            "type":"kafka"
         }
-      } 
+      }

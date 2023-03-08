@@ -2,7 +2,6 @@ package ingestion
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -15,7 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	druidv1alpha1 "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
-	"github.com/datainfrahq/druid-operator/controllers/druid"
 )
 
 // DruidReconciler reconciles a Druid object
@@ -42,7 +40,6 @@ func NewDruidReconciler(mgr ctrl.Manager) *IngestionReconciler {
 func (r *IngestionReconciler) Reconcile(ctx context.Context, request reconcile.Request) (ctrl.Result, error) {
 	_ = context.Background()
 	_ = r.Log.WithValues("ingestion", request.NamespacedName)
-	fmt.Println("hello")
 
 	// Fetch the Druid instance
 	instance := &druidv1alpha1.DruidIngestion{}
@@ -58,15 +55,11 @@ func (r *IngestionReconciler) Reconcile(ctx context.Context, request reconcile.R
 		return ctrl.Result{}, err
 	}
 
-	var emitEvent druid.EventEmitter = druid.EmitEventFuncs{r.Recorder}
-	var readers druid.Reader = druid.ReaderFuncs{}
-
-	if err := deployDruidIngestion(r.Client, instance, emitEvent); err != nil {
+	if err := deployDruidIngestion(r.Client, instance, nil); err != nil {
 		return ctrl.Result{}, err
 	} else {
-		return ctrl.Result{RequeueAfter: r.ReconcileWait}, nil
+		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 	}
-	return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 }
 
 func (r *IngestionReconciler) SetupWithManager(mgr ctrl.Manager) error {

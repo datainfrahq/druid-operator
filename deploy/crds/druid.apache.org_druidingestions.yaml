@@ -15,7 +15,14 @@ spec:
     singular: druidingestion
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    - jsonPath: .spec.ingestionSpec.type
+      name: Type
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Ingestion is the Schema for the Ingestion API
@@ -34,15 +41,22 @@ spec:
             type: object
           spec:
             properties:
+              ingestionSpec:
+                properties:
+                  supervisorSpec:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - type
+                type: object
               routerUrl:
-                type: string
-              supervisorSpec:
                 type: string
               suspend:
                 type: boolean
             required:
+            - ingestionSpec
             - routerUrl
-            - supervisorSpec
             - suspend
             type: object
           status:
