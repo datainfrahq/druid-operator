@@ -10,7 +10,7 @@
 
 ```yaml
 spec:
-  # Enable rolling deploy for druid
+  # Enable rolling deploy for druid, not required but suggested for production setup
   # more information in features.md and in druid documentation
   # http://druid.io/docs/latest/operations/rolling-updates.html
   rollingDeploy: true
