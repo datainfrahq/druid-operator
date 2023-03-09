@@ -3,7 +3,6 @@
 - Golang 1.19+
 - Kubebuilder 2.3.1+
 
-
 ## Running Operator Locally
 
 - make run
