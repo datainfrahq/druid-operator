@@ -43,23 +43,21 @@ spec:
                     container
                   properties:
                     args:
-                      description: 'Optional: Argument to call the command'
+                      description: Argument to call the command
                       items:
                         type: string
                       type: array
                     command:
                       description: This is the command for the additional container
-                        to run. This is a required field
+                        to run.
                       items:
                         type: string
                       type: array
                     containerName:
-                      description: This is the name of the additional container. This
-                        is a required field
+                      description: This is the name of the additional container.
                       type: string
                     env:
-                      description: 'Optional: environment variables for the Additional
-                        Container'
+                      description: Environment variables for the Additional Container
                       items:
                         description: EnvVar represents an environment variable present
                           in a Container.
@@ -177,7 +175,7 @@ spec:
                         type: object
                       type: array
                     envFrom:
-                      description: 'Optional: Extra environment variables'
+                      description: Extra environment variables
                       items:
                         description: EnvFromSource represents the source of a set
                           of ConfigMaps
@@ -217,14 +215,13 @@ spec:
                       type: array
                     image:
                       description: This is the image for the additional container
-                        to run. This is a required field
+                        to run.
                       type: string
                     imagePullPolicy:
-                      description: 'Optional: If not present, will be taken from top
-                        level spec'
+                      description: If not present, will be taken from top level spec
                       type: string
                     resources:
-                      description: 'Optional: CPU/Memory Resources'
+                      description: CPU/Memory Resources
                       properties:
                         claims:
                           description: "Claims lists the names of resources, defined
@@ -272,8 +269,8 @@ spec:
                           type: object
                       type: object
                     securityContext:
-                      description: 'Optional: ContainerSecurityContext. If not present,
-                        will be taken from top level pod'
+                      description: ContainerSecurityContext. If not present, will
+                        be taken from top level pod
                       properties:
                         allowPrivilegeEscalation:
                           description: 'AllowPrivilegeEscalation controls whether
@@ -446,7 +443,7 @@ spec:
                           type: object
                       type: object
                     volumeMounts:
-                      description: 'Optional: volumes etc for the Druid pods'
+                      description: Volumes etc for the Druid pods
                       items:
                         description: VolumeMount describes a mounting of a Volume
                           within a container.
@@ -492,8 +489,8 @@ spec:
                   type: object
                 type: array
               affinity:
-                description: 'Optional: affinity to be used to for enabling node,
-                  pod affinity and anti-affinity'
+                description: Affinity to be used to for enabling node, pod affinity
+                  and anti-affinity
                 properties:
                   nodeAffinity:
                     description: Describes node affinity scheduling rules for the
@@ -1321,13 +1318,13 @@ spec:
                     type: object
                 type: object
               common.runtime.properties:
-                description: 'Required: common.runtime.properties contents'
+                description: common.runtime.properties contents
                 type: string
               commonConfigMountPath:
-                description: 'Required: in-container directory to mount with common.runtime.properties'
+                description: In-container directory to mount with common.runtime.properties
                 type: string
               containerSecurityContext:
-                description: 'Optional: druid pods container-security-context'
+                description: druid pods container-security-context
                 properties:
                   allowPrivilegeEscalation:
                     description: 'AllowPrivilegeEscalation controls whether a process
@@ -1500,15 +1497,15 @@ spec:
                 - type
                 type: object
               deleteOrphanPvc:
-                description: 'Optional: Default is set to true, orphaned ( unmounted
-                  pvc''s ) shall be cleaned up by the operator.'
+                description: Default is set to true, orphaned ( unmounted pvc's )
+                  shall be cleaned up by the operator.
                 type: boolean
               disablePVCDeletionFinalizer:
-                description: 'Optional: Default is set to false, pvc shall be deleted
-                  on deletion of CR'
+                description: Default is set to false, pvc shall be deleted on deletion
+                  of CR
                 type: boolean
               env:
-                description: 'Optional: environment variables for druid containers'
+                description: Environment variables for druid containers
                 items:
                   description: EnvVar represents an environment variable present in
                     a Container.
@@ -1617,7 +1614,7 @@ spec:
                   type: object
                 type: array
               envFrom:
-                description: 'Optional: Extra environment variables'
+                description: Extra environment variables
                 items:
                   description: EnvFromSource represents the source of a set of ConfigMaps
                   properties:
@@ -1657,17 +1654,18 @@ spec:
                   doc: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#forced-rollback'
                 type: boolean
               ignored:
-                description: 'Optional: If true, this spec would be ignored by the
-                  operator'
+                default: false
+                description: If true, this spec would be ignored by the operator
                 type: boolean
               image:
                 description: Required here or at nodeSpec level
                 type: string
               imagePullPolicy:
-                description: 'Optional:'
+                description: PullPolicy describes a policy for if/when to pull a container
+                  image
                 type: string
               imagePullSecrets:
-                description: 'Optional: imagePullSecrets for private registries'
+                description: imagePullSecrets for private registries
                 items:
                   description: LocalObjectReference contains enough information to
                     let you locate the referenced object inside the same namespace.
@@ -1680,11 +1678,11 @@ spec:
                   x-kubernetes-map-type: atomic
                 type: array
               jvm.options:
-                description: 'Optional: jvm options for druid jvm processes'
+                description: jvm options for druid jvm processes
                 type: string
               livenessProbe:
-                description: Optional, port is set to druid.port if not specified
-                  with httpGet handler
+                description: Port is set to druid.port if not specified with httpGet
+                  handler
                 properties:
                   exec:
                     description: Exec specifies the action to take.
@@ -1826,7 +1824,7 @@ spec:
                     type: integer
                 type: object
               log4j.config:
-                description: 'Optional: log4j config contents'
+                description: log4j config contents
                 type: string
               metadataStore:
                 properties:
@@ -1843,19 +1841,19 @@ spec:
                 - type
                 type: object
               metricDimensions.json:
-                description: 'Optional: Custom Dimension Map Path for statsd emitter'
+                description: Custom Dimension Map Path for statsd emitter
                 type: string
               nodeSelector:
                 additionalProperties:
                   type: string
-                description: 'Optional: node selector to be used by Druid statefulsets'
+                description: Node selector to be used by Druid statefulsets
                 type: object
               nodes:
                 additionalProperties:
                   properties:
                     affinity:
-                      description: 'Optional: affinity to be used to for enabling
-                        node, pod affinity and anti-affinity'
+                      description: Affinity to be used to for enabling node, pod affinity
+                        and anti-affinity
                       properties:
                         nodeAffinity:
                           description: Describes node affinity scheduling rules for
@@ -2736,7 +2734,7 @@ spec:
                           type: object
                       type: object
                     containerSecurityContext:
-                      description: 'Optional: druid pods container-security-context'
+                      description: Druid pods container-security-context
                       properties:
                         allowPrivilegeEscalation:
                           description: 'AllowPrivilegeEscalation controls whether
@@ -2909,11 +2907,11 @@ spec:
                           type: object
                       type: object
                     druid.port:
-                      description: 'Required: Port used by Druid Process'
+                      description: Port used by Druid Process
                       format: int32
                       type: integer
                     env:
-                      description: 'Optional: Extra environment variables'
+                      description: Extra environment variables
                       items:
                         description: EnvVar represents an environment variable present
                           in a Container.
@@ -3031,7 +3029,7 @@ spec:
                         type: object
                       type: array
                     envFrom:
-                      description: 'Optional: Extra environment variables'
+                      description: Extra environment variables
                       items:
                         description: EnvFromSource represents the source of a set
                           of ConfigMaps
@@ -3070,11 +3068,11 @@ spec:
                         type: object
                       type: array
                     extra.jvm.options:
-                      description: 'Optional: This appends extra jvm options to JvmOptions
-                        field'
+                      description: This appends extra jvm options to JvmOptions field
                       type: string
                     hpAutoscaler:
-                      description: Optional
+                      description: HorizontalPodAutoscalerSpec describes the desired
+                        functionality of the HorizontalPodAutoscaler.
                       properties:
                         behavior:
                           description: behavior configures the scaling behavior of
@@ -3752,15 +3750,14 @@ spec:
                       - scaleTargetRef
                       type: object
                     image:
-                      description: 'Optional: Overrides image from top level, Required
-                        if no image specified at top level'
+                      description: Overrides image from top level, Required if no
+                        image specified at top level
                       type: string
                     imagePullPolicy:
-                      description: 'Optional: Overrides imagePullPolicy from top level'
+                      description: Overrides imagePullPolicy from top level
                       type: string
                     imagePullSecrets:
-                      description: 'Optional: Overrides imagePullSecrets from top
-                        level'
+                      description: Overrides imagePullSecrets from top level
                       items:
                         description: LocalObjectReference contains enough information
                           to let you locate the referenced object inside the same
@@ -3774,7 +3771,7 @@ spec:
                         x-kubernetes-map-type: atomic
                       type: array
                     ingress:
-                      description: 'Optional: Ingress Spec'
+                      description: Ingress Spec
                       properties:
                         defaultBackend:
                           description: DefaultBackend is the backend that should handle
@@ -4063,18 +4060,23 @@ spec:
                     ingressAnnotations:
                       additionalProperties:
                         type: string
-                      description: 'Optional: Ingress Annoatations to be populated
-                        in ingress spec'
+                      description: Ingress Annoatations to be populated in ingress
+                        spec
                       type: object
                     jvm.options:
-                      description: 'Optional: This overrides JvmOptions at top level'
+                      description: This overrides JvmOptions at top level
                       type: string
                     kind:
                       description: 'Defaults to statefulsets. Note: volumeClaimTemplates
                         are ignored when kind=Deployment'
                       type: string
                     lifecycle:
-                      description: Optional
+                      description: Lifecycle describes actions that the management
+                        system should take in response to container lifecycle events.
+                        For the PostStart and PreStop lifecycle handlers, management
+                        of the container blocks until the action is complete, unless
+                        the container process fails, in which case the handler is
+                        aborted.
                       properties:
                         postStart:
                           description: 'PostStart is called immediately after a container
@@ -4264,7 +4266,9 @@ spec:
                           type: object
                       type: object
                     livenessProbe:
-                      description: Optional
+                      description: Probe describes a health check to be performed
+                        against a container to determine whether it is alive or ready
+                        to receive traffic.
                       properties:
                         exec:
                           description: Exec specifies the action to take.
@@ -4413,33 +4417,39 @@ spec:
                           type: integer
                       type: object
                     log4j.config:
-                      description: 'Optional: This overrides Log4jConfig at top level'
+                      description: This overrides Log4jConfig at top level
                       type: string
                     maxSurge:
-                      description: 'Optional: maxSurge for deployment object, only
-                        applicable if kind=Deployment, by default set to 25%'
+                      description: maxSurge for deployment object, only applicable
+                        if kind=Deployment, by default set to 25%
                       format: int32
                       type: integer
                     maxUnavailable:
-                      description: 'Optional: maxUnavailable for deployment object,
-                        only applicable if kind=Deployment, by default set to 25%'
+                      description: maxUnavailable for deployment object, only applicable
+                        if kind=Deployment, by default set to 25%
                       format: int32
                       type: integer
                     nodeConfigMountPath:
-                      description: 'Required: in-container directory to mount with
-                        runtime.properties, jvm.config, log4j2.xml files'
+                      description: in-container directory to mount with runtime.properties,
+                        jvm.config, log4j2.xml files
                       type: string
                     nodeSelector:
                       additionalProperties:
                         type: string
-                      description: 'Optional: node selector to be used by Druid statefulsets'
+                      description: Node selector to be used by Druid statefulsets
                       type: object
                     nodeType:
-                      description: 'Required: Druid node type e.g. Broker, Coordinator,
-                        Historical, MiddleManager, Router, Overlord etc'
+                      description: Druid node type
+                      enum:
+                      - historical
+                      - overlord
+                      - middleManager
+                      - indexer
+                      - broker
+                      - coordinator
+                      - router
                       type: string
                     persistentVolumeClaim:
-                      description: 'Optional: Persistant volume claim'
                       items:
                         description: PersistentVolumeClaim is a user's request for
                           and claim to a persistent volume
@@ -4806,11 +4816,10 @@ spec:
                     podAnnotations:
                       additionalProperties:
                         type: string
-                      description: 'Optional: custom annotations to be populated in
-                        Druid pods'
+                      description: Custom annotations to be populated in Druid pods
                       type: object
                     podDisruptionBudgetSpec:
-                      description: Optional
+                      description: PodDisruptionBudgetSpec is a description of a PodDisruptionBudget.
                       properties:
                         maxUnavailable:
                           anyOf:
@@ -4911,13 +4920,12 @@ spec:
                     podLabels:
                       additionalProperties:
                         type: string
-                      description: Optional
                       type: object
                     podManagementPolicy:
-                      description: 'Optional: By default it is set to "parallel"'
+                      description: By default, it is set to "parallel"
                       type: string
                     ports:
-                      description: 'Optional: extra ports to be added to pod spec'
+                      description: Extra ports to be added to pod spec
                       items:
                         description: ContainerPort represents a network port in a
                           single container.
@@ -4953,7 +4961,9 @@ spec:
                         type: object
                       type: array
                     readinessProbe:
-                      description: Optional
+                      description: Probe describes a health check to be performed
+                        against a container to determine whether it is alive or ready
+                        to receive traffic.
                       properties:
                         exec:
                           description: Exec specifies the action to take.
@@ -5102,12 +5112,11 @@ spec:
                           type: integer
                       type: object
                     replicas:
-                      description: Required
                       format: int32
                       minimum: 0
                       type: integer
                     resources:
-                      description: 'Optional: CPU/Memory Resources'
+                      description: CPU/Memory Resources
                       properties:
                         claims:
                           description: "Claims lists the names of resources, defined
@@ -5155,10 +5164,9 @@ spec:
                           type: object
                       type: object
                     runtime.properties:
-                      description: Required
                       type: string
                     securityContext:
-                      description: 'Optional: Overrides securityContext at top level'
+                      description: Overrides securityContext at top level
                       properties:
                         fsGroup:
                           description: "A special supplemental group that applies
@@ -5338,7 +5346,7 @@ spec:
                           type: object
                       type: object
                     services:
-                      description: 'Optional: Overrides services at top level'
+                      description: Overrides services at top level
                       items:
                         description: Service is a named abstraction of software service
                           (for example, mysql) consisting of local port (for example
@@ -5909,7 +5917,7 @@ spec:
                         type: object
                       type: array
                     startUpProbes:
-                      description: 'Optional: StartupProbe for nodeSpec'
+                      description: StartupProbe for nodeSpec
                       properties:
                         exec:
                           description: Exec specifies the action to take.
@@ -6058,12 +6066,11 @@ spec:
                           type: integer
                       type: object
                     terminationGracePeriodSeconds:
-                      description: 'Optional: terminationGracePeriod'
                       format: int64
                       type: integer
                     tolerations:
-                      description: 'Optional: toleration to be used in order to run
-                        Druid on nodes tainted'
+                      description: Toleration to be used in order to run Druid on
+                        nodes tainted
                       items:
                         description: The pod this Toleration is attached to tolerates
                           any taint that matches the triple <key,value,effect> using
@@ -6105,7 +6112,6 @@ spec:
                         type: object
                       type: array
                     topologySpreadConstraints:
-                      description: Optional
                       items:
                         description: TopologySpreadConstraint specifies how to spread
                           matching pods among the given topology.
@@ -6283,7 +6289,10 @@ spec:
                         type: object
                       type: array
                     updateStrategy:
-                      description: Optional
+                      description: StatefulSetUpdateStrategy indicates the strategy
+                        that the StatefulSet controller will use to perform updates.
+                        It includes any additional parameters necessary to perform
+                        the update for the indicated strategy.
                       properties:
                         rollingUpdate:
                           description: RollingUpdate is used to communicate parameters
@@ -8419,20 +8428,19 @@ spec:
               podAnnotations:
                 additionalProperties:
                   type: string
-                description: 'Optional: custom annotations to be populated in Druid
-                  pods'
+                description: Custom annotations to be populated in Druid pods
                 type: object
               podLabels:
                 additionalProperties:
                   type: string
-                description: 'Optional: custom labels to be populated in Druid pods'
+                description: Custom labels to be populated in Druid pods
                 type: object
               podManagementPolicy:
-                description: 'Optional: By default it is set to "parallel"'
+                description: By default, it is set to "parallel"
                 type: string
               readinessProbe:
-                description: Optional, port is set to druid.port if not specified
-                  with httpGet handler
+                description: Port is set to druid.port if not specified with httpGet
+                  handler
                 properties:
                   exec:
                     description: Exec specifies the action to take.
@@ -8574,18 +8582,17 @@ spec:
                     type: integer
                 type: object
               rollingDeploy:
-                description: 'Operator deploys above list of nodes in the Druid prescribed
+                description: Operator deploys above list of nodes in the Druid prescribed
                   order of Historical, Overlord, MiddleManager, Broker, Coordinator
-                  etc. Optional: If set to true then operator checks the rollout status
-                  of previous version StateSets before updating next. Used only for
-                  updates.'
+                  etc. If set to true then operator checks the rollout status of previous
+                  version StateSets before updating next. Used only for updates.
                 type: boolean
               scalePvcSts:
-                description: 'Optional: ScalePvcSts, defaults to false. When enabled,
-                  operator will allow volume expansion of sts and pvc''s.'
+                description: ScalePvcSts, defaults to false. When enabled, operator
+                  will allow volume expansion of sts and pvc's.
                 type: boolean
               securityContext:
-                description: 'Optional: druid pods pod-security-context'
+                description: druid pods pod-security-context
                 properties:
                   fsGroup:
                     description: "A special supplemental group that applies to all
@@ -8753,11 +8760,10 @@ spec:
                     type: object
                 type: object
               serviceAccount:
-                description: 'Optional: ServiceAccount for the druid cluster'
+                description: ServiceAccount for the druid cluster
                 type: string
               services:
-                description: 'Optional: k8s service resources to be created for each
-                  Druid statefulsets'
+                description: k8s service resources to be created for each Druid statefulsets
                 items:
                   description: Service is a named abstraction of software service
                     (for example, mysql) consisting of local port (for example 3306)
@@ -9289,11 +9295,10 @@ spec:
                   type: object
                 type: array
               startScript:
-                description: 'Required: path to druid start script to be run on container
-                  start'
+                description: Path to druid start script to be run on container start
                 type: string
               startUpProbe:
-                description: 'Optional: StartupProbe for nodeSpec'
+                description: StartupProbe for nodeSpec
                 properties:
                   exec:
                     description: Exec specifies the action to take.
@@ -9435,8 +9440,8 @@ spec:
                     type: integer
                 type: object
               tolerations:
-                description: 'Optional: toleration to be used in order to run Druid
-                  on nodes tainted'
+                description: Toleration to be used in order to run Druid on nodes
+                  tainted
                 items:
                   description: The pod this Toleration is attached to tolerates any
                     taint that matches the triple <key,value,effect> using the matching
@@ -9476,7 +9481,10 @@ spec:
                   type: object
                 type: array
               updateStrategy:
-                description: Optional
+                description: StatefulSetUpdateStrategy indicates the strategy that
+                  the StatefulSet controller will use to perform updates. It includes
+                  any additional parameters necessary to perform the update for the
+                  indicated strategy.
                 properties:
                   rollingUpdate:
                     description: RollingUpdate is used to communicate parameters when
@@ -9512,7 +9520,7 @@ spec:
                     type: string
                 type: object
               volumeClaimTemplates:
-                description: 'Optional: volumes etc for the Druid pods'
+                description: volumes etc for the Druid pods
                 items:
                   description: PersistentVolumeClaim is a user's request for and claim
                     to a persistent volume

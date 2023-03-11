@@ -1553,33 +1553,9 @@ func verifyDruidSpec(drd *v1alpha1.Druid) error {
 
 	errorMsg := ""
 
-	if drd.Spec.CommonRuntimeProperties == "" {
-		errorMsg = fmt.Sprintf("%sCommonRuntimeProperties missing from Druid Cluster Spec\n", errorMsg)
-	}
-
-	if drd.Spec.CommonConfigMountPath == "" {
-		errorMsg = fmt.Sprintf("%sCommonConfigMountPath missing from Druid Cluster Spec\n", errorMsg)
-	}
-
-	if drd.Spec.StartScript == "" {
-		errorMsg = fmt.Sprintf("%sStartScript missing from Druid Cluster Spec\n", errorMsg)
-	}
-
 	for key, node := range drd.Spec.Nodes {
-		if node.NodeType == "" {
-			errorMsg = fmt.Sprintf("%sNode[%s] missing NodeType\n", errorMsg, key)
-		}
-
 		if drd.Spec.Image == "" && node.Image == "" {
 			errorMsg = fmt.Sprintf("%sImage missing from Druid Cluster Spec\n", errorMsg)
-		}
-
-		if node.RuntimeProperties == "" {
-			errorMsg = fmt.Sprintf("%sNode[%s] missing RuntimeProperties\n", errorMsg, key)
-		}
-
-		if node.NodeConfigMountPath == "" {
-			errorMsg = fmt.Sprintf("%sNode[%s] missing NodeConfigMountPath\n", errorMsg, key)
 		}
 
 		if !keyValidationRegex.MatchString(key) {
@@ -1613,11 +1589,7 @@ func getAllNodeSpecsInDruidPrescribedOrder(m *v1alpha1.Druid) ([]keyAndNodeSpec,
 
 	for key, nodeSpec := range m.Spec.Nodes {
 		nodeSpecs := nodeSpecsByNodeType[nodeSpec.NodeType]
-		if nodeSpecs == nil {
-			return nil, fmt.Errorf("druidSpec[%s:%s] has invalid NodeType[%s]. Deployment aborted", m.Kind, m.Name, nodeSpec.NodeType)
-		} else {
-			nodeSpecsByNodeType[nodeSpec.NodeType] = append(nodeSpecs, keyAndNodeSpec{key, nodeSpec})
-		}
+		nodeSpecsByNodeType[nodeSpec.NodeType] = append(nodeSpecs, keyAndNodeSpec{key, nodeSpec})
 	}
 
 	allNodeSpecs := make([]keyAndNodeSpec, 0, len(m.Spec.Nodes))
