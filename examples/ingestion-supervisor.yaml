@@ -1,0 +1,86 @@
+apiVersion: "druid.apache.org/v1alpha1"
+kind: "DruidIngestion"
+metadata:
+  name: sample-druid-spec
+spec:
+  routerUrl: localhost:8088
+  suspend: false
+  ingestionSpec:
+    type: kafka
+    supervisorSpec: |-
+      {
+        "type":"kafka",
+        "spec":{
+            "ioConfig":{
+              "type":"kafka",
+              "consumerProperties":{
+                  "bootstrap.servers":"localhost:9092"
+              },
+              "topic":"wiki-edits",
+              "inputFormat":{
+                  "type":"kafka",
+                  "headerLabelPrefix":"kafka.header.",
+                  "timestampColumnName":"kafka.timestamp",
+                  "keyColumnName":"kafka.key",
+                  "headerFormat":{
+                    "type":"string"
+                  },
+                  "keyFormat":{
+                    "type":"json"
+                  },
+                  "valueFormat":{
+                    "type":"json"
+                  },
+                  "findColumnsFromHeader":false
+              },
+              "useEarliestOffset":true
+            },
+            "tuningConfig":{
+              "type":"kafka"
+            },
+            "dataSchema":{
+              "dataSource":"new7",
+              "timestampSpec":{
+                  "column":"timestamp",
+                  "format":"posix"
+              },
+              "dimensionsSpec":{
+                  "dimensions":[
+                    {
+                        "type":"string",
+                        "name":"kafka.key"
+                    },
+                    {
+                        "type":"string",
+                        "name":"kafka.timestamp"
+                    },
+                    {
+                        "type":"string",
+                        "name":"kafka.header.environment"
+                    },
+                    "$schema",
+                    {
+                        "type":"long",
+                        "name":"id"
+                    },
+                    "type",
+                    {
+                        "type":"long",
+                        "name":"namespace"
+                    },
+                    "title",
+                    "comment",
+                    "user"
+                  ]
+              },
+              "granularitySpec":{
+                  "queryGranularity":"none",
+                  "rollup":false,
+                  "segmentGranularity":"day"
+              }
+            }
+        },
+        "tuningConfig":{
+            "type":"kafka"
+        }
+      }

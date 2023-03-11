@@ -15,6 +15,7 @@ import (
 
 	druidv1alpha1 "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 	"github.com/datainfrahq/druid-operator/controllers/druid"
+	"github.com/datainfrahq/druid-operator/controllers/ingestion"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -63,6 +64,11 @@ func main() {
 
 	if err = (druid.NewDruidReconciler(mgr)).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Druid")
+		os.Exit(1)
+	}
+
+	if err = (ingestion.NewDruidIngestionReconciler(mgr)).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Ingestion")
 		os.Exit(1)
 	}
 

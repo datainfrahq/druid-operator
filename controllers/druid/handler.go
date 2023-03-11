@@ -15,6 +15,7 @@ import (
 	storage "k8s.io/api/storage/v1"
 
 	"github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
+	"github.com/datainfrahq/druid-operator/pkg/common"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -22,7 +23,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -676,7 +676,7 @@ func sdkCreateOrUpdateAsNeeded(
 		addHashToObject(obj)
 
 		prevObj := emptyObjFn()
-		if err := sdk.Get(context.TODO(), *namespacedName(obj.GetName(), obj.GetNamespace()), prevObj); err != nil {
+		if err := sdk.Get(context.TODO(), *common.NamespacedName(obj.GetName(), obj.GetNamespace()), prevObj); err != nil {
 			if apierrors.IsNotFound(err) {
 				// resource does not exist, create it.
 				create, err := writers.Create(context.TODO(), sdk, drd, obj, emitEvent)
@@ -1603,8 +1603,4 @@ func getAllNodeSpecsInDruidPrescribedOrder(m *v1alpha1.Druid) ([]keyAndNodeSpec,
 	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[router]...)
 
 	return allNodeSpecs, nil
-}
-
-func namespacedName(name, namespace string) *types.NamespacedName {
-	return &types.NamespacedName{Name: name, Namespace: namespace}
 }
