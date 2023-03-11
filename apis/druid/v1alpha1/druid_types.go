@@ -71,9 +71,6 @@ type AdditionalContainer struct {
 
 // DruidSpec defines the desired state of Druid
 type DruidSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	// If true, this spec would be ignored by the operator
 	// +optional
 	// +kubebuilder:default:=false
@@ -86,6 +83,7 @@ type DruidSpec struct {
 	// Optional: Default is true, will delete the sts pod if sts is set to ordered ready to ensure
 	// issue: https://github.com/kubernetes/kubernetes/issues/67250
 	// doc: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#forced-rollback
+
 	// +optional
 	ForceDeleteStsPodOnError bool `json:"forceDeleteStsPodOnError,omitempty"`
 
@@ -205,6 +203,7 @@ type DruidSpec struct {
 	// But, it is used in the k8s resource names, so it must be compliant with restrictions
 	// placed on k8s resource names.
 	// that is, it must match regex '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'
+
 	// +required
 	Nodes map[string]DruidNodeSpec `json:"nodes"`
 
@@ -216,6 +215,7 @@ type DruidSpec struct {
 	// Broker, Coordinator etc.
 	// If set to true then operator checks the rollout status of previous version StateSets before updating next.
 	// Used only for updates.
+
 	// +optional
 	RollingDeploy bool `json:"rollingDeploy,omitempty"`
 

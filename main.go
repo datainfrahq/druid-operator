@@ -21,6 +21,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/datainfrahq/druid-operator/controllers/druid"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -33,8 +34,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	druidv1alpha1 "github.com/datainfrahq/druid-operator/api/v1alpha1"
-	"github.com/datainfrahq/druid-operator/controllers"
+	druidv1alpha1 "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
+	druidcontrollers "github.com/druid-io/druid-operator/controllers/druid"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -94,9 +95,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.DruidReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+	if err = (&druidcontrollers.DruidReconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		Log:           ctrl.Log.WithName("controllers").WithName("Druid"),
+		ReconcileWait: druid.LookupReconcileTime(),
+		Recorder:      mgr.GetEventRecorderFor("druid-operator"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Druid")
 		os.Exit(1)
