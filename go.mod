@@ -3,7 +3,6 @@ module github.com/datainfrahq/druid-operator
 go 1.19
 
 require (
-	github.com/druid-io/druid-operator v0.0.0-20230223202126-9cec3f2814d3
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr v1.2.3
 	github.com/stretchr/testify v1.8.0
