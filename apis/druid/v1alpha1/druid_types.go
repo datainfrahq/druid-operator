@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	appsv1 "k8s.io/api/apps/v1"
-	autoscalev2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autoscalev2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -376,7 +376,7 @@ type DruidNodeSpec struct {
 	Lifecycle *v1.Lifecycle `json:"lifecycle,omitempty"`
 
 	// +optional
-	HPAutoScaler *autoscalev2beta2.HorizontalPodAutoscalerSpec `json:"hpAutoscaler,omitempty"`
+	HPAutoScaler *autoscalev2.HorizontalPodAutoscalerSpec `json:"hpAutoscaler,omitempty"`
 
 	// +optional
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`

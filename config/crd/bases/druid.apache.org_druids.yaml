@@ -1441,6 +1441,7 @@ spec:
                                     - value
                                     type: object
                                   type: array
+                                  x-kubernetes-list-type: atomic
                                 selectPolicy:
                                   type: string
                                 stabilizationWindowSeconds:
@@ -1466,6 +1467,7 @@ spec:
                                     - value
                                     type: object
                                   type: array
+                                  x-kubernetes-list-type: atomic
                                 selectPolicy:
                                   type: string
                                 stabilizationWindowSeconds:
@@ -1738,6 +1740,7 @@ spec:
                             - type
                             type: object
                           type: array
+                          x-kubernetes-list-type: atomic
                         minReplicas:
                           format: int32
                           type: integer
