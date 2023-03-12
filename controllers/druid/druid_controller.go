@@ -42,14 +42,13 @@ func NewDruidReconciler(mgr ctrl.Manager) *DruidReconciler {
 // +kubebuilder:rbac:groups=druid.apache.org,resources=druids/status,verbs=get;update;patch
 
 func (r *DruidReconciler) Reconcile(ctx context.Context, request reconcile.Request) (ctrl.Result, error) {
-	_ = context.Background()
 	_ = r.Log.WithValues("druid", request.NamespacedName)
 
 	// your logic here
 
 	// Fetch the Druid instance
 	instance := &druidv1alpha1.Druid{}
-	err := r.Get(context.TODO(), request.NamespacedName, instance)
+	err := r.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
