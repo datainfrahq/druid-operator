@@ -1,8 +1,7 @@
-
 # IMG TAG
 IMG_TAG ?= "latest"
 # Image URL to use all building/pushing image targets
-IMG ?= "druid-operator"
+IMG ?= "datainfrahq/druid-operator"
 # Local Image URL to be pushed to kind registery
 IMG_KIND ?= "localhost:5001/druid-operator"
 # NAMESPACE for druid operator e2e
@@ -156,7 +155,7 @@ helm-lint: ## Lint Helm chart.
 
 .PHONY: helm-template
 helm-template: ## Run Helm template.
-	helm -n druid-operator template cluster-druid-operator ./chart --debug
+	helm -n druid-operator-system template --create-namespace cluster-druid-operator ./chart --debug
 
 .PHONY: helm-install-druid-operator
 helm-install-druid-operator: ## helm upgrade/install.
