@@ -149,6 +149,10 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 ##@ Helm
+.PHONY: helm-generate
+helm-generate: ## Generate the Helm chart directory
+	$(KUSTOMIZE) build config/crd > chart/templates/crds/druid.apache.org_druids.yaml
+
 .PHONY: helm-lint
 helm-lint: ## Lint Helm chart.
 	helm lint ./chart
