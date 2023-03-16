@@ -159,7 +159,7 @@ helm-lint: ## Lint Helm chart.
 
 .PHONY: helm-template
 helm-template: ## Run Helm template.
-	helm -n druid-operator-system template --create-namespace cluster-druid-operator ./chart --debug
+	helm -n druid-operator-system template --create-namespace ${NAMESPACE_DRUID_OPERATOR} ./chart --debug
 
 .PHONY: helm-install-druid-operator
 helm-install-druid-operator: ## helm upgrade/install.

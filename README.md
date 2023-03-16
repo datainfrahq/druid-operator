@@ -31,6 +31,7 @@
 
 ### Notifications
 
+- The project moved to <b>Kubebuilder v3</b> which requires a [manual change](docs/kubebuilder_v3_migration.md) in the operator. 
 - Users may experience HPA issues with druid-operator with release 0.0.5, as described in the [issue](https://github.com/druid-io/druid-operator/issues/160).
 - The latest release 0.0.6 has fixes for the above issue.
 - The operator has moved from HPA apiVersion autoscaling/v2beta1 to autoscaling/v2 API users will need to update there HPA Specs according v2beta2 api in order to work with the latest druid-operator release.
