@@ -42,7 +42,7 @@ spec:
         <artifactId>log4j-layout-template-json</artifactId>
         <version>2.20.0</version>
     </dependency>
-    <Configuration status="WARN">
+    <Configuration status="INFO">
         <Appenders>
             <Http name="Http" url="https://demo.parseable.io/" method="POST">
               <Property name="X-Java-Runtime" value="$${java:runtime}" />
