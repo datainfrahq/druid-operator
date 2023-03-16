@@ -74,7 +74,7 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "2fe5e753.apache.org",
+		LeaderElectionID:       "e6946145.apache.org",
 		Namespace:              os.Getenv("WATCH_NAMESPACE"),
 		NewCache:               watchNamespaceCache(),
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
