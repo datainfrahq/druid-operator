@@ -47,6 +47,7 @@ spec:
             <Http name="Http" url="https://demo.parseable.io/" method="POST">
               <Property name="X-Java-Runtime" value="$${java:runtime}" />
               <Property name="Authorization: Basic" value="YWRtaW46YWRtaW4=" />
+              <Property name="X-P-Stream" value="druide2e" />
               <Property name="Accept" value="application/json" />
               <JsonLayout properties="true"/>
             </Http>
