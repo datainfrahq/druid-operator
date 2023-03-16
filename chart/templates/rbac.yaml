@@ -243,7 +243,7 @@ roleRef:
   name: {{ include "druid-operator.fullname" . }}-leader-election-role
 subjects:
   - kind: ServiceAccount
-    name: {{ include "druid-operator.serviceAccountName" . }}
+    name: {{ include "druid-operator.fullname" . }}
     namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -261,7 +261,7 @@ roleRef:
   name: {{ include "druid-operator.fullname" . }}-manager-role
 subjects:
   - kind: ServiceAccount
-    name: {{ include "druid-operator.serviceAccountName" . }}
+    name: {{ include "druid-operator.fullname" . }}
     namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -279,5 +279,5 @@ roleRef:
   name: {{ include "druid-operator.fullname" . }}-proxy-role
 subjects:
   - kind: ServiceAccount
-    name: {{ include "druid-operator.serviceAccountName" . }}
+    name: {{ include "druid-operator.fullname" . }}
     namespace: {{ .Release.Namespace }}

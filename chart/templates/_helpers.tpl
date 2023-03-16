@@ -53,6 +53,6 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "druid-operator.serviceAccountName" -}}
+{{- define "druid-operator.fullname" -}}
 {{- default (include "druid-operator.fullname" .) .Values.serviceAccount.name }}
 {{- end }}

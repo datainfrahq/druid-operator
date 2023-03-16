@@ -98,5 +98,5 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      serviceAccountName: {{ include "druid-operator.serviceAccountName" . }}
+      serviceAccountName: {{ include "druid-operator.fullname" . }}
       terminationGracePeriodSeconds: 10
