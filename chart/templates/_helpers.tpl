@@ -49,10 +49,3 @@ Selector labels
 app.kubernetes.io/name: {{ include "druid-operator.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
-
-{{/*
-Create the name of the service account to use
-*/}}
-{{- define "druid-operator.fullname" -}}
-{{- default (include "druid-operator.fullname" .) .Values.serviceAccount.name }}
-{{- end }}
