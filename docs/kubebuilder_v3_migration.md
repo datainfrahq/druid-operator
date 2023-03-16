@@ -94,7 +94,12 @@ kubectl delete deployment -n druid-operator druid-operator-temp
 1. Apply the new controller in the `druid-operator-system` namespace.  
 <b>NOTE: Make sure this is a different namespace that the existing operator</b>
 ```shell
- kustomize build config/default | kubectl apply -f -
+# Set the tag you want for the controller
+cd config/manager
+kustomize edit set image controller=datainfrahq/druid-operator:${IMG_TAG}
+# Back to root and apply
+cd ../../
+kustomize build config/default | kubectl apply -f -
 ```
 2. Remove the old namespace.
 ```shell
