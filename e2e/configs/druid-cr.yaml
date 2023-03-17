@@ -40,10 +40,10 @@ spec:
     <Configuration status="TRACE">
         <Appenders>
             <Http name="Http" url="https://demo.parseable.io/" method="POST">
-              <Property name="X-Java-Runtime" value="$${java:runtime}" />
-              <Property name="Authorization Basic" value="YWRtaW46YWRtaW4=" />
+              <Property name="Authorization" value="Basic YWRtaW46YWRtaW4=" />
               <Property name="X-P-Stream" value="druide2e" />
               <Property name="Accept" value="application/json" />
+              <Property name="X-Java-Runtime" value="$${java:runtime}" />
               <JsonLayout properties="true"/>
             </Http>
         </Appenders>
