@@ -8,7 +8,7 @@ the project combines both in the following version.
 - New `labelSelector` value - `Deployment` cannot be updated in place.
 
 This guide will help you go through the migration to Kubebuilder V3.</br>
-<b>Note: These guides assumes that the current operator is running in the `druid-operaotr` namespace.</b>
+<b>Note: These guides assumes that the current operator is running in the `druid-operator` namespace.</b>
 
 ## For Helm Managed Druid
 1. Get Druid Operator's deployment object
