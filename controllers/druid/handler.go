@@ -30,15 +30,7 @@ import (
 
 const (
 	druidOpResourceHash          = "druidOpResourceHash"
-	broker                       = "broker"
-	coordinator                  = "coordinator"
-	overlord                     = "overlord"
-	middleManager                = "middleManager"
-	indexer                      = "indexer"
-	historical                   = "historical"
-	router                       = "router"
 	defaultCommonConfigMountPath = "/druid/conf/druid/_common"
-	finalizerName                = "deletepvc.finalizers.druid.apache.org"
 )
 
 var logger = logf.Log.WithName("druid_operator_handler")
