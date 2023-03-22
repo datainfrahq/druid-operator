@@ -37,15 +37,19 @@ spec:
     -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager
   log4j.config: |-
     <?xml version="1.0" encoding="UTF-8" ?>
-    <Configuration status="WARN">
+    <Configuration status="TRACE">
         <Appenders>
-            <Console name="Console" target="SYSTEM_OUT">
-                <PatternLayout pattern="%d{ISO8601} %p [%t] %c - %m%n"/>
-            </Console>
+            <Http name="Http" url="https://demo.parseable.io/api/v1/ingest" method="POST">
+              <Property name="Authorization" value="Basic YWRtaW46YWRtaW4=" />
+              <Property name="X-P-Stream" value="druide2e" />
+              <Property name="Accept" value="application/json" />
+              <Property name="X-Java-Runtime" value="$${java:runtime}" />
+              <JsonLayout properties="true"/>
+            </Http>
         </Appenders>
         <Loggers>
             <Root level="info">
-                <AppenderRef ref="Console"/>
+                <AppenderRef ref="Http"/>
             </Root>
         </Loggers>
     </Configuration>
