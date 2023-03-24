@@ -74,7 +74,8 @@ type DruidSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// If true, this spec would be ignored by the operator
+	// Ignored is now deprecated API. In order to avoid reconciliation of objects use the
+	// druid.apache.org/ignored: "true" annotation
 	// +optional
 	// +kubebuilder:default:=false
 	Ignored bool `json:"ignored,omitempty"`
