@@ -1,5 +1,6 @@
 # IMG TAG
 IMG_TAG ?= "latest"
+TEST_IMG_TAG ?= "test"
 # Image URL to use all building/pushing image targets
 IMG ?= "druid-operator"
 # Local Image URL to be pushed to kind registery
@@ -12,6 +13,7 @@ NAMESPACE_ZK_OPERATOR ?= "zk-operator"
 NAMESPACE_MINIO_OPERATOR ?= "minio-operator"
 # NAMESPACE for druid app e2e
 NAMESPACE_DRUID ?= "druid"
+
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.25.0
@@ -171,6 +173,16 @@ docker-build-local: ## Build docker image with the manager.
 docker-push-local: ## Build docker image with the manager.
 	docker push ${IMG_KIND}:${IMG_TAG}
 
+## Make Docker build for test image
+.PHONY: docker-build-local-test
+docker-build-local: ## Build docker image with the manager.
+	docker build -t ${IMG_KIND}:${TEST_IMG_TAG} -f e2e/Dockerfile-testpod .
+
+## Make Docker push  locally to kind registery
+.PHONY: docker-push-local-test
+docker-push-local: ## Build docker image with the manager.
+	docker push ${IMG_KIND}:${TEST_IMG_TAG}
+
 ## Helm install to deploy the druid operator
 .PHONY: helm-install-druid-operator
 helm-install-druid-operator: ## helm upgrade/install
@@ -196,3 +208,8 @@ helm-minio-install:
 	--create-namespace \
   	${NAMESPACE_DRUID}-minio minio/tenant \
 	-f e2e/configs/minio-tenant-override.yaml
+
+## Run the test pod
+.PHONY: deploy-testjob
+deploy-test:
+    kubectl create job wiki-test --image=${IMG_KIND}:${TEST_IMG_TAG}  -- sh /wikipedia-test.sh
