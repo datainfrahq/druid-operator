@@ -4,3 +4,5 @@ tenant:
     volumesPerServer: 1
   certificate:
     requestAutoCert: false
+  buckets: 
+  - name: "druid"
