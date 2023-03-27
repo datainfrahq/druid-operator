@@ -30,23 +30,12 @@ import (
 
 const (
 	druidOpResourceHash          = "druidOpResourceHash"
-	broker                       = "broker"
-	coordinator                  = "coordinator"
-	overlord                     = "overlord"
-	middleManager                = "middleManager"
-	indexer                      = "indexer"
-	historical                   = "historical"
-	router                       = "router"
 	defaultCommonConfigMountPath = "/druid/conf/druid/_common"
-	finalizerName                = "deletepvc.finalizers.druid.apache.org"
 )
 
 var logger = logf.Log.WithName("druid_operator_handler")
 
 func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmitter) error {
-	if m.Spec.Ignored {
-		return nil
-	}
 
 	if err := verifyDruidSpec(m); err != nil {
 		e := fmt.Errorf("invalid DruidSpec[%s:%s] due to [%s]", m.Kind, m.Name, err.Error())

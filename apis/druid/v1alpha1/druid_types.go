@@ -71,7 +71,9 @@ type AdditionalContainer struct {
 
 // DruidSpec defines the desired state of Druid
 type DruidSpec struct {
-	// If true, this spec would be ignored by the operator
+
+	// Ignored is now deprecated API. In order to avoid reconciliation of objects use the
+	// druid.apache.org/ignored: "true" annotation
 	// +optional
 	// +kubebuilder:default:=false
 	Ignored bool `json:"ignored,omitempty"`
