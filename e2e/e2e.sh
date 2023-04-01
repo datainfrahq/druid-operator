@@ -4,7 +4,7 @@ set -x
 # Get Kind
 go install sigs.k8s.io/kind@v0.17.0
 # minio statefulset name
-MINIO_STS_NAME=minio1-ss-0
+MINIO_STS_NAME=myminio-ss-0
 # druid namespace
 NAMESPACE=druid
 # fmt code
