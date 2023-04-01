@@ -212,4 +212,4 @@ helm-minio-install:
 ## Run the test pod
 .PHONY: deploy-testjob
 deploy-test:
-    kubectl create job wiki-test --image=${IMG_KIND}:${TEST_IMG_TAG}  -- sh /wikipedia-test.sh
+	kubectl create job wiki-test --image=${IMG_KIND}:${TEST_IMG_TAG}  -- sh /wikipedia-test.sh
