@@ -99,8 +99,17 @@ helm-install-druid-operator: ## Helm install to deploy the druid operator
 	helm upgrade --install \
 	--namespace ${NAMESPACE_DRUID_OPERATOR} \
 	--create-namespace \
+	zookeeper bitnami/zookeeper
+	helm upgrade --install \
+	--namespace ${NAMESPACE_DRUID_OPERATOR} \
+	--create-namespace \
+	--set auth.username=druid \
+	--set auth.password=druid \
+	--set auth.database=druid \
+	mysql bitnami/mysql
+	helm upgrade --install \
+	--namespace ${NAMESPACE_DRUID_OPERATOR} \
 	${NAMESPACE_DRUID_OPERATOR} chart/ \
-	--set image.repository=${IMG_KIND} \
 	--set image.tag=${IMG_TAG}
 
 .PHONY: helm-minio-install

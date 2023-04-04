@@ -1,0 +1,24 @@
+# permissions for end users to edit supervisorspecs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: supervisorspec-editor-role
+rules:
+- apiGroups:
+  - druid.apache.org
+  resources:
+  - supervisorspecs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - druid.apache.org
+  resources:
+  - supervisorspecs/status
+  verbs:
+  - get

@@ -1,0 +1,6 @@
+apiVersion: druid.apache.org/v1alpha1
+kind: SupervisorSpec
+metadata:
+  name: supervisorspec-sample
+spec:
+  # TODO(user): Add fields here

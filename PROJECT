@@ -18,4 +18,8 @@ resources:
   kind: Druid
   path: github.com/datainfrahq/druid-operator/apis/druid/v1alpha1
   version: v1alpha1
+- group: druid
+  kind: SupervisorSpec
+  path: github.com/datainfrahq/druid-operator/apis/supervisorspec/v1alpha1
+  version: v1alpha1
 version: "3"
