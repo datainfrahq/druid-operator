@@ -1,5 +1,6 @@
 # IMG TAG
 IMG_TAG ?= "latest"
+TEST_IMG_TAG ?= "test"
 # Image URL to use all building/pushing image targets
 IMG ?= "datainfrahq/druid-operator"
 # Local Image URL to be pushed to kind registery
@@ -12,6 +13,7 @@ NAMESPACE_ZK_OPERATOR ?= "zk-operator"
 NAMESPACE_MINIO_OPERATOR ?= "minio-operator"
 # NAMESPACE for druid app e2e
 NAMESPACE_DRUID ?= "druid"
+
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.26.0
 
@@ -222,3 +224,65 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+## e2e deployment
+.PHONY: e2e
+e2e: 
+	e2e/e2e.sh
+
+## Build Kind
+.PHONY: kind 
+kind: ## Bootstrap Kind Locally
+	sh e2e/kind.sh
+
+## Make Docker build for kind registery
+.PHONY: docker-build-local
+docker-build-local: ## Build docker image with the manager.
+	docker build -t ${IMG_KIND}:${IMG_TAG} .
+
+## Make Docker push locally to kind registery
+.PHONY: docker-push-local
+docker-push-local: ## Build docker image with the manager.
+	docker push ${IMG_KIND}:${IMG_TAG}
+
+## Make Docker build for test image
+.PHONY: docker-build-local-test
+docker-build-local: ## Build docker image with the manager.
+	docker build -t ${IMG_KIND}:${TEST_IMG_TAG} -f e2e/Dockerfile-testpod .
+
+## Make Docker push  locally to kind registery
+.PHONY: docker-push-local-test
+docker-push-local: ## Build docker image with the manager.
+	docker push ${IMG_KIND}:${TEST_IMG_TAG}
+
+## Helm install to deploy the druid operator
+.PHONY: helm-install-druid-operator
+helm-install-druid-operator: ## helm upgrade/install
+	helm upgrade --install \
+	--namespace ${NAMESPACE_DRUID_OPERATOR} \
+	--create-namespace \
+	${NAMESPACE_DRUID_OPERATOR} chart/ \
+	--set image.repository=${IMG_KIND} \
+	--set image.tag=${IMG_TAG}
+
+## Helm deploy minio operator and minio
+.PHONY: helm-minio-install
+helm-minio-install:
+	helm repo add minio https://operator.min.io/
+	helm repo update minio
+	helm upgrade --install \
+	--namespace ${NAMESPACE_MINIO_OPERATOR} \
+	--create-namespace \
+	 ${NAMESPACE_MINIO_OPERATOR} minio/operator \
+	-f e2e/configs/minio-operator-override.yaml
+	helm upgrade --install \
+	--namespace ${NAMESPACE_DRUID} \
+	--create-namespace \
+  	${NAMESPACE_DRUID}-minio minio/tenant \
+	-f e2e/configs/minio-tenant-override.yaml
+
+## Run the test pod
+.PHONY: deploy-testjob
+deploy-testjob:
+	kubectl create job wiki-test --image=${IMG_KIND}:${TEST_IMG_TAG}  -- sh /wikipedia-test.sh
+
