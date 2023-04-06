@@ -31,9 +31,10 @@
 
 ### Notifications
 
+- The project moved to <b>Kubebuilder v3</b> which requires a [manual change](docs/kubebuilder_v3_migration.md) in the operator. 
 - Users may experience HPA issues with druid-operator with release 0.0.5, as described in the [issue](https://github.com/druid-io/druid-operator/issues/160).
 - The latest release 0.0.6 has fixes for the above issue.
-- The operator has moved from HPA apiVersion autoscaling/v2beta1 to autoscaling/v2beta2 API users will need to update there HPA Specs according v2beta2 api in order to work with the latest druid-operator release.
+- The operator has moved from HPA apiVersion autoscaling/v2beta1 to autoscaling/v2 API users will need to update there HPA Specs according v2beta2 api in order to work with the latest druid-operator release.
 - Users may experience pvc deletion [issue](https://github.com/druid-io/druid-operator/issues/186) in release 0.0.6, this issue has been fixed in patch release 0.0.6.1.
 - druid-operator has moved Ingress apiVersion networking/v1beta1 to networking/v1. Users will need to update there Ingress Spec in the druid CR according networking/v1 syntax. In case users are using schema validated CRD, the CRD will also be needed to be updated.
 - druid-operator has moved PodDisruptionBudget apiVersion policy/v1beta1 to policy/v1. Users will need to update there Kubernetes versions to 1.21+ to use druid-operator tag 0.0.9+.

@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"sort"
 
-	autoscalev2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autoscalev2 "k8s.io/api/autoscaling/v2"
 	networkingv1 "k8s.io/api/networking/v1"
 	storage "k8s.io/api/storage/v1"
 
@@ -255,7 +255,7 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEm
 				func() (object, error) {
 					return makeHorizontalPodAutoscaler(&nodeSpec, m, ls, nodeSpecUniqueStr)
 				},
-				func() object { return &autoscalev2beta2.HorizontalPodAutoscaler{} },
+				func() object { return &autoscalev2.HorizontalPodAutoscaler{} },
 				alwaysTrueIsEqualsFn, noopUpdaterFn, m, hpaNames, emitEvents); err != nil {
 				return err
 			}
@@ -309,9 +309,9 @@ func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEm
 	sort.Strings(updatedStatus.Deployments)
 
 	updatedStatus.HPAutoScalers = deleteUnusedResources(sdk, m, hpaNames, ls,
-		func() objectList { return &autoscalev2beta2.HorizontalPodAutoscalerList{} },
+		func() objectList { return &autoscalev2.HorizontalPodAutoscalerList{} },
 		func(listObj runtime.Object) []object {
-			items := listObj.(*autoscalev2beta2.HorizontalPodAutoscalerList).Items
+			items := listObj.(*autoscalev2.HorizontalPodAutoscalerList).Items
 			result := make([]object, len(items))
 			for i := 0; i < len(items); i++ {
 				result[i] = &items[i]
@@ -1370,12 +1370,12 @@ func makePodDisruptionBudget(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid
 	return pdb, nil
 }
 
-func makeHorizontalPodAutoscaler(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[string]string, nodeSpecUniqueStr string) (*autoscalev2beta2.HorizontalPodAutoscaler, error) {
+func makeHorizontalPodAutoscaler(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[string]string, nodeSpecUniqueStr string) (*autoscalev2.HorizontalPodAutoscaler, error) {
 	nodeHSpec := *nodeSpec.HPAutoScaler
 
-	hpa := &autoscalev2beta2.HorizontalPodAutoscaler{
+	hpa := &autoscalev2.HorizontalPodAutoscaler{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "autoscaling/v2beta2",
+			APIVersion: "autoscaling/v2",
 			Kind:       "HorizontalPodAutoscaler",
 		},
 		ObjectMeta: metav1.ObjectMeta{

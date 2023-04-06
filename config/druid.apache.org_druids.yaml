@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.2
+    controller-gen.kubebuilder.io/version: v0.11.2
   creationTimestamp: null
   name: druids.druid.apache.org
 spec:
@@ -1649,9 +1649,6 @@ spec:
                   type: object
                 type: array
               forceDeleteStsPodOnError:
-                description: 'Optional: Default is true, will delete the sts pod if
-                  sts is set to ordered ready to ensure issue: https://github.com/kubernetes/kubernetes/issues/67250
-                  doc: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#forced-rollback'
                 type: boolean
               ignored:
                 default: false
@@ -3120,10 +3117,11 @@ spec:
                                     - value
                                     type: object
                                   type: array
+                                  x-kubernetes-list-type: atomic
                                 selectPolicy:
                                   description: selectPolicy is used to specify which
                                     policy should be used. If not set, the default
-                                    value MaxPolicySelect is used.
+                                    value Max is used.
                                   type: string
                                 stabilizationWindowSeconds:
                                   description: 'StabilizationWindowSeconds is the
@@ -3178,10 +3176,11 @@ spec:
                                     - value
                                     type: object
                                   type: array
+                                  x-kubernetes-list-type: atomic
                                 selectPolicy:
                                   description: selectPolicy is used to specify which
                                     policy should be used. If not set, the default
-                                    value MaxPolicySelect is used.
+                                    value Max is used.
                                   type: string
                                 stabilizationWindowSeconds:
                                   description: 'StabilizationWindowSeconds is the
@@ -3220,7 +3219,7 @@ spec:
                               field should be set at once).
                             properties:
                               containerResource:
-                                description: container resource refers to a resource
+                                description: containerResource refers to a resource
                                   metric (such as those specified in requests and
                                   limits) known to Kubernetes describing a single
                                   container in each pod of the current scale target
@@ -3405,9 +3404,8 @@ spec:
                                   on an Ingress object).
                                 properties:
                                   describedObject:
-                                    description: CrossVersionObjectReference contains
-                                      enough information to let you identify the referred
-                                      resource.
+                                    description: describedObject specifies the descriptions
+                                      of a object,such as kind,name apiVersion
                                     properties:
                                       apiVersion:
                                         description: API version of the referent
@@ -3717,6 +3715,7 @@ spec:
                             - type
                             type: object
                           type: array
+                          x-kubernetes-list-type: atomic
                         minReplicas:
                           description: minReplicas is the lower limit for the number
                             of replicas to which the autoscaler can scale down.  It
@@ -8417,13 +8416,6 @@ spec:
                   - replicas
                   - runtime.properties
                   type: object
-                description: Spec used to create StatefulSet specs etc, Many of the
-                  fields above can be overridden at the specific node spec level.
-                  Key in following map can be arbitrary string that helps you identify
-                  resources(pods, statefulsets etc) for specific nodeSpec. But, it
-                  is used in the k8s resource names, so it must be compliant with
-                  restrictions placed on k8s resource names. that is, it must match
-                  regex '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'
                 type: object
               podAnnotations:
                 additionalProperties:
@@ -8582,10 +8574,6 @@ spec:
                     type: integer
                 type: object
               rollingDeploy:
-                description: Operator deploys above list of nodes in the Druid prescribed
-                  order of Historical, Overlord, MiddleManager, Broker, Coordinator
-                  etc. If set to true then operator checks the rollout status of previous
-                  version StateSets before updating next. Used only for updates.
                 type: boolean
               scalePvcSts:
                 description: ScalePvcSts, defaults to false. When enabled, operator

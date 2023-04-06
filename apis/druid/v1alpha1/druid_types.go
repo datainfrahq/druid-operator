@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	appsv1 "k8s.io/api/apps/v1"
-	autoscalev2beta2 "k8s.io/api/autoscaling/v2beta2"
+	autoscalev2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
@@ -71,8 +71,6 @@ type AdditionalContainer struct {
 
 // DruidSpec defines the desired state of Druid
 type DruidSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 
 	// Ignored is now deprecated API. In order to avoid reconciliation of objects use the
 	// druid.apache.org/ignored: "true" annotation
@@ -87,6 +85,7 @@ type DruidSpec struct {
 	// Optional: Default is true, will delete the sts pod if sts is set to ordered ready to ensure
 	// issue: https://github.com/kubernetes/kubernetes/issues/67250
 	// doc: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#forced-rollback
+
 	// +optional
 	ForceDeleteStsPodOnError bool `json:"forceDeleteStsPodOnError,omitempty"`
 
@@ -206,6 +205,7 @@ type DruidSpec struct {
 	// But, it is used in the k8s resource names, so it must be compliant with restrictions
 	// placed on k8s resource names.
 	// that is, it must match regex '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'
+
 	// +required
 	Nodes map[string]DruidNodeSpec `json:"nodes"`
 
@@ -217,6 +217,7 @@ type DruidSpec struct {
 	// Broker, Coordinator etc.
 	// If set to true then operator checks the rollout status of previous version StateSets before updating next.
 	// Used only for updates.
+
 	// +optional
 	RollingDeploy bool `json:"rollingDeploy,omitempty"`
 
@@ -377,7 +378,7 @@ type DruidNodeSpec struct {
 	Lifecycle *v1.Lifecycle `json:"lifecycle,omitempty"`
 
 	// +optional
-	HPAutoScaler *autoscalev2beta2.HorizontalPodAutoscalerSpec `json:"hpAutoscaler,omitempty"`
+	HPAutoScaler *autoscalev2.HorizontalPodAutoscalerSpec `json:"hpAutoscaler,omitempty"`
 
 	// +optional
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`

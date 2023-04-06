@@ -4,6 +4,7 @@
 * [Druid CR Spec](./druid_cr.md)
 * [Example Specs](./examples.md)
 * [Feature Supported by Druid Operator](./features.md)
+* [Migration To Kubebuilder V3 in the Upcoming Version](./kubebuilder_v3_migration.md)
 * [Developer Documentation](./dev_doc.md)
 
 ---
