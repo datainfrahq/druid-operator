@@ -1652,7 +1652,8 @@ spec:
                 type: boolean
               ignored:
                 default: false
-                description: If true, this spec would be ignored by the operator
+                description: 'Ignored is now deprecated API. In order to avoid reconciliation
+                  of objects use the druid.apache.org/ignored: "true" annotation'
                 type: boolean
               image:
                 description: Required here or at nodeSpec level
