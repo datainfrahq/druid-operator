@@ -18,4 +18,7 @@ resources:
   kind: Druid
   path: github.com/datainfrahq/druid-operator/apis/druid/v1alpha1
   version: v1alpha1
+  webhooks:
+    validation: true
+    webhookVersion: v1
 version: "3"

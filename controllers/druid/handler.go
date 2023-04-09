@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"regexp"
 	"sort"
 
 	autoscalev2 "k8s.io/api/autoscaling/v2"
@@ -36,13 +35,6 @@ const (
 var logger = logf.Log.WithName("druid_operator_handler")
 
 func deployDruidCluster(sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmitter) error {
-
-	if err := verifyDruidSpec(m); err != nil {
-		e := fmt.Errorf("invalid DruidSpec[%s:%s] due to [%s]", m.Kind, m.Name, err.Error())
-		emitEvents.EmitEventGeneric(m, "DruidOperatorInvalidSpec", "", e)
-		return nil
-	}
-
 	allNodeSpecs, err := getAllNodeSpecsInDruidPrescribedOrder(m)
 	if err != nil {
 		e := fmt.Errorf("invalid DruidSpec[%s:%s] due to [%s]", m.Kind, m.Name, err.Error())
@@ -1531,31 +1523,6 @@ func sendEvent(sdk client.Client, drd *v1alpha1.Druid, eventtype, reason, messag
 
 	if err := sdk.Create(context.TODO(), event); err != nil {
 		logger.Error(err, fmt.Sprintf("Failed to push event [%v]", event))
-	}
-}
-
-func verifyDruidSpec(drd *v1alpha1.Druid) error {
-	keyValidationRegex, err := regexp.Compile("[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*")
-	if err != nil {
-		return err
-	}
-
-	errorMsg := ""
-
-	for key, node := range drd.Spec.Nodes {
-		if drd.Spec.Image == "" && node.Image == "" {
-			errorMsg = fmt.Sprintf("%sImage missing from Druid Cluster Spec\n", errorMsg)
-		}
-
-		if !keyValidationRegex.MatchString(key) {
-			errorMsg = fmt.Sprintf("%sNode[%s] Key must match k8s resource name regex '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'", errorMsg, key)
-		}
-	}
-
-	if errorMsg == "" {
-		return nil
-	} else {
-		return fmt.Errorf(errorMsg)
 	}
 }
 
