@@ -245,4 +245,4 @@ helm-minio-install:
 .PHONY: deploy-testjob
 deploy-testjob:
 	kubectl create job wiki-test --image=${IMG_KIND}:${TEST_IMG_TAG}  -- sh /wikipedia-test.sh
-	sh e2e/monitor-task.sh
+	bash e2e/monitor-task.sh

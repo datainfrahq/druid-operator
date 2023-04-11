@@ -1,8 +1,9 @@
 #!/bin/bash
+#!/bin/sh
 set -e 
 echo "---------------"
 echo "Checking the status of running job ..."
-for (( i=0; i <=9; i++ ))
+for (( i=0; i<=9; i++ ))
 do  
     sleep 60
     STAT=`kubectl get job  wiki-test --template={{.status.succeeded}}`
