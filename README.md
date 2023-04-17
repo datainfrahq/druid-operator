@@ -1,17 +1,22 @@
+<h2 align="center">
+  <picture>
+    <img alt="DataInfra Logo" src="https://raw.githubusercontent.com/datainfrahq/.github/main/images/logo.svg">
+  </picture>
+  <br>
+  Kubernetes Operator For Apache Druid
+</h2>
+
 **This is the official [druid-operator](https://github.com/druid-io/druid-operator)  project, now maintained by [Maintainers.md](./MAINTAINERS.md). 
 [druid-operator](https://github.com/druid-io/druid-operator) is depreacted. Ref to [issue](https://github.com/druid-io/druid-operator/issues/329) and [PR](https://github.com/druid-io/druid-operator/pull/336). Feel free to open issues and PRs! Collaborators are welcome !**
 
-# Kubernetes Operator for Apache Druid
+<div align="center">
 
-![Build Status](https://github.com/datainfrahq/druid-operator/actions/workflows/docker-image.yml/badge.svg) ![Docker pull](https://img.shields.io/docker/pulls/datainfrahq/druid-operator.svg) [![Latest Version](https://img.shields.io/github/tag/datainfrahq/druid-operator)](https://github.com/datainfrahq/druid-operator/releases)  
+![Build Status](https://github.com/datainfrahq/druid-operator/actions/workflows/docker-image.yml/badge.svg) ![Docker pull](https://img.shields.io/docker/pulls/datainfrahq/druid-operator.svg) [![Latest Version](https://img.shields.io/github/tag/datainfrahq/druid-operator)](https://github.com/datainfrahq/druid-operator/releases) [![Slack](https://img.shields.io/badge/slack-brightgreen.svg?logo=slack&label=Community&style=flat&color=%2373DC8C&)](https://kubernetes.slack.com/archives/C04F4M6HT2L)
 
-- druid-operator provisions and manages [Apache Druid](https://druid.apache.org/) cluster on kubernetes.
-- druid-operator is designed to provision and manage [Apache Druid](https://druid.apache.org/) in distributed mode only.
-- It is built using the [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder).
-- Language used is GoLang.
-- druid-operator is available on [operatorhub.io](https://operatorhub.io/operator/druid-operator)
-- Refer to [Documentation](./docs/README.md) for getting started.
-- Join Kubernetes slack and join [druid-operator](https://kubernetes.slack.com/archives/C04F4M6HT2L)
+
+ </div>
+ 
+ Druid Operator provisions and manages [Apache Druid](https://druid.apache.org/) cluster on kubernetes. Druid Operator is designed to provision and manage [Apache Druid](https://druid.apache.org/) in distributed mode only. It is built using the [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder). Language used is GoLang. Druid Operator is available on [operatorhub.io](https://operatorhub.io/operator/druid-operator) Refer to [Documentation](./docs/README.md) for getting started. Join Kubernetes slack and join [druid-operator](https://kubernetes.slack.com/archives/C04F4M6HT2L)
 
 ### Talks and Blogs on Druid Operator
 
