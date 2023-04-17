@@ -79,7 +79,7 @@ spec:
     druid.s3.enabePathStyleAccess=true
     druid.s3.endpoint.signingRegion=us-east-1
     druid.s3.enablePathStyleAccess=true
-    druid.s3.endpoint.url=http://minio1-hl.druid.svc.cluster.local:9000/
+    druid.s3.endpoint.url=http://myminio-hl.druid.svc.cluster.local:9000/
     #
     # Extensions
     #

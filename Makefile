@@ -72,23 +72,6 @@ vet: ## Run go vet against code.
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
 
-.PHONY: e2e
-e2e: ## Runs e2e tests
-	e2e/e2e.sh
-
-.PHONY: kind
-kind: ## Bootstrap Kind Locally
-	sh e2e/kind.sh
-
-## Make Docker build for kind registery
-.PHONY: docker-build-local
-docker-build-local: ## Build docker image with the manager.
-	docker build -t ${IMG_KIND}:${IMG_TAG} .
-
-## Make Docker push locally to kind registery
-.PHONY: docker-push-local
-docker-push-local: ## Build docker image with the manager.
-	docker push ${IMG_KIND}:${IMG_TAG}
 
 ##@ Build
 
@@ -164,29 +147,6 @@ helm-lint: ## Lint Helm chart.
 helm-template: ## Run Helm template.
 	helm -n druid-operator-system template --create-namespace ${NAMESPACE_DRUID_OPERATOR} ./chart --debug
 
-.PHONY: helm-install-druid-operator
-helm-install-druid-operator: ## helm upgrade/install.
-	helm upgrade --install \
-	--namespace ${NAMESPACE_DRUID_OPERATOR} \
-	--create-namespace \
-	${NAMESPACE_DRUID_OPERATOR} chart/ \
-	--set image.repository=${IMG_KIND} \
-	--set image.tag=${IMG_TAG}
-
-.PHONY: helm-minio-install
-helm-minio-install: ## Helm deploy minio operator and minio
-	helm repo add minio https://operator.min.io/
-	helm repo update minio
-	helm upgrade --install \
-	--namespace ${NAMESPACE_MINIO_OPERATOR} \
-	--create-namespace \
-	 ${NAMESPACE_MINIO_OPERATOR} minio/operator \
-	-f e2e/configs/minio-operator-override.yaml
-	helm upgrade --install \
-	--namespace ${NAMESPACE_DRUID} \
-	--create-namespace \
-  	${NAMESPACE_DRUID}-minio minio/tenant \
-	-f e2e/configs/minio-tenant-override.yaml
 
 ##@ Build Dependencies
 
@@ -227,7 +187,7 @@ $(ENVTEST): $(LOCALBIN)
 
 ## e2e deployment
 .PHONY: e2e
-e2e: 
+e2e: ## Runs e2e tests
 	e2e/e2e.sh
 
 ## Build Kind
@@ -247,12 +207,12 @@ docker-push-local: ## Build docker image with the manager.
 
 ## Make Docker build for test image
 .PHONY: docker-build-local-test
-docker-build-local: ## Build docker image with the manager.
+docker-build-local-test: ## Build docker image with the manager.
 	docker build -t ${IMG_KIND}:${TEST_IMG_TAG} -f e2e/Dockerfile-testpod .
 
 ## Make Docker push  locally to kind registery
 .PHONY: docker-push-local-test
-docker-push-local: ## Build docker image with the manager.
+docker-push-local-test: ## Build docker image with the manager.
 	docker push ${IMG_KIND}:${TEST_IMG_TAG}
 
 ## Helm install to deploy the druid operator
@@ -285,4 +245,4 @@ helm-minio-install:
 .PHONY: deploy-testjob
 deploy-testjob:
 	kubectl create job wiki-test --image=${IMG_KIND}:${TEST_IMG_TAG}  -- sh /wikipedia-test.sh
-
+	bash e2e/monitor-task.sh
