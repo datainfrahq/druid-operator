@@ -55,8 +55,6 @@ func NewDruidReconciler(mgr ctrl.Manager) *DruidReconciler {
 func (r *DruidReconciler) Reconcile(ctx context.Context, request reconcile.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("druid", request.NamespacedName)
 
-	// your logic here
-
 	// Fetch the Druid instance
 	instance := &druidv1alpha1.Druid{}
 	err := r.Get(ctx, request.NamespacedName, instance)
@@ -74,7 +72,7 @@ func (r *DruidReconciler) Reconcile(ctx context.Context, request reconcile.Reque
 	// Intialize Emit Events
 	var emitEvent EventEmitter = EmitEventFuncs{r.Recorder}
 
-	if err := deployDruidCluster(r.Client, instance, emitEvent); err != nil {
+	if err := deployDruidCluster(ctx, r.Client, instance, emitEvent); err != nil {
 		return ctrl.Result{}, err
 	} else {
 		return ctrl.Result{RequeueAfter: r.ReconcileWait}, nil
