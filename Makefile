@@ -6,7 +6,7 @@ IMG ?= "datainfrahq/druid-operator"
 # Local Image URL to be pushed to kind registery
 IMG_KIND ?= "localhost:5001/druid-operator"
 # NAMESPACE for druid operator e2e
-NAMESPACE_DRUID_OPERATOR ?= "druid-operator"
+NAMESPACE_DRUID_OPERATOR ?= "druid-operator-system"
 # NAMESPACE for zk operator e2e
 NAMESPACE_ZK_OPERATOR ?= "zk-operator"
 # NAMESPACE for zk operator e2e

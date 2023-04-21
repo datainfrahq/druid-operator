@@ -1,7 +1,7 @@
 ## Dev Dependencies
 
-- Golang 1.19+
-- Kubebuilder 2.3.1+
+- Golang 1.20+
+- Kubebuilder v3
 
 ## Running Operator Locally
 
