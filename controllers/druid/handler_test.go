@@ -1,180 +1,227 @@
+/*
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+// +kubebuilder:docs-gen:collapse=Apache License
+
+/*
+As usual, we start with the necessary imports. We also define some utility variables.
+*/
 package druid
 
 import (
-	"fmt"
 	"io/ioutil"
-	"reflect"
-	"testing"
-
-	"github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
+	"time"
 
 	"github.com/ghodss/yaml"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
+
+	druidv1alpha1 "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 )
 
-func TestMakeStatefulSetForBroker(t *testing.T) {
-	clusterSpec := readSampleDruidClusterSpec(t)
+// +kubebuilder:docs-gen:collapse=Imports
 
-	nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
-	nodeSpec := clusterSpec.Spec.Nodes["brokers"]
+/*
+	testHandler
+*/
+var _ = Describe("Test handler", func() {
 
-	actual, _ := makeStatefulSet(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr, "blah", nodeSpecUniqueStr)
-	addHashToObject(actual)
+	// Define utility constants for object names and testing timeouts/durations and intervals.
+	const (
+		timeout  = time.Second * 45
+		interval = time.Millisecond * 250
+	)
 
-	expected := new(appsv1.StatefulSet)
-	readAndUnmarshallResource("testdata/broker-statefulset.yaml", &expected, t)
+	Context("When testing handler", func() {
+		It("should make statefulset for broker", func() {
+			By("By making statefulset for broker")
+			filePath := "testdata/druid-test-cr.yaml"
+			clusterSpec, err := readDruidClusterSpecFromFile(filePath)
+			Expect(err).Should(BeNil())
 
-	assertEquals(expected, actual, t)
-}
+			nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
+			nodeSpec := clusterSpec.Spec.Nodes["brokers"]
 
-func TestMakeStatefulSetForBrokerWithSidecar(t *testing.T) {
-	clusterSpec := readSampleDruidClusterSpecWithSidecar(t)
+			actual, _ := makeStatefulSet(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr, "blah", nodeSpecUniqueStr)
+			addHashToObject(actual)
 
-	nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
-	nodeSpec := clusterSpec.Spec.Nodes["brokers"]
+			expected := new(appsv1.StatefulSet)
+			err = readAndUnmarshallResource("testdata/broker-statefulset.yaml", &expected)
+			Expect(err).Should(BeNil())
 
-	actual, _ := makeStatefulSet(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr, "blah", nodeSpecUniqueStr)
-	addHashToObject(actual)
+			Expect(actual).Should(Equal(expected))
+		})
 
-	expected := new(appsv1.StatefulSet)
-	readAndUnmarshallResource("testdata/broker-statefulset-sidecar.yaml", &expected, t)
-	assertEquals(expected, actual, t)
-}
+		It("should make statefulset for broker with sidecar", func() {
+			By("By making statefulset for broker with sidecar")
+			filePath := "testdata/druid-test-cr-sidecar.yaml"
+			clusterSpec, err := readDruidClusterSpecFromFile(filePath)
+			Expect(err).Should(BeNil())
 
-func TestDeploymentForBroker(t *testing.T) {
-	clusterSpec := readSampleDruidClusterSpec(t)
+			nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
+			nodeSpec := clusterSpec.Spec.Nodes["brokers"]
 
-	nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
-	nodeSpec := clusterSpec.Spec.Nodes["brokers"]
+			actual, _ := makeStatefulSet(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr, "blah", nodeSpecUniqueStr)
+			addHashToObject(actual)
 
-	actual, _ := makeDeployment(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr, "blah", nodeSpecUniqueStr)
-	addHashToObject(actual)
+			expected := new(appsv1.StatefulSet)
+			readAndUnmarshallResource("testdata/broker-statefulset-sidecar.yaml", &expected)
+			Expect(err).Should(BeNil())
 
-	expected := new(appsv1.Deployment)
-	readAndUnmarshallResource("testdata/broker-deployment.yaml", &expected, t)
+			Expect(actual).Should(Equal(expected))
+		})
 
-	assertEquals(expected, actual, t)
-}
+		It("should make deployment for broker", func() {
+			By("By making deployment for broker")
+			filePath := "testdata/druid-test-cr.yaml"
+			clusterSpec, err := readDruidClusterSpecFromFile(filePath)
+			Expect(err).Should(BeNil())
 
-func TestMakePodDisruptionBudgetForBroker(t *testing.T) {
-	clusterSpec := readSampleDruidClusterSpec(t)
+			nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
+			nodeSpec := clusterSpec.Spec.Nodes["brokers"]
 
-	nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
-	nodeSpec := clusterSpec.Spec.Nodes["brokers"]
+			actual, _ := makeDeployment(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr, "blah", nodeSpecUniqueStr)
+			addHashToObject(actual)
 
-	actual, _ := makePodDisruptionBudget(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr)
-	addHashToObject(actual)
+			expected := new(appsv1.Deployment)
+			readAndUnmarshallResource("testdata/broker-deployment.yaml", &expected)
+			Expect(err).Should(BeNil())
 
-	expected := new(policyv1.PodDisruptionBudget)
-	readAndUnmarshallResource("testdata/broker-pod-disruption-budget.yaml", &expected, t)
+			Expect(actual).Should(Equal(expected))
+		})
 
-	assertEquals(expected, actual, t)
-}
+		It("should make PDB for broker", func() {
+			By("By making PDB for broker")
+			filePath := "testdata/druid-test-cr.yaml"
+			clusterSpec, err := readDruidClusterSpecFromFile(filePath)
+			Expect(err).Should(BeNil())
 
-func TestMakeHeadlessService(t *testing.T) {
-	clusterSpec := readSampleDruidClusterSpec(t)
+			nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
+			nodeSpec := clusterSpec.Spec.Nodes["brokers"]
 
-	nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
-	nodeSpec := clusterSpec.Spec.Nodes["brokers"]
+			actual, _ := makePodDisruptionBudget(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr)
+			addHashToObject(actual)
 
-	actual, _ := makeService(&nodeSpec.Services[0], &nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr)
-	addHashToObject(actual)
+			expected := new(policyv1.PodDisruptionBudget)
+			readAndUnmarshallResource("testdata/broker-pod-disruption-budget.yaml", &expected)
+			Expect(err).Should(BeNil())
 
-	expected := new(corev1.Service)
-	readAndUnmarshallResource("testdata/broker-headless-service.yaml", &expected, t)
+			Expect(actual).Should(Equal(expected))
+		})
 
-	assertEquals(expected, actual, t)
-}
+		It("should make headless service", func() {
+			By("By making headless service")
+			filePath := "testdata/druid-test-cr.yaml"
+			clusterSpec, err := readDruidClusterSpecFromFile(filePath)
+			Expect(err).Should(BeNil())
 
-func TestMakeLoadBalancerService(t *testing.T) {
-	clusterSpec := readSampleDruidClusterSpec(t)
+			nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
+			nodeSpec := clusterSpec.Spec.Nodes["brokers"]
 
-	nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
-	nodeSpec := clusterSpec.Spec.Nodes["brokers"]
+			actual, _ := makeService(&nodeSpec.Services[0], &nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr)
+			addHashToObject(actual)
 
-	actual, _ := makeService(&nodeSpec.Services[1], &nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr)
-	addHashToObject(actual)
+			expected := new(corev1.Service)
+			readAndUnmarshallResource("testdata/broker-headless-service.yaml", &expected)
+			Expect(err).Should(BeNil())
 
-	expected := new(corev1.Service)
-	readAndUnmarshallResource("testdata/broker-load-balancer-service.yaml", &expected, t)
+			Expect(actual).Should(Equal(expected))
+		})
 
-	assertEquals(expected, actual, t)
-}
+		It("should make load balancer service", func() {
+			By("By making load balancer service")
+			filePath := "testdata/druid-test-cr.yaml"
+			clusterSpec, err := readDruidClusterSpecFromFile(filePath)
+			Expect(err).Should(BeNil())
 
-func TestMakeConfigMap(t *testing.T) {
-	clusterSpec := readSampleDruidClusterSpec(t)
+			nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
+			nodeSpec := clusterSpec.Spec.Nodes["brokers"]
 
-	actual, _ := makeCommonConfigMap(clusterSpec, makeLabelsForDruid(clusterSpec.Name))
-	addHashToObject(actual)
+			actual, _ := makeService(&nodeSpec.Services[1], &nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr)
+			addHashToObject(actual)
 
-	expected := new(corev1.ConfigMap)
-	readAndUnmarshallResource("testdata/common-config-map.yaml", &expected, t)
+			expected := new(corev1.Service)
+			readAndUnmarshallResource("testdata/broker-load-balancer-service.yaml", &expected)
+			Expect(err).Should(BeNil())
 
-	assertEquals(expected, actual, t)
-}
+			Expect(actual).Should(Equal(expected))
+		})
 
-func TestMakeBrokerConfigMap(t *testing.T) {
-	clusterSpec := readSampleDruidClusterSpec(t)
+		It("should make config map", func() {
+			By("By making config map")
+			filePath := "testdata/druid-test-cr.yaml"
+			clusterSpec, err := readDruidClusterSpecFromFile(filePath)
+			Expect(err).Should(BeNil())
 
-	nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
-	nodeSpec := clusterSpec.Spec.Nodes["brokers"]
+			actual, _ := makeCommonConfigMap(clusterSpec, makeLabelsForDruid(clusterSpec.Name))
+			addHashToObject(actual)
 
-	actual, _ := makeConfigMapForNodeSpec(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr)
-	addHashToObject(actual)
+			expected := new(corev1.ConfigMap)
+			readAndUnmarshallResource("testdata/common-config-map.yaml", &expected)
+			Expect(err).Should(BeNil())
 
-	expected := new(corev1.ConfigMap)
-	readAndUnmarshallResource("testdata/broker-config-map.yaml", &expected, t)
+			Expect(actual).Should(Equal(expected))
+		})
 
-	assertEquals(expected, actual, t)
-}
+		It("should make broker config map", func() {
+			By("By making broker config map")
+			filePath := "testdata/druid-test-cr.yaml"
+			clusterSpec, err := readDruidClusterSpecFromFile(filePath)
+			Expect(err).Should(BeNil())
 
-func readSampleDruidClusterSpec(t *testing.T) *v1alpha1.Druid {
-	return readDruidClusterSpecFromFile(t, "testdata/druid-test-cr.yaml")
-}
+			nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
+			nodeSpec := clusterSpec.Spec.Nodes["brokers"]
 
-func readSampleDruidClusterSpecWithSidecar(t *testing.T) *v1alpha1.Druid {
-	return readDruidClusterSpecFromFile(t, "testdata/druid-test-cr-sidecar.yaml")
-}
+			actual, _ := makeConfigMapForNodeSpec(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr)
+			addHashToObject(actual)
 
-func readDruidClusterSpecFromFile(t *testing.T, filePath string) *v1alpha1.Druid {
+			expected := new(corev1.ConfigMap)
+			readAndUnmarshallResource("testdata/broker-config-map.yaml", &expected)
+			Expect(err).Should(BeNil())
+
+			Expect(actual).Should(Equal(expected))
+		})
+
+	})
+})
+
+func readDruidClusterSpecFromFile(filePath string) (*druidv1alpha1.Druid, error) {
+	clusterSpec := new(druidv1alpha1.Druid)
 	bytes, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		t.Errorf("Failed to read druid cluster spec")
+		return clusterSpec, err
 	}
 
-	clusterSpec := new(v1alpha1.Druid)
 	err = yaml.Unmarshal(bytes, &clusterSpec)
 	if err != nil {
-		t.Errorf("Failed to unmarshall druid cluster spec: %v", err)
+		return clusterSpec, err
 	}
-
-	return clusterSpec
+	return clusterSpec, nil
 }
 
-func readAndUnmarshallResource(file string, res interface{}, t *testing.T) {
+func readAndUnmarshallResource(file string, res interface{}) error {
 	bytes, err := ioutil.ReadFile(file)
 	if err != nil {
-		t.Errorf("Failed to read file[%s]", file)
+		return err
 	}
 
 	err = yaml.Unmarshal(bytes, res)
 	if err != nil {
-		t.Errorf("Failed to unmarshall resource from file[%s]", file)
+		return err
 	}
-}
-
-func assertEquals(expected, actual interface{}, t *testing.T) {
-	if !reflect.DeepEqual(expected, actual) {
-		t.Error("Match failed!.")
-	}
-}
-
-func dumpResource(res interface{}, t *testing.T) {
-	bytes, err := yaml.Marshal(res)
-	if err != nil {
-		t.Errorf("failed to marshall: %v", err)
-	}
-	fmt.Println(string(bytes))
+	return nil
 }

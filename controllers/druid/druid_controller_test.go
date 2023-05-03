@@ -22,10 +22,8 @@ package druid
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"time"
 
-	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/types"
@@ -43,19 +41,13 @@ var _ = Describe("Druid Operator", func() {
 	// Define utility constants for object names and testing timeouts/durations and intervals.
 	const (
 		filePath = "testdata/druid-smoke-test-cluster.yaml"
-
 		timeout  = time.Second * 45
 		interval = time.Millisecond * 250
 	)
 
 	Context("When testing Druid Operator", func() {
-		// Read and marshal CR file
-		bytes, err := ioutil.ReadFile(filePath)
-		Expect(err).ToNot(HaveOccurred(), "Failed to read druid cluster spec")
-
-		druidCR := new(druidv1alpha1.Druid)
-		err = yaml.Unmarshal(bytes, &druidCR)
-		Expect(err).ToNot(HaveOccurred(), "Failed to unmarshall druid cluster spec")
+		druidCR, err := readDruidClusterSpecFromFile(filePath)
+		Expect(err).Should(BeNil())
 
 		It("should create druidCR - testDruidOperator", func() {
 			By("By creating a new druidCR")
