@@ -2,71 +2,67 @@ package druid
 
 import (
 	"encoding/json"
-	"testing"
 
-	"github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
+
+	druidv1alpha1 "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 )
 
-func TestFirstNonNilValue(t *testing.T) {
-	var js = []byte(`
-    {
-		"image": "himanshu01/druid:druid-0.12.0-1",
-		"securityContext": { "fsGroup": 107, "runAsUser": 106 },
-		"env": [{ "name": "k", "value": "v" }],
-		"nodes":
-		{
-			"brokers": {
-				"nodeType": "broker",
-				"druid.port": 8080,
-				"replicas": 2
-			}
-		}
-    }`)
+// +kubebuilder:docs-gen:collapse=Imports
 
-	clusterSpec := v1alpha1.DruidSpec{}
-	if err := json.Unmarshal(js, &clusterSpec); err != nil {
-		t.Errorf("Failed to unmarshall[%v]", err)
-	}
+/*
+	util test
+*/
+var _ = Describe("Test util", func() {
+	Context("When testing util", func() {
+		It("should test first non nil value", func() {
+			var js = []byte(`
+			{
+				"image": "himanshu01/druid:druid-0.12.0-1",
+				"securityContext": { "fsGroup": 107, "runAsUser": 106 },
+				"env": [{ "name": "k", "value": "v" }],
+				"nodes":
+				{
+					"brokers": {
+						"nodeType": "broker",
+						"druid.port": 8080,
+						"replicas": 2
+					}
+				}
+			}`)
 
-	if x := firstNonNilValue(clusterSpec.Nodes["brokers"].PodSecurityContext, clusterSpec.PodSecurityContext).(*v1.PodSecurityContext); *x.RunAsUser != 106 {
-		t.Fail()
-	}
+			clusterSpec := druidv1alpha1.DruidSpec{}
+			Expect(json.Unmarshal(js, &clusterSpec)).Should(BeNil())
 
-	if x := firstNonNilValue(clusterSpec.Nodes["brokers"].Env, clusterSpec.Env).([]v1.EnvVar); x[0].Name != "k" {
-		t.Fail()
-	}
-}
+			By("By testing first non nil value of PodSecurityContext.RunAsUser")
+			x := firstNonNilValue(clusterSpec.Nodes["brokers"].PodSecurityContext, clusterSpec.PodSecurityContext).(*v1.PodSecurityContext)
+			Expect(*x.RunAsUser).Should(Equal(int64(106)))
 
-func TestFirstNonEmptyStr(t *testing.T) {
-	if firstNonEmptyStr("a", "b") != "a" {
-		t.Fail()
-	}
+			By("By testing first non nil value of Env.Name")
+			y := firstNonNilValue(clusterSpec.Nodes["brokers"].Env, clusterSpec.Env).([]v1.EnvVar)
+			Expect(y[0].Name).Should(Equal("k"))
+		})
 
-	if firstNonEmptyStr("", "b") != "b" {
-		t.Fail()
-	}
-}
+		It("should test first non empty string", func() {
+			By("By testing first non empty string 1")
+			Expect(firstNonEmptyStr("a", "b")).Should(Equal("a"))
 
-func TestContainsString(t *testing.T) {
-	if ContainsString([]string{"a", "b"}, "a") == false {
-		t.Fail()
-	}
-}
+			By("By testing first non empty string 2")
+			Expect(firstNonEmptyStr("", "b")).Should(Equal("b"))
+		})
 
-func TestRemoveString(t *testing.T) {
-	rs := RemoveString([]string{"a", "b"}, "a")
-	if linearsearch(rs, "a") {
-		t.Fail()
-	}
+		It("should test contains string", func() {
+			By("By testing contains string")
+			Expect(ContainsString([]string{"a", "b"}, "a")).Should(BeTrue())
+		})
 
-}
+		It("should test removes string", func() {
+			By("By testing removes string")
+			rs := RemoveString([]string{"a", "b"}, "a")
+			Expect(rs).Should(Not(ConsistOf("a")))
+		})
 
-func linearsearch(list []string, key string) bool {
-	for _, item := range list {
-		if item == key {
-			return true
-		}
-	}
-	return false
-}
+	})
+})
