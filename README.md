@@ -47,12 +47,12 @@
 
 ### Kubernetes version compatibility
 
-| druid-operator | 0.0.9 | v1.0.0 |
-| :------------- | :-------------: | :-----: |
-| kubernetes <= 1.20 | :x:| :x: |
-| kubernetes == 1.21 | :white_check_mark:| :x: |
-| kubernetes >= 1.22 and < 1.25 | :white_check_mark: | :white_check_mark: |
-| kubernetes > 1.25 | :x: | :white_check_mark: |
+| druid-operator | 0.0.9 | v1.0.0 | v1.1.0 |
+| :------------- | :-------------: | :-----: | :---: |
+| kubernetes <= 1.20 | :x:| :x: | :x: |
+| kubernetes == 1.21 | :white_check_mark:| :x: | :x: |
+| kubernetes >= 1.22 and < 1.25 | :white_check_mark: | :white_check_mark: | :x: |
+| kubernetes > 1.25 | :x: | :x: | :white_check_mark: |
 
 ### Contributors
 
