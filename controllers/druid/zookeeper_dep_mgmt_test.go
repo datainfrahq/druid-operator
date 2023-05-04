@@ -1,22 +1,29 @@
 package druid
 
 import (
-	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
-	"github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
+	druidv1alpha1 "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 )
 
-func TestIt(t *testing.T) {
-	v := v1alpha1.ZookeeperSpec{
-		Type: "default",
-		Spec: []byte(`{ "properties": "my-zookeeper-config" }`),
-	}
+// +kubebuilder:docs-gen:collapse=Imports
 
-	if zm, err := createZookeeperManager(&v); err != nil {
-		t.Error(err.Error())
-	} else {
-		if zm.Configuration() != "my-zookeeper-config" {
-			t.Errorf("Error: Expected[%s], Actual[%s]", "my-zookeeper-config", zm.Configuration())
-		}
-	}
-}
+/*
+	zookeeper_dep_mgmt_test
+*/
+var _ = Describe("Test zookeeper dep mgmt", func() {
+	Context("When testing zookeeper dep mgmt", func() {
+		It("should test zookeeper dep mgmt", func() {
+			v := druidv1alpha1.ZookeeperSpec{
+				Type: "default",
+				Spec: []byte(`{ "properties": "my-zookeeper-config" }`),
+			}
+
+			zm, err := createZookeeperManager(&v)
+			Expect(err).Should(BeNil())
+			Expect(zm.Configuration()).Should(Equal("my-zookeeper-config"))
+
+		})
+	})
+})

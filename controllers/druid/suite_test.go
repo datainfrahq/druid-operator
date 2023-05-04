@@ -1,196 +1,114 @@
+// +kubebuilder:docs-gen:collapse=Apache License
+
 package druid
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"path/filepath"
 	"testing"
-	"time"
 
-	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	druidv1alpha1 "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
-	// +kubebuilder:scaffold:imports
+	//+kubebuilder:scaffold:imports
 )
 
-type TestK8sEnvCtx struct {
-	restConfig *rest.Config
-	k8sManager manager.Manager
-	env        *envtest.Environment
+// These tests use Ginkgo (BDD-style Go testing framework). Refer to
+// http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
+
+// +kubebuilder:docs-gen:collapse=Imports
+
+// Now, let's go through the code generated.
+
+var (
+	cfg       *rest.Config
+	k8sClient client.Client // You'll be using this client in your tests.
+	testEnv   *envtest.Environment
+	ctx       context.Context
+	cancel    context.CancelFunc
+)
+
+func TestAPIs(t *testing.T) {
+	RegisterFailHandler(Fail)
+
+	RunSpecs(t, "Controller Suite")
 }
 
-func setupK8Evn(t *testing.T, testK8sCtx *TestK8sEnvCtx) {
+var _ = BeforeSuite(func() {
 	ctrl.SetLogger(zap.New())
-	testK8sCtx.env = &envtest.Environment{
+
+	ctx, cancel = context.WithCancel(context.TODO())
+
+	/*
+		First, the envtest cluster is configured to read CRDs from the CRD directory Kubebuilder scaffolds for you.
+	*/
+	By("bootstrapping test environment")
+	testEnv = &envtest.Environment{
 		CRDInstallOptions: envtest.CRDInstallOptions{
 			Paths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
 		},
 		ErrorIfCRDPathMissing: true,
 	}
 
-	config, err := testK8sCtx.env.Start()
-	require.NoError(t, err)
+	//	Then, we start the envtest cluster.
+	var err error
+	// cfg is defined in this file globally.
+	cfg, err = testEnv.Start()
+	Expect(err).NotTo(HaveOccurred())
+	Expect(cfg).NotTo(BeNil())
 
-	testK8sCtx.restConfig = config
-}
+	err = druidv1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+	/*
+		After the schemas, you will see the following marker.
+		This marker is what allows new schemas to be added here automatically when a new API is added to the project.
+	*/
 
-func destroyK8Env(t *testing.T, testK8sCtx *TestK8sEnvCtx) {
-	testK8sCtx.env.Stop()
-}
+	//+kubebuilder:scaffold:scheme
 
-func TestAPIs(t *testing.T) {
-	testK8sCtx := &TestK8sEnvCtx{}
+	// A client is created for our test CRUD operations.
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	Expect(err).NotTo(HaveOccurred())
+	Expect(k8sClient).NotTo(BeNil())
 
-	setupK8Evn(t, testK8sCtx)
-	defer destroyK8Env(t, testK8sCtx)
-
-	err := druidv1alpha1.AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	testK8sCtx.k8sManager, err = ctrl.NewManager(testK8sCtx.restConfig, ctrl.Options{
+	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,
 	})
-	require.NoError(t, err)
+	Expect(err).ToNot(HaveOccurred())
 
-	setupDruidOperator(t, testK8sCtx)
+	err = (&DruidReconciler{
+		Client:        k8sManager.GetClient(),
+		Log:           ctrl.Log.WithName("controllers").WithName("Druid"),
+		Scheme:        k8sManager.GetScheme(),
+		ReconcileWait: LookupReconcileTime(),
+		Recorder:      k8sManager.GetEventRecorderFor("druid-operator"),
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
-		err = testK8sCtx.k8sManager.Start(ctrl.SetupSignalHandler())
-		if err != nil {
-			fmt.Printf("problem starting mgr [%v] \n", err)
-		}
-		require.NoError(t, err)
+		defer GinkgoRecover()
+		err = k8sManager.Start(ctx)
+		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
 	}()
 
-	testDruidOperator(t, testK8sCtx)
-}
+})
 
-func setupDruidOperator(t *testing.T, testK8sCtx *TestK8sEnvCtx) {
-	err := (&DruidReconciler{
-		Client:        testK8sCtx.k8sManager.GetClient(),
-		Log:           ctrl.Log.WithName("controllers").WithName("Druid"),
-		Scheme:        testK8sCtx.k8sManager.GetScheme(),
-		ReconcileWait: LookupReconcileTime(),
-		Recorder:      testK8sCtx.k8sManager.GetEventRecorderFor("druid-operator"),
-	}).SetupWithManager(testK8sCtx.k8sManager)
+/*
+Kubebuilder also generates boilerplate functions for cleaning up envtest and actually running your test files in your controllers/ directory.
+You won't need to touch these.
+*/
 
-	require.NoError(t, err)
-}
-
-func testDruidOperator(t *testing.T, testK8sCtx *TestK8sEnvCtx) {
-	druidCR := readDruidClusterSpecFromFile(t, "testdata/druid-smoke-test-cluster.yaml")
-
-	k8sClient := testK8sCtx.k8sManager.GetClient()
-
-	err := k8sClient.Create(context.TODO(), druidCR)
-	require.NoError(t, err)
-
-	err = retry(func() error {
-		druid := &druidv1alpha1.Druid{}
-
-		err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: druidCR.Name, Namespace: druidCR.Namespace}, druid)
-		if err != nil {
-			return err
-		}
-
-		expectedConfigMaps := []string{
-			fmt.Sprintf("druid-%s-brokers-config", druidCR.Name),
-			fmt.Sprintf("druid-%s-coordinators-config", druidCR.Name),
-			fmt.Sprintf("druid-%s-historicals-config", druidCR.Name),
-			fmt.Sprintf("druid-%s-routers-config", druidCR.Name),
-			fmt.Sprintf("%s-druid-common-config", druidCR.Name),
-		}
-		if !areStringArraysEqual(druid.Status.ConfigMaps, expectedConfigMaps) {
-			return errors.New(fmt.Sprintf("Failed to get expected ConfigMaps, got [%v]", druid.Status.ConfigMaps))
-		}
-
-		expectedServices := []string{
-			fmt.Sprintf("druid-%s-brokers", druidCR.Name),
-			fmt.Sprintf("druid-%s-coordinators", druidCR.Name),
-			fmt.Sprintf("druid-%s-historicals", druidCR.Name),
-			fmt.Sprintf("druid-%s-routers", druidCR.Name),
-		}
-		if !areStringArraysEqual(druid.Status.Services, expectedServices) {
-			return errors.New(fmt.Sprintf("Failed to get expected Services, got [%v]", druid.Status.Services))
-		}
-
-		expectedStatefulSets := []string{
-			fmt.Sprintf("druid-%s-coordinators", druidCR.Name),
-			fmt.Sprintf("druid-%s-historicals", druidCR.Name),
-			fmt.Sprintf("druid-%s-routers", druidCR.Name),
-		}
-		if !areStringArraysEqual(druid.Status.StatefulSets, expectedStatefulSets) {
-			return errors.New(fmt.Sprintf("Failed to get expected StatefulSets, got [%v]", druid.Status.StatefulSets))
-		}
-
-		expectedDeployments := []string{
-			fmt.Sprintf("druid-%s-brokers", druidCR.Name),
-		}
-		if !areStringArraysEqual(druid.Status.Deployments, expectedDeployments) {
-			return errors.New(fmt.Sprintf("Failed to get expected Deployments, got [%v]", druid.Status.Deployments))
-		}
-
-		expectedPDBs := []string{
-			fmt.Sprintf("druid-%s-brokers", druidCR.Name),
-		}
-		if !areStringArraysEqual(druid.Status.PodDisruptionBudgets, expectedPDBs) {
-			return errors.New(fmt.Sprintf("Failed to get expected PDBs, got [%v]", druid.Status.PodDisruptionBudgets))
-		}
-
-		expectedHPAs := []string{
-			fmt.Sprintf("druid-%s-brokers", druidCR.Name),
-		}
-		if !areStringArraysEqual(druid.Status.HPAutoScalers, expectedHPAs) {
-			return errors.New(fmt.Sprintf("Failed to get expected HPAs, got [%v]", druid.Status.HPAutoScalers))
-		}
-
-		expectedIngress := []string{
-			fmt.Sprintf("druid-%s-routers", druidCR.Name),
-		}
-		if !areStringArraysEqual(druid.Status.Ingress, expectedIngress) {
-			return errors.New(fmt.Sprintf("Failed to get expected Ingress, got [%v]", druid.Status.Ingress))
-		}
-
-		return nil
-	}, time.Millisecond*250, time.Second*45)
-
-	require.NoError(t, err)
-}
-
-func areStringArraysEqual(a1, a2 []string) bool {
-	if len(a1) == len(a2) {
-		for i, v := range a1 {
-			if v != a2[i] {
-				return false
-			}
-		}
-	} else {
-		return false
-	}
-	return true
-}
-
-func retry(fn func() error, retryWait, timeOut time.Duration) error {
-	timeOutTimestamp := time.Now().Add(timeOut)
-
-	for {
-		if err := fn(); err != nil {
-			if time.Now().Before(timeOutTimestamp) {
-				time.Sleep(retryWait)
-			} else {
-				return err
-			}
-		} else {
-			return nil
-		}
-	}
-}
+var _ = AfterSuite(func() {
+	cancel()
+	By("tearing down the test environment")
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
+})
