@@ -15,9 +15,7 @@ import (
 
 // +kubebuilder:docs-gen:collapse=Imports
 
-/*
-	testHandler
-*/
+// testHandler
 var _ = Describe("Test handler", func() {
 	Context("When testing handler", func() {
 		It("should make statefulset for broker", func() {

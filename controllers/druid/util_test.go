@@ -20,7 +20,7 @@ var _ = Describe("Test util", func() {
 		It("should test first non nil value", func() {
 			var js = []byte(`
 			{
-				"image": "himanshu01/druid:druid-0.12.0-1",
+				"image": "apache/druid:25.0.0",
 				"securityContext": { "fsGroup": 107, "runAsUser": 106 },
 				"env": [{ "name": "k", "value": "v" }],
 				"nodes":
