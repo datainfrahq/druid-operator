@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	druidv1alpha1 "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
+	druidingestioncontrollers "github.com/datainfrahq/druid-operator/controllers/ingestion"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -98,6 +99,12 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Druid")
 		os.Exit(1)
 	}
+
+	if err = (druidingestioncontrollers.NewDruidIngestionReconciler(mgr)).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Druid")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

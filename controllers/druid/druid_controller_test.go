@@ -16,7 +16,7 @@ import (
 // +kubebuilder:docs-gen:collapse=Imports
 
 /*
-	testDruidOperator
+testDruidOperator
 */
 var _ = Describe("Druid Operator", func() {
 
