@@ -78,6 +78,11 @@ type DruidSpec struct {
 	// +kubebuilder:default:=false
 	Ignored bool `json:"ignored,omitempty"`
 
+	// Auth creds to be used by the operator for authenticating
+	// with druid cluster created by this CR.
+	// +optional
+	Auth Auth `json:"auth"`
+
 	// common.runtime.properties contents
 	// +required
 	CommonRuntimeProperties string `json:"common.runtime.properties"`
@@ -404,6 +409,19 @@ type MetadataStoreSpec struct {
 type DeepStorageSpec struct {
 	Type string          `json:"type"`
 	Spec json.RawMessage `json:"spec"`
+}
+
+type AuthType string
+
+const (
+	BasicAuth AuthType = "basic-auth"
+)
+
+type Auth struct {
+	// +required
+	Type AuthType `json:"type"`
+	// +required
+	SecretRef v1.SecretReference `json:"secretRef"`
 }
 
 // These are valid conditions of a druid Node

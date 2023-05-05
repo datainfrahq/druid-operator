@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -31,16 +32,30 @@ const (
 )
 
 type DruidIngestionSpec struct {
-	Suspend       bool                       `json:"suspend"`
-	IngestionSpec DruidOperatorIngestionSpec `json:"ingestionSpec"`
+	// +optional
+	Suspend bool `json:"suspend"`
+	// +required
+	DruidClusterName string `json:"druidCluster"`
+	// +required
+	Ingestion IngestionSpec `json:"ingestion"`
 }
 
-type DruidOperatorIngestionSpec struct {
-	Type           DruidIngestionMethod `json:"type"`
-	SupervisorSpec string               `json:"supervisorSpec,omitempty"`
+type IngestionSpec struct {
+	// +required
+	Type DruidIngestionMethod `json:"type"`
+	// +required
+	Spec string `json:"spec,omitempty"`
 }
 
-type DruidIngestionStatus struct{}
+type DruidIngestionStatus struct {
+	TaskId               string             `json:"taskId"`
+	Type                 string             `json:"type,omitempty"`
+	Status               v1.ConditionStatus `json:"status,omitempty"`
+	Reason               string             `json:"reason,omitempty"`
+	Message              string             `json:"message,omitempty"`
+	LastUpdateTime       metav1.Time        `json:"lastUpdateTime,omitempty"`
+	CurrentIngestionSpec string             `json:"currentIngestionSpec.json"`
+}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status

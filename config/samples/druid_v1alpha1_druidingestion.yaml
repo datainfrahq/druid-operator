@@ -4,9 +4,72 @@ metadata:
   labels:
     app.kubernetes.io/name: druidingestion
     app.kubernetes.io/instance: druidingestion-sample
-    app.kubernetes.io/part-of: druid-operator
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: druid-operator
-  name: druidingestion-sample
+  name: wikipedia-1
 spec:
-  # TODO(user): Add fields here
+  suspend: false
+  druidCluster: tiny-cluster
+  ingestion:
+    type: native-batch
+    spec: |-
+      {
+        "type" : "index_parallel",
+        "spec" : {
+          "dataSchema" : {
+            "dataSource" : "wikipedia-1",
+            "dimensionsSpec" : {
+              "dimensions" : [
+                "channel",
+                "cityName",
+                "comment",
+                "countryIsoCode",
+                "countryName",
+                "isAnonymous",
+                "isMinor",
+                "isNew",
+                "isRobot",
+                "isUnpatrolled",
+                "metroCode",
+                "namespace",
+                "page",
+                "regionIsoCode",
+                "regionName",
+                "user",
+                { "name": "added", "type": "long" },
+                { "name": "deleted", "type": "long" },
+                { "name": "delta", "type": "long" }
+              ]
+            },
+            "timestampSpec": {
+              "column": "time",
+              "format": "iso"
+            },
+            "metricsSpec" : [],
+            "granularitySpec" : {
+              "type" : "uniform",
+              "segmentGranularity" : "day",
+              "queryGranularity" : "none",
+              "intervals" : ["2015-09-12/2015-09-13"],
+              "rollup" : false
+            }
+          },
+          "ioConfig" : {
+            "type" : "index_parallel",
+            "inputSource" : {
+              "type" : "local",
+              "baseDir" : "quickstart/tutorial/",
+              "filter" : "wikiticker-2015-09-12-sampled.json.gz"
+            },
+            "inputFormat" :  {
+              "type": "json"
+            },
+            "appendToExisting" : false
+          },
+          "tuningConfig" : {
+            "type" : "index_parallel",
+            "partitionsSpec": {
+              "type": "dynamic"
+            },
+            "maxRowsInMemory" : 25000
+          }
+        }
+      }

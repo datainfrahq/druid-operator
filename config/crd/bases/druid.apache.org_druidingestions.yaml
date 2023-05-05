@@ -25,34 +25,59 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
+        description: Ingestion is the Schema for the Ingestion API
         properties:
           apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
           spec:
             properties:
-              ingestionSpec:
+              druidCluster:
+                type: string
+              ingestion:
                 properties:
-                  supervisorSpec:
+                  spec:
                     type: string
                   type:
                     type: string
                 required:
                 - type
                 type: object
-              routerUrl:
-                type: string
               suspend:
                 type: boolean
             required:
-            - ingestionSpec
-            - routerUrl
-            - suspend
+            - druidCluster
+            - ingestion
             type: object
           status:
+            properties:
+              currentIngestionSpec.json:
+                type: string
+              lastUpdateTime:
+                format: date-time
+                type: string
+              message:
+                type: string
+              reason:
+                type: string
+              status:
+                type: string
+              taskId:
+                type: string
+              type:
+                type: string
+            required:
+            - currentIngestionSpec.json
+            - taskId
             type: object
         required:
         - spec

@@ -2,6 +2,7 @@ package ingestion
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -54,9 +55,23 @@ func (r *DruidIngestionReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		logr.Error(err, err.Error())
 		return ctrl.Result{}, err
 	} else {
-		return ctrl.Result{RequeueAfter: r.ReconcileWait}, nil
+		return ctrl.Result{RequeueAfter: LookupReconcileTime()}, nil
 	}
 
+}
+
+func LookupReconcileTime() time.Duration {
+	val, exists := os.LookupEnv("RECONCILE_WAIT")
+	if !exists {
+		return time.Second * 10
+	} else {
+		v, err := time.ParseDuration(val)
+		if err != nil {
+			// Exit Program if not valid
+			os.Exit(1)
+		}
+		return v
+	}
 }
 
 func (r *DruidIngestionReconciler) SetupWithManager(mgr ctrl.Manager) error {
