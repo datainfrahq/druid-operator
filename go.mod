@@ -1,6 +1,6 @@
 module github.com/datainfrahq/druid-operator
 
-go 1.19
+go 1.20
 
 require (
 	github.com/datainfrahq/operator-runtime v0.0.2-0.20230425161705-667c247a660b
