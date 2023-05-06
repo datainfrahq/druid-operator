@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: druidingestion
     app.kubernetes.io/instance: druidingestion-sample
-  name: wikipedia-1
+  name: wikipedia-10
 spec:
   suspend: false
   druidCluster: tiny-cluster
@@ -15,7 +15,7 @@ spec:
         "type" : "index_parallel",
         "spec" : {
           "dataSchema" : {
-            "dataSource" : "wikipedia-1",
+            "dataSource" : "wikipedia-10",
             "dimensionsSpec" : {
               "dimensions" : [
                 "channel",

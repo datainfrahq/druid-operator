@@ -1318,30 +1318,6 @@ spec:
                         type: array
                     type: object
                 type: object
-              auth:
-                description: Auth creds to be used by the operator for authenticating
-                  with druid cluster created by this CR.
-                properties:
-                  secretRef:
-                    description: SecretReference represents a Secret Reference. It
-                      has enough information to retrieve secret in any namespace
-                    properties:
-                      name:
-                        description: name is unique within a namespace to reference
-                          a secret resource.
-                        type: string
-                      namespace:
-                        description: namespace defines the space within which the
-                          secret name must be unique.
-                        type: string
-                    type: object
-                    x-kubernetes-map-type: atomic
-                  type:
-                    type: string
-                required:
-                - secretRef
-                - type
-                type: object
               common.runtime.properties:
                 description: common.runtime.properties contents
                 type: string

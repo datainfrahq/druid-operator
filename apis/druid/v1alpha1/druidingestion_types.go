@@ -38,6 +38,8 @@ type DruidIngestionSpec struct {
 	DruidClusterName string `json:"druidCluster"`
 	// +required
 	Ingestion IngestionSpec `json:"ingestion"`
+	// +optional
+	Auth Auth `json:"auth"`
 }
 
 type IngestionSpec struct {
@@ -55,6 +57,19 @@ type DruidIngestionStatus struct {
 	Message              string             `json:"message,omitempty"`
 	LastUpdateTime       metav1.Time        `json:"lastUpdateTime,omitempty"`
 	CurrentIngestionSpec string             `json:"currentIngestionSpec.json"`
+}
+
+type AuthType string
+
+const (
+	BasicAuth AuthType = "basic-auth"
+)
+
+type Auth struct {
+	// +required
+	Type AuthType `json:"type"`
+	// +required
+	SecretRef v1.SecretReference `json:"secretRef"`
 }
 
 // +kubebuilder:object:root=true

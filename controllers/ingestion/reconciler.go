@@ -2,9 +2,11 @@ package ingestion
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,8 +27,8 @@ const (
 	DruidIngestionControllerGetFail            = "DruidIngestionControllerGetFail"
 	DruidIngestionControllerUpdateSuccess      = "DruidIngestionControllerUpdateSuccess"
 	DruidIngestionControllerUpdateFail         = "DruidIngestionControllerUpdateFail"
-	DruidIngestionControllerDeleteSuccess      = "DruidIngestionControllerDeleteSuccess"
-	DruidIngestionControllerDeleteFail         = "DruidIngestionControllerDeleteFail"
+	DruidIngestionControllerShutDownSuccess    = "DruidIngestionControllerShutDownSuccess"
+	DruidIngestionControllerShutDownFail       = "DruidIngestionControllerShutDownFail"
 	DruidIngestionControllerPatchStatusSuccess = "DruidIngestionControllerPatchStatusSuccess"
 	DruidIngestionControllerPatchStatusFail    = "DruidIngestionControllerPatchStatusFail"
 	DruidIngestionControllerFinalizer          = "druidingestion.datainfra.io/finalizer"
@@ -61,6 +63,59 @@ func (r *DruidIngestionReconciler) do(ctx context.Context, di *v1alpha1.DruidIng
 		return err
 	}
 
+	if di.ObjectMeta.DeletionTimestamp.IsZero() {
+		// The object is not being deleted, so if it does not have our finalizer,
+		// then lets add the finalizer and update the object. This is equivalent
+		// registering our finalizer.
+		if !controllerutil.ContainsFinalizer(di, DruidIngestionControllerFinalizer) {
+			controllerutil.AddFinalizer(di, DruidIngestionControllerFinalizer)
+			if err := r.Update(ctx, di.DeepCopyObject().(*v1alpha1.DruidIngestion)); err != nil {
+				return nil
+			}
+		}
+	} else {
+		if controllerutil.ContainsFinalizer(di, DruidIngestionControllerFinalizer) {
+			// our finalizer is present, so lets handle any external dependency
+			svcName, err := r.getRouterSvcUrl(di.Namespace, di.Spec.DruidClusterName)
+			if err != nil {
+				return err
+			}
+
+			http := internalhttp.NewHTTPClient(
+				http.MethodPost,
+				getPath(di.Spec.Ingestion.Type, svcName, http.MethodPost, di.Status.TaskId, true),
+				http.Client{},
+				[]byte{},
+				internalhttp.Auth{BasicAuth: basicAuth},
+			)
+			respShutDownTask, err := http.Do()
+			if err != nil {
+				return err
+			}
+			if respShutDownTask.StatusCode != 200 {
+				build.Recorder.GenericEvent(
+					di,
+					v1.EventTypeWarning,
+					fmt.Sprintf("Resp [%s], StatusCode [%d]", string(respShutDownTask.ResponseBody), respShutDownTask.StatusCode),
+					DruidIngestionControllerShutDownFail,
+				)
+			} else {
+				build.Recorder.GenericEvent(
+					di,
+					v1.EventTypeNormal,
+					fmt.Sprintf("Resp [%s], StatusCode [%d]", string(respShutDownTask.ResponseBody), respShutDownTask.StatusCode),
+					DruidIngestionControllerShutDownSuccess,
+				)
+			}
+
+			// remove our finalizer from the list and update it.
+			controllerutil.RemoveFinalizer(di, DruidIngestionControllerFinalizer)
+			if err := r.Update(ctx, di.DeepCopyObject().(*v1alpha1.DruidIngestion)); err != nil {
+				return nil
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -72,11 +127,12 @@ func (r *DruidIngestionReconciler) CreateOrUpdate(
 ) (controllerutil.OperationResult, error) {
 
 	// check status if task id exists
-	if di.Status.TaskId == "" {
+	if di.Status.TaskId == "" && di.Status.CurrentIngestionSpec == "" {
 		// if does not exist create task
+
 		postHttp := internalhttp.NewHTTPClient(
 			http.MethodPost,
-			makeRouterCreateUpdateTaskPath(svcName),
+			getPath(di.Spec.Ingestion.Type, svcName, http.MethodPost, "", false),
 			http.Client{},
 			[]byte(di.Spec.Ingestion.Spec),
 			auth,
@@ -89,9 +145,13 @@ func (r *DruidIngestionReconciler) CreateOrUpdate(
 
 		// if success patch status
 		if respCreateTask.StatusCode == 200 {
+			taskId, err := getTaskIdFromResponse(respCreateTask.ResponseBody)
+			if err != nil {
+				return controllerutil.OperationResultNone, err
+			}
 			result, err := r.makePatchDruidIngestionStatus(
 				di,
-				respCreateTask.ResponseBody,
+				taskId,
 				DruidIngestionControllerCreateSuccess,
 				string(respCreateTask.ResponseBody),
 				v1.ConditionTrue,
@@ -112,7 +172,85 @@ func (r *DruidIngestionReconciler) CreateOrUpdate(
 				fmt.Sprintf("Resp [%s], Result [%s]", string(respCreateTask.ResponseBody), result),
 				DruidIngestionControllerPatchStatusSuccess)
 			return controllerutil.OperationResultCreated, nil
+		} else {
+			taskId, err := getTaskIdFromResponse(respCreateTask.ResponseBody)
+			if err != nil {
+				return controllerutil.OperationResultNone, err
+			}
+			_, err = r.makePatchDruidIngestionStatus(
+				di,
+				taskId,
+				DruidIngestionControllerCreateFail,
+				string(respCreateTask.ResponseBody),
+				v1.ConditionTrue,
+				DruidIngestionControllerCreateFail,
+			)
+			if err != nil {
+				return controllerutil.OperationResultNone, err
+			}
+			build.Recorder.GenericEvent(
+				di,
+				v1.EventTypeWarning,
+				fmt.Sprintf("Resp [%s], Status", string(respCreateTask.ResponseBody)),
+				DruidIngestionControllerCreateFail,
+			)
+			return controllerutil.OperationResultCreated, nil
 		}
+	} else {
+		// compare the state
+		ok, err := isEqualJson(di.Status.CurrentIngestionSpec, di.Spec.Ingestion.Spec)
+		if err != nil {
+			return controllerutil.OperationResultNone, err
+		}
+
+		if !ok {
+			postHttp := internalhttp.NewHTTPClient(
+				http.MethodPost,
+				getPath(di.Spec.Ingestion.Type, svcName, http.MethodPost, "", false),
+				http.Client{},
+				[]byte(di.Spec.Ingestion.Spec),
+				auth,
+			)
+
+			respUpdateSpec, err := postHttp.Do()
+			if err != nil {
+				return controllerutil.OperationResultNone, err
+			}
+
+			if respUpdateSpec.StatusCode == 200 {
+				// patch status to store the current valid ingestion spec json
+				taskId, err := getTaskIdFromResponse(respUpdateSpec.ResponseBody)
+				if err != nil {
+					return controllerutil.OperationResultNone, err
+				}
+				result, err := r.makePatchDruidIngestionStatus(
+					di,
+					taskId,
+					DruidIngestionControllerUpdateSuccess,
+					string(respUpdateSpec.ResponseBody),
+					v1.ConditionTrue,
+					DruidIngestionControllerUpdateSuccess,
+				)
+				if err != nil {
+					return controllerutil.OperationResultNone, err
+				}
+				build.Recorder.GenericEvent(
+					di,
+					v1.EventTypeNormal,
+					fmt.Sprintf("Resp [%s]", string(respUpdateSpec.ResponseBody)),
+					DruidIngestionControllerUpdateSuccess,
+				)
+				build.Recorder.GenericEvent(
+					di,
+					v1.EventTypeNormal,
+					fmt.Sprintf("Resp [%s], Result [%s]", string(respUpdateSpec.ResponseBody), result),
+					DruidIngestionControllerPatchStatusSuccess)
+
+				return controllerutil.OperationResultUpdated, nil
+			}
+
+		}
+
 	}
 
 	return controllerutil.OperationResultNone, nil
@@ -145,12 +283,54 @@ func (r *DruidIngestionReconciler) makePatchDruidIngestionStatus(
 	return controllerutil.OperationResultUpdatedStatusOnly, nil
 }
 
+func getPath(
+	ingestionType v1alpha1.DruidIngestionMethod,
+	svcName, httpMethod, taskId string,
+	shutDownTask bool) string {
+
+	switch ingestionType {
+	case v1alpha1.NativeBatchIndexParallel:
+		if httpMethod == http.MethodGet {
+			return makeRouterGetTaskPath(svcName, taskId)
+		} else if httpMethod == http.MethodPost && !shutDownTask {
+			return makeRouterCreateUpdateTaskPath(svcName)
+		} else if shutDownTask {
+			return makeRouterShutDownTaskPath(svcName, taskId)
+		}
+	case v1alpha1.HadoopIndexHadoop:
+	case v1alpha1.Kafka:
+	case v1alpha1.Kinesis:
+	case v1alpha1.QueryControllerSQL:
+	default:
+		return ""
+	}
+
+	return ""
+
+}
+
 func makeRouterCreateUpdateTaskPath(svcName string) string {
 	return svcName + "/druid/indexer/v1/task"
 }
 
+func makeRouterShutDownTaskPath(svcName, taskId string) string {
+	return svcName + "/druid/indexer/v1/task/" + taskId + "/shutdown"
+}
+
 func makeRouterGetTaskPath(svcName, taskId string) string {
 	return svcName + "/druid/indexer/v1/task/" + taskId
+}
+
+type taskHolder struct {
+	Task string `json:"task"`
+}
+
+func getTaskIdFromResponse(resp string) (string, error) {
+	var task taskHolder
+	if err := json.Unmarshal([]byte(resp), &task); err != nil {
+		return "", err
+	}
+	return task.Task, nil
 }
 
 func (r *DruidIngestionReconciler) getRouterSvcUrl(namespace, druidClusterName string) (string, error) {
@@ -190,11 +370,11 @@ func (r *DruidIngestionReconciler) getAuthCreds(ctx context.Context, di *v1alpha
 		return internalhttp.BasicAuth{}, err
 	}
 
-	if druid.Spec.Auth != (v1alpha1.Auth{}) {
+	if di.Spec.Auth != (v1alpha1.Auth{}) {
 		secret := v1.Secret{}
 		if err := r.Client.Get(ctx, types.NamespacedName{
-			Namespace: druid.Spec.Auth.SecretRef.Namespace,
-			Name:      druid.Spec.Auth.SecretRef.Name,
+			Namespace: di.Spec.Auth.SecretRef.Namespace,
+			Name:      di.Spec.Auth.SecretRef.Name,
 		},
 			&secret,
 		); err != nil {
@@ -246,4 +426,21 @@ func patchStatus(ctx context.Context, c client.Client, obj client.Object, transf
 		return nil, VerbUnchanged, err
 	}
 	return obj, VerbPatched, nil
+}
+
+func isEqualJson(s1, s2 string) (bool, error) {
+	var o1 interface{}
+	var o2 interface{}
+
+	var err error
+	err = json.Unmarshal([]byte(s1), &o1)
+	if err != nil {
+		return false, fmt.Errorf("Error mashalling string 1 :: %s", err.Error())
+	}
+	err = json.Unmarshal([]byte(s2), &o2)
+	if err != nil {
+		return false, fmt.Errorf("Error mashalling string 2 :: %s", err.Error())
+	}
+
+	return reflect.DeepEqual(o1, o2), nil
 }
