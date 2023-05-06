@@ -354,9 +354,9 @@ func (r *DruidIngestionReconciler) getRouterSvcUrl(namespace, druidClusterName s
 	if svcName == "" {
 		return "", errors.New("router svc discovery fail")
 	}
-	_ = "http://" + svcName + "." + namespace + ".svc.cluster.local:" + DruidRouterPort
+	newName := "http://" + svcName + "." + namespace + ".svc.cluster.local:" + DruidRouterPort
 
-	return "http://localhost:8088", nil
+	return newName, nil
 }
 
 func (r *DruidIngestionReconciler) getAuthCreds(ctx context.Context, di *v1alpha1.DruidIngestion) (internalhttp.BasicAuth, error) {
