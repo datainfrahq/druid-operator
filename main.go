@@ -101,7 +101,7 @@ func main() {
 	}
 
 	if err = (druidingestioncontrollers.NewDruidIngestionReconciler(mgr)).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Druid")
+		setupLog.Error(err, "unable to create controller", "controller", "DruidIngestion")
 		os.Exit(1)
 	}
 
