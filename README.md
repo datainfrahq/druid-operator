@@ -24,6 +24,7 @@
 - [Druid Summit](https://youtu.be/UqPrttXRBDg)
 - [Druid Operator Blog](https://www.cloudnatively.com/apache-druid-on-kubernetes/)
 - [Druid On K8s Without ZK](https://youtu.be/TRYOvkz5Wuw)
+- [Building Apache Druid on Kubernetes: How Dailymotion Serves Partner Data](https://youtu.be/FYFq-tGJOQk)
 
 ### Supported CR
 
