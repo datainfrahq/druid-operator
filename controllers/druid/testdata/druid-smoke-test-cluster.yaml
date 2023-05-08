@@ -206,7 +206,7 @@ spec:
         tls:
         - hosts:
           - broker.myhostname.com
-      secretName: tls-broker-druid-cluster
+          secretName: tls-broker-druid-cluster
       runtime.properties: |
         druid.service=druid/router
 
