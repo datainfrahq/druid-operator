@@ -1,6 +1,6 @@
 <h2 align="center">
   <picture>
-    <img alt="DataInfra Logo" src="https://raw.githubusercontent.com/datainfrahq/.github/main/images/logo.svg">
+    <img alt="DataInfra Logo" src="https://raw.githubusercontent.com/datainfrahq/.github/main/images/druid-operator.png"width="200" height="200">
   </picture>
   <br>
   Kubernetes Operator For Apache Druid
