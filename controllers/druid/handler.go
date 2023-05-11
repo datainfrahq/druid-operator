@@ -951,7 +951,12 @@ func makeCommonConfigMap(m *v1alpha1.Druid, ls map[string]string) (*v1.ConfigMap
 	if m.Spec.DimensionsMapPath != "" {
 		data["metricDimensions.json"] = m.Spec.DimensionsMapPath
 	}
-
+	if m.Spec.HdfsSite != "" {
+		data["hdfs-site.xml"] = m.Spec.HdfsSite
+	}
+	if m.Spec.CoreSite != "" {
+		data["core-site.xml"] = m.Spec.CoreSite
+	}
 	cfg, err := makeConfigMap(
 		fmt.Sprintf("%s-druid-common-config", m.ObjectMeta.Name),
 		m.Namespace,

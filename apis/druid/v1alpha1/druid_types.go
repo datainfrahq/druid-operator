@@ -233,6 +233,12 @@ type DruidSpec struct {
 	// Custom Dimension Map Path for statsd emitter
 	// +optional
 	DimensionsMapPath string `json:"metricDimensions.json,omitempty"`
+	// HDFS common config
+	// +optional
+	HdfsSite string `json:"hdfs-site.xml,omitempty"`
+
+	// +optional
+	CoreSite string `json:"core-site.xml,omitempty"`
 }
 
 type DruidNodeSpec struct {
