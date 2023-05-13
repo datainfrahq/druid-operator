@@ -75,7 +75,7 @@ func (r *DruidReconciler) Reconcile(ctx context.Context, request reconcile.Reque
 	if err := deployDruidCluster(ctx, r.Client, instance, emitEvent); err != nil {
 		return ctrl.Result{}, err
 	} else {
-		return ctrl.Result{RequeueAfter: time.Second * 2}, nil
+		return ctrl.Result{RequeueAfter: r.ReconcileWait}, nil
 	}
 }
 
