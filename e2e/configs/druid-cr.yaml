@@ -17,6 +17,23 @@ spec:
     httpGet:
       path: /status/health
       port: 8088
+  additionalContainer:
+  - containerName: mysqlconnector 
+    runAsInit: true
+    image: apache/druid:25.0.0
+    command:
+    - "sh"
+    - "-c"
+    - "wget -O /tmp/mysql-connector-j-8.0.32.tar.gz https://downloads.mysql.com/archives/get/p/3/file/mysql-connector-j-8.0.32.tar.gz && cd /tmp && tar -xf /tmp/mysql-connector-j-8.0.32.tar.gz && cp /tmp/mysql-connector-j-8.0.32/mysql-connector-j-8.0.32.jar /opt/druid/extensions/mysql-connector/mysql-connector-java.jar"
+    volumeMounts:
+    - name: mysqlconnector
+      mountPath: "/opt/druid/extensions/mysql-connector"
+  volumes:
+  - name: mysqlconnector
+    emptyDir: {} 
+  volumeMounts:
+  - name: mysqlconnector
+    mountPath: "/opt/druid/extensions/mysql-connector"
   securityContext:
     fsGroup: 0
     runAsUser: 0

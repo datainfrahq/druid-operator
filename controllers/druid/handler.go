@@ -1311,28 +1311,46 @@ func makePodSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, nodeSpecUn
 		},
 	)
 
+	var initContainer []v1.Container
+
 	if m.Spec.AdditionalContainer != nil {
-
 		for _, containerList := range m.Spec.AdditionalContainer {
-
-			containers = append(containers,
-				v1.Container{
-					Image:           containerList.Image,
-					Name:            containerList.ContainerName,
-					Resources:       containerList.Resources,
-					VolumeMounts:    containerList.VolumeMounts,
-					Command:         containerList.Command,
-					Args:            containerList.Args,
-					ImagePullPolicy: containerList.ImagePullPolicy,
-					SecurityContext: containerList.ContainerSecurityContext,
-					Env:             containerList.Env,
-					EnvFrom:         containerList.EnvFrom,
-				},
-			)
+			if containerList.RunAsInit {
+				initContainer = append(initContainer,
+					v1.Container{
+						Image:           containerList.Image,
+						Name:            containerList.ContainerName,
+						Resources:       containerList.Resources,
+						VolumeMounts:    containerList.VolumeMounts,
+						Command:         containerList.Command,
+						Args:            containerList.Args,
+						ImagePullPolicy: containerList.ImagePullPolicy,
+						SecurityContext: containerList.ContainerSecurityContext,
+						Env:             containerList.Env,
+						EnvFrom:         containerList.EnvFrom,
+					},
+				)
+			} else {
+				containers = append(containers,
+					v1.Container{
+						Image:           containerList.Image,
+						Name:            containerList.ContainerName,
+						Resources:       containerList.Resources,
+						VolumeMounts:    containerList.VolumeMounts,
+						Command:         containerList.Command,
+						Args:            containerList.Args,
+						ImagePullPolicy: containerList.ImagePullPolicy,
+						SecurityContext: containerList.ContainerSecurityContext,
+						Env:             containerList.Env,
+						EnvFrom:         containerList.EnvFrom,
+					},
+				)
+			}
 		}
 	}
 
 	spec := v1.PodSpec{
+		InitContainers:                initContainer,
 		NodeSelector:                  firstNonNilValue(nodeSpec.NodeSelector, m.Spec.NodeSelector).(map[string]string),
 		TopologySpreadConstraints:     getTopologySpreadConstraints(nodeSpec),
 		Tolerations:                   getTolerations(nodeSpec, m),

@@ -28,6 +28,8 @@ import (
 type AdditionalContainer struct {
 	// List of configurations to use which are not present or to override default implementation configurations
 
+	// +optional
+	RunAsInit bool `json:"runAsInit"`
 	// This is the image for the additional container to run.
 	// +required
 	Image string `json:"image"`
