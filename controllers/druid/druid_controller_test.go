@@ -9,17 +9,17 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalev2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/types"
-	autoscalev2 "k8s.io/api/autoscaling/v2"
 )
 
 // +kubebuilder:docs-gen:collapse=Imports
 
 /*
-	testDruidOperator
+testDruidOperator
 */
 var _ = Describe("Druid Operator", func() {
 
@@ -282,7 +282,7 @@ var _ = Describe("Druid Operator", func() {
 				configMapName := fmt.Sprintf("druid-%s-%s-config", druidCR.Name, componentName)
 				configMapNamespacedName := types.NamespacedName{Name: configMapName, Namespace: druidCR.Namespace}
 				runtimeProperties := fmt.Sprintf("druid.port=%d\n%s", druidCR.Spec.Nodes[componentName].DruidPort, druidCR.Spec.Nodes[componentName].RuntimeProperties)
-				jvmConfig := fmt.Sprintf("%s\n%s", druidCR.Spec.JvmOptions ,druidCR.Spec.Nodes[componentName].ExtraJvmOptions)
+				jvmConfig := fmt.Sprintf("%s\n%s", druidCR.Spec.JvmOptions, druidCR.Spec.Nodes[componentName].ExtraJvmOptions)
 				// Checking  the kubernetes service Type
 				By(fmt.Sprintf("By checking configmap check for %s config", configMapName))
 				Eventually(func() bool {
@@ -314,7 +314,7 @@ var _ = Describe("Druid Operator", func() {
 			Expect(createdHpa.Spec.MinReplicas).To(Equal(druidCR.Spec.Nodes[componentName].HPAutoScaler.MinReplicas))
 			// check for ScaleTargetRef
 			Expect(createdHpa.Spec.ScaleTargetRef).To(Equal(druidCR.Spec.Nodes[componentName].HPAutoScaler.ScaleTargetRef))
-		})		
+		})
 
 	})
 })

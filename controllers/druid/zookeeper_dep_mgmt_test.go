@@ -10,7 +10,7 @@ import (
 // +kubebuilder:docs-gen:collapse=Imports
 
 /*
-	zookeeper_dep_mgmt_test
+zookeeper_dep_mgmt_test
 */
 var _ = Describe("Test zookeeper dep mgmt", func() {
 	Context("When testing zookeeper dep mgmt", func() {

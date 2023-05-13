@@ -269,6 +269,8 @@ spec:
                             https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                           type: object
                       type: object
+                    runAsInit:
+                      type: boolean
                     securityContext:
                       description: ContainerSecurityContext. If not present, will
                         be taken from top level pod
