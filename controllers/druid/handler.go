@@ -518,11 +518,11 @@ func deleteOrphanPVC(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid
 						}
 					} else {
 						// wait for 60s
-						msg := fmt.Sprintf("pvc [%s:%s] mark to be deleted after %ds", pvcList[i].GetName(), drd.Namespace, timeDiff)
+						msg := fmt.Sprintf("pvc [%s:%s] marked to be deleted after %ds", pvcList[i].GetName(), drd.Namespace, timeDiff)
 						logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
 					}
 				} else {
-					// set labels when pvc comes for deletion for the deletion, then wait for 60s to delete it
+					// set labels when pvc comes for deletion for the first time
 					getPvcLabels := pvc.GetLabels()
 					getPvcLabels["toBeDeleted"] = "yes"
 					getPvcLabels["deletionTimestamp"] = strconv.FormatInt(time.Now().Unix(), 10)
@@ -532,7 +532,7 @@ func deleteOrphanPVC(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid
 					if err != nil {
 						return err
 					} else {
-						msg := fmt.Sprintf("pvc mark to be deleted, added labels %s and %s successfully [%s]", "toBeDeleted", "deletionTimestamp", pvc.GetName())
+						msg := fmt.Sprintf("marked pvc for deletion , added labels %s and %s successfully [%s]", "toBeDeleted", "deletionTimestamp", pvc.GetName())
 						logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
 					}
 				}
@@ -548,7 +548,7 @@ func deleteOrphanPVC(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid
 					if err != nil {
 						return err
 					} else {
-						msg := fmt.Sprintf("Deleted labels %s and %s successfully in pvc [%s]", "toBeDeleted", "deletionTimestamp", pvc.GetName())
+						msg := fmt.Sprintf("unmarked pvc for deletion, removed labels %s and %s successfully in pvc [%s]", "toBeDeleted", "deletionTimestamp", pvc.GetName())
 						logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
 					}
 				}
