@@ -1,7 +1,6 @@
 package druid
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -38,7 +37,7 @@ var _ = Describe("Druid Operator", func() {
 
 		It("Test druidCR creation - testDruidOperator", func() {
 			By("By creating a new druidCR")
-			Expect(k8sClient.Create(context.TODO(), druidCR)).To(Succeed())
+			Expect(k8sClient.Create(ctx, druidCR)).To(Succeed())
 
 			// Get CR and match ConfigMaps
 			expectedConfigMaps := []string{
@@ -51,7 +50,7 @@ var _ = Describe("Druid Operator", func() {
 
 			By("By getting a newly created druidCR")
 			Eventually(func() bool {
-				err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: druidCR.Name, Namespace: druidCR.Namespace}, druid)
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: druidCR.Name, Namespace: druidCR.Namespace}, druid)
 				if !areStringArraysEqual(druid.Status.ConfigMaps, expectedConfigMaps) {
 					return false
 				}
@@ -121,14 +120,14 @@ var _ = Describe("Druid Operator", func() {
 			By("By getting deployment and checking replicas")
 
 			Eventually(func() bool {
-				err := k8sClient.Get(context.TODO(), depNamespacedName, createdDeploy)
+				err := k8sClient.Get(ctx, depNamespacedName, createdDeploy)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
 			Expect(*createdDeploy.Spec.Replicas).To(Equal(druidCR.Spec.Nodes[componentName].Replicas))
 
 			Eventually(func() bool {
-				err := k8sClient.Get(context.TODO(), types.NamespacedName{Name: druidCR.Name, Namespace: druidCR.Namespace}, druid)
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: druidCR.Name, Namespace: druidCR.Namespace}, druid)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
@@ -139,17 +138,17 @@ var _ = Describe("Druid Operator", func() {
 				druid.Spec.Nodes[componentName] = druidRep
 			}
 			// updating CR
-			Expect(k8sClient.Update(context.TODO(), druid)).Should(Succeed())
+			Expect(k8sClient.Update(ctx, druid)).Should(Succeed())
 
 			// Fetch druid CR and check replicas
 			Eventually(func() bool {
-				k8sClient.Get(context.TODO(), depNamespacedName, druid)
+				k8sClient.Get(ctx, depNamespacedName, druid)
 				return druid.Spec.Nodes[componentName].Replicas == 2
 			}, timeout, interval).Should(BeTrue())
 
 			// Fetch deployment and check replicas
 			Eventually(func() bool {
-				k8sClient.Get(context.TODO(), depNamespacedName, createdDeploy)
+				k8sClient.Get(ctx, depNamespacedName, createdDeploy)
 				return *createdDeploy.Spec.Replicas == 2
 			}, timeout, interval).Should(BeTrue())
 		})
@@ -166,7 +165,7 @@ var _ = Describe("Druid Operator", func() {
 				// Match statefulset replicas
 				By(fmt.Sprintf("By getting statefulset and checking replicas for %s ", stsName))
 				Eventually(func() bool {
-					err := k8sClient.Get(context.TODO(), stsNamespacedName, createdSts)
+					err := k8sClient.Get(ctx, stsNamespacedName, createdSts)
 					return err == nil
 				}, timeout, interval).Should(BeTrue())
 				Expect(*createdSts.Spec.Replicas).To(Equal(druidCR.Spec.Nodes[componentName].Replicas))
@@ -178,17 +177,17 @@ var _ = Describe("Druid Operator", func() {
 					druid.Spec.Nodes[componentName] = druidRep
 				}
 				// updating CR
-				Expect(k8sClient.Update(context.TODO(), druid)).Should(Succeed())
+				Expect(k8sClient.Update(ctx, druid)).Should(Succeed())
 
 				// Fetch druid CR and check replicas
 				Eventually(func() bool {
-					k8sClient.Get(context.TODO(), types.NamespacedName{Name: druidCR.Name, Namespace: druidCR.Namespace}, druid)
+					k8sClient.Get(ctx, types.NamespacedName{Name: druidCR.Name, Namespace: druidCR.Namespace}, druid)
 					return druid.Spec.Nodes[componentName].Replicas == 2
 				}, timeout, interval).Should(BeTrue())
 
 				// Fetch statefulset and check replicas
 				Eventually(func() bool {
-					k8sClient.Get(context.TODO(), stsNamespacedName, createdSts)
+					k8sClient.Get(ctx, stsNamespacedName, createdSts)
 					return *createdSts.Spec.Replicas == 2
 				}, timeout, interval).Should(BeTrue())
 			})
@@ -205,7 +204,7 @@ var _ = Describe("Druid Operator", func() {
 				// Checking  the kubernetes service Type
 				By(fmt.Sprintf("By checking kubernetes service type %s ", serviceName))
 				Eventually(func() bool {
-					err := k8sClient.Get(context.TODO(), serviceNamespacedName, createdService)
+					err := k8sClient.Get(ctx, serviceNamespacedName, createdService)
 					return err == nil
 				}, timeout, interval).Should(BeTrue())
 				Expect(createdService.Spec.Type).To(Equal(druidCR.Spec.Services[0].Spec.Type))
@@ -226,7 +225,7 @@ var _ = Describe("Druid Operator", func() {
 			By(fmt.Sprintf("By checking kubernetes poddisruptionbudget for  %s ", pdbName))
 
 			Eventually(func() bool {
-				err := k8sClient.Get(context.TODO(), pdbNamespacedName, createdPdb)
+				err := k8sClient.Get(ctx, pdbNamespacedName, createdPdb)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 			Expect(createdPdb.Spec.MinAvailable).To(Equal(druidCR.Spec.Nodes[componentName].PodDisruptionBudgetSpec.MinAvailable))
@@ -241,7 +240,7 @@ var _ = Describe("Druid Operator", func() {
 			// Checking  the kubernetes service Type
 			By(fmt.Sprintf("By checking ingress for %s ", ingressName))
 			Eventually(func() bool {
-				err := k8sClient.Get(context.TODO(), ingressNamespacedName, createdIngress)
+				err := k8sClient.Get(ctx, ingressNamespacedName, createdIngress)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 			// check host and validate the domain
@@ -269,7 +268,7 @@ var _ = Describe("Druid Operator", func() {
 			By(fmt.Sprintf("By checking common configmap for %s config ", configMapName))
 
 			Eventually(func() bool {
-				err := k8sClient.Get(context.TODO(), configMapNamespacedName, createdConfigMap)
+				err := k8sClient.Get(ctx, configMapNamespacedName, createdConfigMap)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 			Expect(createdConfigMap.Data["metricDimensions.json"]).To(Equal(druidCR.Spec.DimensionsMapPath))
@@ -286,7 +285,7 @@ var _ = Describe("Druid Operator", func() {
 				// Checking  the kubernetes service Type
 				By(fmt.Sprintf("By checking configmap check for %s config", configMapName))
 				Eventually(func() bool {
-					err := k8sClient.Get(context.TODO(), configMapNamespacedName, createdConfigMap)
+					err := k8sClient.Get(ctx, configMapNamespacedName, createdConfigMap)
 					return err == nil
 				}, timeout, interval).Should(BeTrue())
 				Expect(createdConfigMap.Data["log4j2.xml"]).To(Equal(druidCR.Spec.Log4jConfig))
@@ -305,7 +304,7 @@ var _ = Describe("Druid Operator", func() {
 			// Checking  the kubernetes service Type
 			By(fmt.Sprintf("By checking horizontal pod autoscaler  for %s ", hpaName))
 			Eventually(func() bool {
-				err := k8sClient.Get(context.TODO(), hpaNamespacedName, createdHpa)
+				err := k8sClient.Get(ctx, hpaNamespacedName, createdHpa)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 			// check for max replicas
