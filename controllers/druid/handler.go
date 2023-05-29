@@ -394,7 +394,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		}
 	}
 
-	err = druidClusterStatusPatcher(sdk, updatedStatus, m, emitEvents)
+	err = druidClusterStatusPatcher(ctx, sdk, updatedStatus, m, emitEvents)
 	if err != nil {
 		return err
 	}
