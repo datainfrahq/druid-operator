@@ -18,6 +18,10 @@ import (
 	druidv1alpha1 "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 )
 
+var (
+	logger = ctrl.Log.WithName("controllers").WithName("Druid")
+)
+
 // DruidReconciler reconciles a Druid object
 type DruidReconciler struct {
 	client.Client
@@ -31,7 +35,7 @@ type DruidReconciler struct {
 func NewDruidReconciler(mgr ctrl.Manager) *DruidReconciler {
 	return &DruidReconciler{
 		Client:        mgr.GetClient(),
-		Log:           ctrl.Log.WithName("controllers").WithName("Druid"),
+		Log:           logger,
 		Scheme:        mgr.GetScheme(),
 		ReconcileWait: LookupReconcileTime(),
 		Recorder:      mgr.GetEventRecorderFor("druid-operator"),
@@ -72,7 +76,7 @@ func (r *DruidReconciler) Reconcile(ctx context.Context, request reconcile.Reque
 	// Initialize Emit Events
 	var emitEvent EventEmitter = EmitEventFuncs{r.Recorder}
 
-	if err := deployDruidCluster(ctx, r.Client, instance, emitEvent); err != nil {
+	if err := r.deployDruidCluster(ctx, r.Client, instance, emitEvent); err != nil {
 		return ctrl.Result{}, err
 	} else {
 		return ctrl.Result{RequeueAfter: r.ReconcileWait}, nil
@@ -96,6 +100,7 @@ func LookupReconcileTime() time.Duration {
 	} else {
 		v, err := time.ParseDuration(val)
 		if err != nil {
+
 			logger.Error(err, err.Error())
 			// Exit Program if not valid
 			os.Exit(1)

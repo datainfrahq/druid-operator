@@ -25,7 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -33,17 +32,15 @@ const (
 	defaultCommonConfigMountPath = "/druid/conf/druid/_common"
 )
 
-var logger = logf.Log.WithName("druid_operator_handler")
+func (r *DruidReconciler) deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmitter) error {
 
-func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmitter) error {
-
-	if err := verifyDruidSpec(m); err != nil {
+	if err := r.verifyDruidSpec(m); err != nil {
 		e := fmt.Errorf("invalid DruidSpec[%s:%s] due to [%s]", m.Kind, m.Name, err.Error())
 		emitEvents.EmitEventGeneric(m, "DruidOperatorInvalidSpec", "", e)
 		return nil
 	}
 
-	allNodeSpecs, err := getAllNodeSpecsInDruidPrescribedOrder(m)
+	allNodeSpecs, err := r.getAllNodeSpecsInDruidPrescribedOrder(m)
 	if err != nil {
 		e := fmt.Errorf("invalid DruidSpec[%s:%s] due to [%s]", m.Kind, m.Name, err.Error())
 		emitEvents.EmitEventGeneric(m, "DruidOperatorInvalidSpec", "", e)
@@ -70,7 +67,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		return err
 	}
 
-	if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
+	if _, err := r.sdkCreateOrUpdateAsNeeded(ctx, sdk,
 		func() (object, error) { return makeCommonConfigMap(m, ls) },
 		func() object { return &v1.ConfigMap{} },
 		alwaysTrueIsEqualsFn, noopUpdaterFn, m, configMapNames, emitEvents); err != nil {
@@ -90,13 +87,13 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 	if m.Spec.DisablePVCDeletionFinalizer == false {
 		md := m.GetDeletionTimestamp() != nil
 		if md {
-			return executeFinalizers(ctx, sdk, m, emitEvents)
+			return r.executeFinalizers(ctx, sdk, m, emitEvents)
 		}
 		/*
 			If finalizer isn't present add it to object meta.
 			In case cr is already deleted do not call this function
 		*/
-		cr := checkIfCRExists(ctx, sdk, m, emitEvents)
+		cr := r.checkIfCRExists(ctx, sdk, m, emitEvents)
 		if cr {
 			if !ContainsString(m.ObjectMeta.Finalizers, finalizerName) {
 				m.SetFinalizers(append(m.GetFinalizers(), finalizerName))
@@ -129,7 +126,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 			return err
 		}
 
-		if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
+		if _, err := r.sdkCreateOrUpdateAsNeeded(ctx, sdk,
 			func() (object, error) { return nodeConfig, nil },
 			func() object { return &v1.ConfigMap{} },
 			alwaysTrueIsEqualsFn, noopUpdaterFn, m, configMapNames, emitEvents); err != nil {
@@ -140,7 +137,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		firstServiceName := ""
 		services := firstNonNilValue(nodeSpec.Services, m.Spec.Services).([]v1.Service)
 		for _, svc := range services {
-			if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
+			if _, err := r.sdkCreateOrUpdateAsNeeded(ctx, sdk,
 				func() (object, error) { return makeService(&svc, &nodeSpec, m, lm, nodeSpecUniqueStr) },
 				func() object { return &v1.Service{} }, alwaysTrueIsEqualsFn,
 				func(prev, curr object) { (curr.(*v1.Service)).Spec.ClusterIP = (prev.(*v1.Service)).Spec.ClusterIP },
@@ -155,7 +152,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		nodeSpec.Ports = append(nodeSpec.Ports, v1.ContainerPort{ContainerPort: nodeSpec.DruidPort, Name: "druid-port"})
 
 		if nodeSpec.Kind == "Deployment" {
-			if deployCreateUpdateStatus, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
+			if deployCreateUpdateStatus, err := r.sdkCreateOrUpdateAsNeeded(ctx, sdk,
 				func() (object, error) {
 					return makeDeployment(&nodeSpec, m, lm, nodeSpecUniqueStr, fmt.Sprintf("%s-%s", commonConfigSHA, nodeConfigSHA), firstServiceName)
 				},
@@ -173,7 +170,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 				// will be sequential.
 				if m.Generation > 1 {
 					// Check Deployment rolling update status, if in-progress then stop here
-					done, err := isObjFullyDeployed(ctx, sdk, nodeSpec, nodeSpecUniqueStr, m, func() object { return &appsv1.Deployment{} }, emitEvents)
+					done, err := r.isObjFullyDeployed(ctx, sdk, nodeSpec, nodeSpecUniqueStr, m, func() object { return &appsv1.Deployment{} }, emitEvents)
 					if !done {
 						return err
 					}
@@ -185,8 +182,8 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 			//  Ignore for the first iteration ie cluster creation, else get sts shall unnecessary log errors.
 
 			if m.Generation > 1 && m.Spec.ScalePvcSts {
-				if isVolumeExpansionEnabled(ctx, sdk, m, &nodeSpec, emitEvents) {
-					err := scalePVCForSts(ctx, sdk, &nodeSpec, nodeSpecUniqueStr, m, emitEvents)
+				if r.isVolumeExpansionEnabled(ctx, sdk, m, &nodeSpec, emitEvents) {
+					err := r.scalePVCForSts(ctx, sdk, &nodeSpec, nodeSpecUniqueStr, m, emitEvents)
 					if err != nil {
 						return err
 					}
@@ -194,7 +191,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 			}
 
 			// Create/Update StatefulSet
-			if stsCreateUpdateStatus, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
+			if stsCreateUpdateStatus, err := r.sdkCreateOrUpdateAsNeeded(ctx, sdk,
 				func() (object, error) {
 					return makeStatefulSet(&nodeSpec, m, lm, nodeSpecUniqueStr, fmt.Sprintf("%s-%s", commonConfigSHA, nodeConfigSHA), firstServiceName)
 				},
@@ -209,14 +206,14 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 				}
 
 				// Default is set to true
-				execCheckCrashStatus(ctx, sdk, &nodeSpec, m, emitEvents)
+				r.execCheckCrashStatus(ctx, sdk, &nodeSpec, m, emitEvents)
 
 				// Ignore isObjFullyDeployed() for the first iteration ie cluster creation
 				// will force cluster creation in parallel, post first iteration rolling updates
 				// will be sequential.
 				if m.Generation > 1 {
 					//Check StatefulSet rolling update status, if in-progress then stop here
-					done, err := isObjFullyDeployed(ctx, sdk, nodeSpec, nodeSpecUniqueStr, m, func() object { return &appsv1.StatefulSet{} }, emitEvents)
+					done, err := r.isObjFullyDeployed(ctx, sdk, nodeSpec, nodeSpecUniqueStr, m, func() object { return &appsv1.StatefulSet{} }, emitEvents)
 					if !done {
 						return err
 					}
@@ -224,12 +221,12 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 			}
 
 			// Default is set to true
-			execCheckCrashStatus(ctx, sdk, &nodeSpec, m, emitEvents)
+			r.execCheckCrashStatus(ctx, sdk, &nodeSpec, m, emitEvents)
 		}
 
 		// Create Ingress Spec
 		if nodeSpec.Ingress != nil {
-			if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
+			if _, err := r.sdkCreateOrUpdateAsNeeded(ctx, sdk,
 				func() (object, error) {
 					return makeIngress(&nodeSpec, m, ls, nodeSpecUniqueStr)
 				},
@@ -241,7 +238,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 
 		// Create PodDisruptionBudget
 		if nodeSpec.PodDisruptionBudgetSpec != nil {
-			if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
+			if _, err := r.sdkCreateOrUpdateAsNeeded(ctx, sdk,
 				func() (object, error) { return makePodDisruptionBudget(&nodeSpec, m, lm, nodeSpecUniqueStr) },
 				func() object { return &policyv1.PodDisruptionBudget{} },
 				alwaysTrueIsEqualsFn, noopUpdaterFn, m, podDisruptionBudgetNames, emitEvents); err != nil {
@@ -251,7 +248,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 
 		// Create HPA Spec
 		if nodeSpec.HPAutoScaler != nil {
-			if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
+			if _, err := r.sdkCreateOrUpdateAsNeeded(ctx, sdk,
 				func() (object, error) {
 					return makeHorizontalPodAutoscaler(&nodeSpec, m, ls, nodeSpecUniqueStr)
 				},
@@ -263,7 +260,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 
 		if nodeSpec.PersistentVolumeClaim != nil {
 			for _, pvc := range nodeSpec.PersistentVolumeClaim {
-				if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
+				if _, err := r.sdkCreateOrUpdateAsNeeded(ctx, sdk,
 					func() (object, error) { return makePersistentVolumeClaim(&pvc, &nodeSpec, m, lm, nodeSpecUniqueStr) },
 					func() object { return &v1.PersistentVolumeClaim{} }, alwaysTrueIsEqualsFn,
 					noopUpdaterFn,
@@ -276,7 +273,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 
 	// Ignore on cluster creation
 	if m.Generation > 1 && m.Spec.DeleteOrphanPvc {
-		if err := deleteOrphanPVC(ctx, sdk, m, emitEvents); err != nil {
+		if err := r.deleteOrphanPVC(ctx, sdk, m, emitEvents); err != nil {
 			return err
 		}
 	}
@@ -284,7 +281,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 	//update status and delete unwanted resources
 	updatedStatus := v1alpha1.DruidClusterStatus{}
 
-	updatedStatus.StatefulSets = deleteUnusedResources(ctx, sdk, m, statefulSetNames, ls,
+	updatedStatus.StatefulSets = r.deleteUnusedResources(ctx, sdk, m, statefulSetNames, ls,
 		func() objectList { return &appsv1.StatefulSetList{} },
 		func(listObj runtime.Object) []object {
 			items := listObj.(*appsv1.StatefulSetList).Items
@@ -296,7 +293,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		}, emitEvents)
 	sort.Strings(updatedStatus.StatefulSets)
 
-	updatedStatus.Deployments = deleteUnusedResources(ctx, sdk, m, deploymentNames, ls,
+	updatedStatus.Deployments = r.deleteUnusedResources(ctx, sdk, m, deploymentNames, ls,
 		func() objectList { return &appsv1.DeploymentList{} },
 		func(listObj runtime.Object) []object {
 			items := listObj.(*appsv1.DeploymentList).Items
@@ -308,7 +305,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		}, emitEvents)
 	sort.Strings(updatedStatus.Deployments)
 
-	updatedStatus.HPAutoScalers = deleteUnusedResources(ctx, sdk, m, hpaNames, ls,
+	updatedStatus.HPAutoScalers = r.deleteUnusedResources(ctx, sdk, m, hpaNames, ls,
 		func() objectList { return &autoscalev2.HorizontalPodAutoscalerList{} },
 		func(listObj runtime.Object) []object {
 			items := listObj.(*autoscalev2.HorizontalPodAutoscalerList).Items
@@ -320,7 +317,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		}, emitEvents)
 	sort.Strings(updatedStatus.HPAutoScalers)
 
-	updatedStatus.Ingress = deleteUnusedResources(ctx, sdk, m, ingressNames, ls,
+	updatedStatus.Ingress = r.deleteUnusedResources(ctx, sdk, m, ingressNames, ls,
 		func() objectList { return &networkingv1.IngressList{} },
 		func(listObj runtime.Object) []object {
 			items := listObj.(*networkingv1.IngressList).Items
@@ -332,7 +329,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		}, emitEvents)
 	sort.Strings(updatedStatus.Ingress)
 
-	updatedStatus.PodDisruptionBudgets = deleteUnusedResources(ctx, sdk, m, podDisruptionBudgetNames, ls,
+	updatedStatus.PodDisruptionBudgets = r.deleteUnusedResources(ctx, sdk, m, podDisruptionBudgetNames, ls,
 		func() objectList { return &policyv1.PodDisruptionBudgetList{} },
 		func(listObj runtime.Object) []object {
 			items := listObj.(*policyv1.PodDisruptionBudgetList).Items
@@ -344,7 +341,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		}, emitEvents)
 	sort.Strings(updatedStatus.PodDisruptionBudgets)
 
-	updatedStatus.Services = deleteUnusedResources(ctx, sdk, m, serviceNames, ls,
+	updatedStatus.Services = r.deleteUnusedResources(ctx, sdk, m, serviceNames, ls,
 		func() objectList { return &v1.ServiceList{} },
 		func(listObj runtime.Object) []object {
 			items := listObj.(*v1.ServiceList).Items
@@ -356,7 +353,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		}, emitEvents)
 	sort.Strings(updatedStatus.Services)
 
-	updatedStatus.ConfigMaps = deleteUnusedResources(ctx, sdk, m, configMapNames, ls,
+	updatedStatus.ConfigMaps = r.deleteUnusedResources(ctx, sdk, m, configMapNames, ls,
 		func() objectList { return &v1.ConfigMapList{} },
 		func(listObj runtime.Object) []object {
 			items := listObj.(*v1.ConfigMapList).Items
@@ -402,7 +399,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 	return nil
 }
 
-func deleteSTSAndPVC(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid, stsList, pvcList []object, emitEvents EventEmitter) error {
+func (r *DruidReconciler) deleteSTSAndPVC(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid, stsList, pvcList []object, emitEvents EventEmitter) error {
 
 	for _, sts := range stsList {
 		err := writers.Delete(ctx, sdk, drd, sts, emitEvents, &client.DeleteAllOfOptions{})
@@ -421,7 +418,7 @@ func deleteSTSAndPVC(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid
 	return nil
 }
 
-func checkIfCRExists(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmitter) bool {
+func (r *DruidReconciler) checkIfCRExists(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmitter) bool {
 	_, err := readers.Get(ctx, sdk, m.Name, m, func() object { return &v1alpha1.Druid{} }, emitEvents)
 	if err != nil {
 		return false
@@ -430,7 +427,7 @@ func checkIfCRExists(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, 
 	}
 }
 
-func deleteOrphanPVC(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid, emitEvents EventEmitter) error {
+func (r *DruidReconciler) deleteOrphanPVC(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid, emitEvents EventEmitter) error {
 
 	podList, err := readers.List(ctx, sdk, drd, makeLabelsForDruid(drd.Name), emitEvents, func() objectList { return &v1.PodList{} }, func(listObj runtime.Object) []object {
 		items := listObj.(*v1.PodList).Items
@@ -495,7 +492,7 @@ func deleteOrphanPVC(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid
 					return err
 				} else {
 					msg := fmt.Sprintf("Deleted orphaned pvc [%s:%s] successfully", pvcList[i].GetName(), drd.Namespace)
-					logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
+					r.Log.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
 				}
 			}
 		}
@@ -503,7 +500,7 @@ func deleteOrphanPVC(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid
 	return nil
 }
 
-func executeFinalizers(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmitter) error {
+func (r *DruidReconciler) executeFinalizers(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmitter) error {
 
 	if ContainsString(m.ObjectMeta.Finalizers, finalizerName) {
 		pvcLabels := map[string]string{
@@ -536,13 +533,13 @@ func executeFinalizers(ctx context.Context, sdk client.Client, m *v1alpha1.Druid
 
 		msg := fmt.Sprintf("Trigerring finalizer for CR [%s] in namespace [%s]", m.Name, m.Namespace)
 		//		sendEvent(sdk, m, v1.EventTypeNormal, DruidFinalizer, msg)
-		logger.Info(msg)
-		if err := deleteSTSAndPVC(ctx, sdk, m, stsList, pvcList, emitEvents); err != nil {
+		r.Log.Info(msg)
+		if err := r.deleteSTSAndPVC(ctx, sdk, m, stsList, pvcList, emitEvents); err != nil {
 			return err
 		} else {
 			msg := fmt.Sprintf("Finalizer success for CR [%s] in namespace [%s]", m.Name, m.Namespace)
 			//			sendEvent(sdk, m, v1.EventTypeNormal, DruidFinalizerSuccess, msg)
-			logger.Info(msg)
+			r.Log.Info(msg)
 		}
 
 		// remove our finalizer from the list and update it.
@@ -558,17 +555,17 @@ func executeFinalizers(ctx context.Context, sdk client.Client, m *v1alpha1.Druid
 
 }
 
-func execCheckCrashStatus(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, event EventEmitter) {
+func (r *DruidReconciler) execCheckCrashStatus(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, event EventEmitter) {
 	if m.Spec.ForceDeleteStsPodOnError == false {
 		return
 	} else {
 		if nodeSpec.PodManagementPolicy == "OrderedReady" {
-			checkCrashStatus(ctx, sdk, m, event)
+			r.checkCrashStatus(ctx, sdk, m, event)
 		}
 	}
 }
 
-func checkCrashStatus(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid, emitEvents EventEmitter) error {
+func (r *DruidReconciler) checkCrashStatus(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid, emitEvents EventEmitter) error {
 
 	podList, err := readers.List(ctx, sdk, drd, makeLabelsForDruid(drd.Name), emitEvents, func() objectList { return &v1.PodList{} }, func(listObj runtime.Object) []object {
 		items := listObj.(*v1.PodList).Items
@@ -597,7 +594,7 @@ func checkCrashStatus(ctx context.Context, sdk client.Client, drd *v1alpha1.Drui
 							return err
 						} else {
 							msg := fmt.Sprintf("Deleted pod [%s] in namespace [%s], since it was in crashloopback state.", p.GetName(), p.GetNamespace())
-							logger.Info(msg, "Object", stringifyForLogging(p, drd), "name", drd.Name, "namespace", drd.Namespace)
+							r.Log.Info(msg, "Object", stringifyForLogging(p, drd), "name", drd.Name, "namespace", drd.Namespace)
 						}
 					}
 				}
@@ -608,7 +605,7 @@ func checkCrashStatus(ctx context.Context, sdk client.Client, drd *v1alpha1.Drui
 	return nil
 }
 
-func deleteUnusedResources(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid,
+func (r *DruidReconciler) deleteUnusedResources(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid,
 	names map[string]bool, selectorLabels map[string]string, emptyListObjFn func() objectList, itemsExtractorFn func(obj runtime.Object) []object, emitEvents EventEmitter) []string {
 
 	listOpts := []client.ListOption{
@@ -622,7 +619,7 @@ func deleteUnusedResources(ctx context.Context, sdk client.Client, drd *v1alpha1
 
 	if err := sdk.List(ctx, listObj, listOpts...); err != nil {
 		e := fmt.Errorf("failed to list [%s] due to [%s]", listObj.GetObjectKind().GroupVersionKind().Kind, err.Error())
-		logger.Error(e, e.Error(), "name", drd.Name, "namespace", drd.Namespace)
+		r.Log.Error(e, e.Error(), "name", drd.Name, "namespace", drd.Namespace)
 	} else {
 		for _, s := range itemsExtractorFn(listObj) {
 			if names[s.GetName()] == false {
@@ -647,7 +644,7 @@ func noopUpdaterFn(prev, curr object) {
 	// do nothing
 }
 
-func sdkCreateOrUpdateAsNeeded(
+func (r *DruidReconciler) sdkCreateOrUpdateAsNeeded(
 	ctx context.Context,
 	sdk client.Client,
 	objFn func() (object, error),
@@ -677,7 +674,7 @@ func sdkCreateOrUpdateAsNeeded(
 				}
 			} else {
 				e := fmt.Errorf("Failed to get [%s:%s] due to [%s].", obj.GetObjectKind().GroupVersionKind().Kind, obj.GetName(), err.Error())
-				logger.Error(e, e.Error(), "Prev object", stringifyForLogging(prevObj, drd), "name", drd.Name, "namespace", drd.Namespace)
+				r.Log.Error(e, e.Error(), "Prev object", stringifyForLogging(prevObj, drd), "name", drd.Name, "namespace", drd.Namespace)
 				emitEvent.EmitEventGeneric(drd, string(druidOjectGetFail), "", err)
 				return "", e
 			}
@@ -700,7 +697,7 @@ func sdkCreateOrUpdateAsNeeded(
 	}
 }
 
-func isObjFullyDeployed(ctx context.Context, sdk client.Client, nodeSpec v1alpha1.DruidNodeSpec, nodeSpecUniqueStr string, drd *v1alpha1.Druid, emptyObjFn func() object, emitEvent EventEmitter) (bool, error) {
+func (r *DruidReconciler) isObjFullyDeployed(ctx context.Context, sdk client.Client, nodeSpec v1alpha1.DruidNodeSpec, nodeSpecUniqueStr string, drd *v1alpha1.Druid, emptyObjFn func() object, emitEvent EventEmitter) (bool, error) {
 
 	// Get Object
 	obj, err := readers.Get(ctx, sdk, nodeSpecUniqueStr, drd, emptyObjFn, emitEvent)
@@ -735,7 +732,7 @@ func isObjFullyDeployed(ctx context.Context, sdk client.Client, nodeSpec v1alpha
 
 // scalePVCForSts shall expand the sts volumeclaimtemplates size as well as N no of pvc supported by the sts.
 // NOTE: To be called only if generation > 1
-func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.DruidNodeSpec, nodeSpecUniqueStr string, drd *v1alpha1.Druid, emitEvent EventEmitter) error {
+func (r *DruidReconciler) scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.DruidNodeSpec, nodeSpecUniqueStr string, drd *v1alpha1.Druid, emitEvent EventEmitter) error {
 
 	getSTSList, err := readers.List(ctx, sdk, drd, makeLabelsForDruid(drd.Name), emitEvent, func() objectList { return &appsv1.StatefulSetList{} }, func(listObj runtime.Object) []object {
 		items := listObj.(*appsv1.StatefulSetList).Items
@@ -781,7 +778,7 @@ func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.D
 		return nil
 	}
 
-	desVolumeClaimTemplateSize, currVolumeClaimTemplateSize, pvcSize := getVolumeClaimTemplateSizes(sts, nodeSpec, pvcList)
+	desVolumeClaimTemplateSize, currVolumeClaimTemplateSize, pvcSize := r.getVolumeClaimTemplateSizes(sts, nodeSpec, pvcList)
 
 	// current number of PVC can't be less than desired number of pvc
 	if len(pvcSize) < len(desVolumeClaimTemplateSize) {
@@ -800,7 +797,7 @@ func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.D
 
 		if desiredSize < currentSize {
 			e := fmt.Errorf("Request for Shrinking of sts pvc size [sts:%s] in [namespace:%s] is not Supported", sts.(*appsv1.StatefulSet).Name, sts.(*appsv1.StatefulSet).Namespace)
-			logger.Error(e, e.Error(), "name", drd.Name, "namespace", drd.Namespace)
+			r.Log.Error(e, e.Error(), "name", drd.Name, "namespace", drd.Namespace)
 			emitEvent.EmitEventGeneric(drd, "DruidOperatorPvcReSizeFail", "", err)
 			return e
 		}
@@ -809,14 +806,14 @@ func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.D
 		// The operator on next reconcile shall create the sts with latest changes
 		if desiredSize != currentSize {
 			msg := fmt.Sprintf("Detected Change in VolumeClaimTemplate Sizes for Statefuleset [%s] in Namespace [%s], desVolumeClaimTemplateSize: [%s], currVolumeClaimTemplateSize: [%s]\n, deleteing STS [%s] with casacde=false]", sts.(*appsv1.StatefulSet).Name, sts.(*appsv1.StatefulSet).Namespace, desVolumeClaimTemplateSize[i].String(), currVolumeClaimTemplateSize[i].String(), sts.(*appsv1.StatefulSet).Name)
-			logger.Info(msg)
+			r.Log.Info(msg)
 			emitEvent.EmitEventGeneric(drd, "DruidOperatorPvcReSizeDetected", msg, nil)
 
 			if err := writers.Delete(ctx, sdk, drd, sts, emitEvent, client.PropagationPolicy(metav1.DeletePropagationOrphan)); err != nil {
 				return err
 			} else {
 				msg := fmt.Sprintf("[StatefuleSet:%s] successfully deleted with casacde=false", sts.(*appsv1.StatefulSet).Name)
-				logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
+				r.Log.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
 				emitEvent.EmitEventGeneric(drd, "DruidOperatorStsOrphaned", msg, nil)
 			}
 
@@ -833,7 +830,7 @@ func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.D
 					return err
 				} else {
 					msg := fmt.Sprintf("[PVC:%s] successfully Patched with [Size:%s]", pvcList[p].(*v1.PersistentVolumeClaim).Name, desVolumeClaimTemplateSize[i].String())
-					logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
+					r.Log.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
 				}
 			}
 		}
@@ -847,7 +844,7 @@ func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.D
 // currVolumeClaimTemplateSize: the sts owned by druid CR holds this value in volumeclaimtemplate
 // pvcSize: the pvc referenced by the sts holds this value
 // type of vars is resource.Quantity. ref: https://godoc.org/k8s.io/apimachinery/pkg/api/resource
-func getVolumeClaimTemplateSizes(sts object, nodeSpec *v1alpha1.DruidNodeSpec, pvc []object) (desVolumeClaimTemplateSize, currVolumeClaimTemplateSize, pvcSize []resource.Quantity) {
+func (r *DruidReconciler) getVolumeClaimTemplateSizes(sts object, nodeSpec *v1alpha1.DruidNodeSpec, pvc []object) (desVolumeClaimTemplateSize, currVolumeClaimTemplateSize, pvcSize []resource.Quantity) {
 
 	for i := range nodeSpec.VolumeClaimTemplates {
 		desVolumeClaimTemplateSize = append(desVolumeClaimTemplateSize, nodeSpec.VolumeClaimTemplates[i].Spec.Resources.Requests[v1.ResourceStorage])
@@ -865,7 +862,7 @@ func getVolumeClaimTemplateSizes(sts object, nodeSpec *v1alpha1.DruidNodeSpec, p
 
 }
 
-func isVolumeExpansionEnabled(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, nodeSpec *v1alpha1.DruidNodeSpec, emitEvent EventEmitter) bool {
+func (r *DruidReconciler) isVolumeExpansionEnabled(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, nodeSpec *v1alpha1.DruidNodeSpec, emitEvent EventEmitter) bool {
 
 	for _, nodeVCT := range nodeSpec.VolumeClaimTemplates {
 		sc, err := readers.Get(ctx, sdk, *nodeVCT.Spec.StorageClassName, m, func() object { return &storage.StorageClass{} }, emitEvent)
@@ -1517,7 +1514,7 @@ func getPodNames(pods []object) []string {
 	return podNames
 }
 
-func sendEvent(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid, eventtype, reason, message string) {
+func (r *DruidReconciler) sendEvent(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid, eventtype, reason, message string) {
 
 	ref := &v1.ObjectReference{
 		Kind:            drd.Kind,
@@ -1554,11 +1551,11 @@ func sendEvent(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid, even
 	}
 
 	if err := sdk.Create(ctx, event); err != nil {
-		logger.Error(err, fmt.Sprintf("Failed to push event [%v]", event))
+		r.Log.Error(err, fmt.Sprintf("Failed to push event [%v]", event))
 	}
 }
 
-func verifyDruidSpec(drd *v1alpha1.Druid) error {
+func (r *DruidReconciler) verifyDruidSpec(drd *v1alpha1.Druid) error {
 	keyValidationRegex, err := regexp.Compile("[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*")
 	if err != nil {
 		return err
@@ -1589,7 +1586,7 @@ type keyAndNodeSpec struct {
 }
 
 // Recommended prescribed order is described at http://druid.io/docs/latest/operations/rolling-updates.html
-func getAllNodeSpecsInDruidPrescribedOrder(m *v1alpha1.Druid) ([]keyAndNodeSpec, error) {
+func (r *DruidReconciler) getAllNodeSpecsInDruidPrescribedOrder(m *v1alpha1.Druid) ([]keyAndNodeSpec, error) {
 	nodeSpecsByNodeType := map[string][]keyAndNodeSpec{
 		historical:    make([]keyAndNodeSpec, 0, 1),
 		overlord:      make([]keyAndNodeSpec, 0, 1),
