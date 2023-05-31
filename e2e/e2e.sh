@@ -21,6 +21,10 @@ make docker-push-local
 make docker-build-local-test
 # push to kind registry
 make docker-push-local-test
+# try to install the CRD with make
+make install
+# delete the crd
+make uninstall
 # install druid-operator
 make helm-install-druid-operator
 # install minio-operator and tenant
