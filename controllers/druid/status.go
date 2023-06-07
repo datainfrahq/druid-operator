@@ -42,21 +42,21 @@ func newDruidNodeTypeStatus(
 }
 
 // wrapper to patch druid cluster status
-func druidClusterStatusPatcher(sdk client.Client, updatedStatus v1alpha1.DruidClusterStatus, m *v1alpha1.Druid, emitEvent EventEmitter) error {
+func druidClusterStatusPatcher(ctx context.Context, sdk client.Client, updatedStatus v1alpha1.DruidClusterStatus, m *v1alpha1.Druid, emitEvent EventEmitter) error {
 
 	if !reflect.DeepEqual(updatedStatus, m.Status) {
 		patchBytes, err := json.Marshal(map[string]v1alpha1.DruidClusterStatus{"status": updatedStatus})
 		if err != nil {
 			return fmt.Errorf("failed to serialize status patch to bytes: %v", err)
 		}
-		_ = writers.Patch(context.TODO(), sdk, m, m, true, client.RawPatch(types.MergePatchType, patchBytes), emitEvent)
+		_ = writers.Patch(ctx, sdk, m, m, true, client.RawPatch(types.MergePatchType, patchBytes), emitEvent)
 	}
 	return nil
 }
 
 // In case of state change, patch the status and emit event.
 // emit events only on state change, to avoid event pollution.
-func druidNodeConditionStatusPatch(
+func druidNodeConditionStatusPatch(ctx context.Context,
 	updatedStatus v1alpha1.DruidClusterStatus,
 	sdk client.Client,
 	nodeSpecUniqueStr string,
@@ -66,12 +66,12 @@ func druidNodeConditionStatusPatch(
 
 	if !reflect.DeepEqual(updatedStatus.DruidNodeStatus, m.Status.DruidNodeStatus) {
 
-		err = druidClusterStatusPatcher(sdk, updatedStatus, m, emitEvent)
+		err = druidClusterStatusPatcher(ctx, sdk, updatedStatus, m, emitEvent)
 		if err != nil {
 			return err
 		}
 
-		obj, err := readers.Get(context.TODO(), sdk, nodeSpecUniqueStr, m, emptyObjFn, emitEvent)
+		obj, err := readers.Get(ctx, sdk, nodeSpecUniqueStr, m, emptyObjFn, emitEvent)
 		if err != nil {
 			return err
 		}
