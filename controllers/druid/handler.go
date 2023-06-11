@@ -33,6 +33,8 @@ import (
 const (
 	druidOpResourceHash          = "druidOpResourceHash"
 	defaultCommonConfigMountPath = "/druid/conf/druid/_common"
+	toBeDeletedLabel             = "toBeDeleted"
+	deletionTSLabel              = "deletionTS"
 )
 
 var logger = logf.Log.WithName("druid_operator_handler")
@@ -493,66 +495,88 @@ func deleteOrphanPVC(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid
 
 			if !ContainsString(mountedPVC, pvc.GetName()) {
 
-				if _, ok := pvc.GetLabels()["toBeDeleted"]; ok {
-					deletionTS := pvc.GetLabels()["deletionTimestamp"]
-
-					deletionTimestamp, err := strconv.ParseInt(deletionTS, 10, 64)
-
+				if _, ok := pvc.GetLabels()[toBeDeletedLabel]; ok {
+					err := checkPVCLabelsAndDelete(ctx, sdk, drd, emitEvents, pvcList[i])
 					if err != nil {
-						msg := fmt.Sprintf("Unable to parse label deletionTimestamp [%s:%s]", deletionTS, pvcList[i].GetName())
-						logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
 						return err
-					}
-
-					timeNow := time.Now().Unix()
-					timeDiff := timeDifference(deletionTimestamp, timeNow)
-
-					if timeDiff >= int64(time.Second/time.Second)*60 {
-						// delete pvc
-						err = writers.Delete(ctx, sdk, drd, pvcList[i], emitEvents, &client.DeleteAllOfOptions{})
-						if err != nil {
-							return err
-						} else {
-							msg := fmt.Sprintf("Deleted orphaned pvc [%s:%s] successfully", pvcList[i].GetName(), drd.Namespace)
-							logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
-						}
-					} else {
-						// wait for 60s
-						msg := fmt.Sprintf("pvc [%s:%s] marked to be deleted after %ds", pvcList[i].GetName(), drd.Namespace, timeDiff)
-						logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
 					}
 				} else {
 					// set labels when pvc comes for deletion for the first time
 					getPvcLabels := pvc.GetLabels()
-					getPvcLabels["toBeDeleted"] = "yes"
-					getPvcLabels["deletionTimestamp"] = strconv.FormatInt(time.Now().Unix(), 10)
-					pvc.SetLabels(getPvcLabels)
+					getPvcLabels[toBeDeletedLabel] = "yes"
+					getPvcLabels[deletionTSLabel] = strconv.FormatInt(time.Now().Unix(), 10)
 
-					_, err = writers.Update(ctx, sdk, drd, pvc, emitEvents)
+					err = setPVCLabels(ctx, sdk, drd, emitEvents, pvcList[i], getPvcLabels, true)
 					if err != nil {
 						return err
 					} else {
-						msg := fmt.Sprintf("marked pvc for deletion , added labels %s and %s successfully [%s]", "toBeDeleted", "deletionTimestamp", pvc.GetName())
-						logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
+						// do nothing
 					}
 				}
 			} else {
 				// do not delete pvc
-				if _, ok := pvc.GetLabels()["toBeDeleted"]; ok {
+				if _, ok := pvc.GetLabels()[toBeDeletedLabel]; ok {
 					getPvcLabels := pvc.GetLabels()
-					delete(getPvcLabels, "toBeDeleted")
-					delete(getPvcLabels, "deletionTimestamp")
-					pvc.SetLabels(getPvcLabels)
+					delete(getPvcLabels, toBeDeletedLabel)
+					delete(getPvcLabels, deletionTSLabel)
 
-					_, err = writers.Update(ctx, sdk, drd, pvc, emitEvents)
+					err = setPVCLabels(ctx, sdk, drd, emitEvents, pvcList[i], getPvcLabels, false)
 					if err != nil {
 						return err
 					} else {
-						msg := fmt.Sprintf("unmarked pvc for deletion, removed labels %s and %s successfully in pvc [%s]", "toBeDeleted", "deletionTimestamp", pvc.GetName())
-						logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
+						// do nothing
 					}
 				}
 			}
+		}
+	}
+	return nil
+}
+
+func checkPVCLabelsAndDelete(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid, emitEvents EventEmitter, pvc object) error {
+	deletionTS := pvc.GetLabels()[deletionTSLabel]
+
+	parsedDeletionTS, err := strconv.ParseInt(deletionTS, 10, 64)
+
+	if err != nil {
+		msg := fmt.Sprintf("Unable to parse label %s [%s:%s]", deletionTSLabel, deletionTS, pvc.GetName())
+		logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
+		return err
+	}
+
+	timeNow := time.Now().Unix()
+	timeDiff := timeDifference(parsedDeletionTS, timeNow)
+
+	if timeDiff >= int64(time.Second/time.Second)*60 {
+		// delete pvc
+		err = writers.Delete(ctx, sdk, drd, pvc, emitEvents, &client.DeleteAllOfOptions{})
+		if err != nil {
+			return err
+		} else {
+			msg := fmt.Sprintf("Deleted orphaned pvc [%s:%s] successfully", pvc.GetName(), drd.Namespace)
+			logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
+		}
+	} else {
+		// wait for 60s
+		msg := fmt.Sprintf("pvc [%s:%s] marked to be deleted after %ds", pvc.GetName(), drd.Namespace, 60-timeDiff)
+		logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
+	}
+	return nil
+}
+
+func setPVCLabels(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid, emitEvents EventEmitter, pvc object, labels map[string]string, isSetLabel bool) error {
+
+	pvc.SetLabels(labels)
+	_, err := writers.Update(ctx, sdk, drd, pvc, emitEvents)
+	if err != nil {
+		return err
+	} else {
+		if isSetLabel {
+			msg := fmt.Sprintf("marked pvc for deletion , added labels %s and %s successfully [%s]", toBeDeletedLabel, deletionTSLabel, pvc.GetName())
+			logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
+		} else {
+			msg := fmt.Sprintf("unmarked pvc for deletion, removed labels %s and %s successfully in pvc [%s]", toBeDeletedLabel, deletionTSLabel, pvc.GetName())
+			logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
 		}
 	}
 	return nil
