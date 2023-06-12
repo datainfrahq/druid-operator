@@ -81,3 +81,4 @@ fi
 
 echo "Test: ExtraCommonConfig => SUCCESS!"
 kind delete cluster
+
