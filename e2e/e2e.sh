@@ -49,9 +49,11 @@ done
 # Running test job with an example dataset 
 make deploy-testjob
 
+# Delete tiny cluster and start testing use-cases
+kubectl delete -f e2e/configs/druid-cr.yaml -n ${NAMESPACE}
+
 # Test: `ExtraCommonConfig`
-sed -i -e "s/NAMESPACE/${NAMESPACE}/g" e2e/configs/extra-common-config.yaml
-kubectl apply -f e2e/configs/extra-common-config.yaml
+sed -e "s/NAMESPACE/${NAMESPACE}/g" e2e/configs/extra-common-config.yaml | kubectl apply -f
 # hack for druid pods
 sleep 30
 # wait for druid pods
@@ -67,4 +69,5 @@ then
   echo "Test: ExtraCommonConfig => FAILED!"
 fi
 
+echo "Test: ExtraCommonConfig => SUCCESS!"
 kubectl delete -f e2e/configs/extra-common-config.yaml
