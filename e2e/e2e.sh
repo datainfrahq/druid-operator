@@ -63,9 +63,17 @@ for s in ${sts[@]}; do
   kubectl rollout status $s -n ${NAMESPACE}  --timeout=300s
 done
 
-extraData=$(kubectl get configmap -n $NAMESPACE extra-common-config-druid-common-config -o 'jsonpath={.data.test\.txt}')
-if [[ "$extraData" != "This Is Test"]]
+extraDataTXT=$(kubectl get configmap -n $NAMESPACE extra-common-config-druid-common-config -o 'jsonpath={.data.test\.txt}')
+if [[ "${extraDataTXT}" != "This Is Test" ]]
 then
+  echo "Bad value for key: test.txt"
+  echo "Test: ExtraCommonConfig => FAILED!"
+fi
+
+extraDataYAML=$(kubectl get configmap -n $NAMESPACE extra-common-config-druid-common-config -o 'jsonpath={.data.test\.yaml}')
+if [[ "${extraDataYAML}" != "YAML" ]]
+then
+  echo "Bad value for key: test.yaml"
   echo "Test: ExtraCommonConfig => FAILED!"
 fi
 

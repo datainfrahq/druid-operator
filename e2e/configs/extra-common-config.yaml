@@ -6,6 +6,8 @@ metadata:
 data:
   test.txt: |-
     This Is Test
+  test.yaml: |-
+    YAML
 ---
 apiVersion: druid.apache.org/v1alpha1
 kind: Druid
