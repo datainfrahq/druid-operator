@@ -49,6 +49,10 @@ done
 # Running test job with an example dataset 
 make deploy-testjob
 
+# Delete old druid
+kubectl delete -f e2e/configs/druid-cr.yaml -n ${NAMESPACE}
+sleep 30
+
 # Start testing use-cases
 # Test: `ExtraCommonConfig`
 sed -e "s/NAMESPACE/${NAMESPACE}/g" e2e/configs/extra-common-config.yaml | kubectl apply -n ${NAMESPACE} -f -
