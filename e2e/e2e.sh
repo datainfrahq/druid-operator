@@ -59,20 +59,20 @@ sed -e "s/NAMESPACE/${NAMESPACE}/g" e2e/configs/extra-common-config.yaml | kubec
 # hack for druid pods
 sleep 30
 # wait for druid pods
-declare -a sts=($( kubectl get sts -n ${NAMESPACE} -l app=${NAMESPACE} -o name| sort -r))
+declare -a sts=($( kubectl get sts -n ${NAMESPACE} -l app=${NAMESPACE} -l druid_cr=extra-common-config -o name| sort -r))
 for s in ${sts[@]}; do
   echo $s
   kubectl rollout status $s -n ${NAMESPACE}  --timeout=300s
 done
 
-extraDataTXT=$(kubectl get configmap -n $NAMESPACE tiny-cluster-druid-common-config -o 'jsonpath={.data.test\.txt}')
+extraDataTXT=$(kubectl get configmap -n $NAMESPACE extra-common-config-druid-common-config -o 'jsonpath={.data.test\.txt}')
 if [[ "${extraDataTXT}" != "This Is Test" ]]
 then
   echo "Bad value for key: test.txt"
   echo "Test: ExtraCommonConfig => FAILED!"
 fi
 
-extraDataYAML=$(kubectl get configmap -n $NAMESPACE tiny-cluster-druid-common-config -o 'jsonpath={.data.test\.yaml}')
+extraDataYAML=$(kubectl get configmap -n $NAMESPACE extra-common-config-druid-common-config -o 'jsonpath={.data.test\.yaml}')
 if [[ "${extraDataYAML}" != "YAML" ]]
 then
   echo "Bad value for key: test.yaml"

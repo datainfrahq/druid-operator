@@ -14,7 +14,7 @@ data:
 apiVersion: "druid.apache.org/v1alpha1"
 kind: "Druid"
 metadata:
-  name: tiny-cluster
+  name: extra-common-config
 spec:
   image: apache/druid:25.0.0
   # Optionally specify image for all nodes. Can be specify on nodes also
@@ -67,7 +67,7 @@ spec:
   common.runtime.properties: |
 
     # Zookeeper
-    druid.zk.service.host=tiny-cluster-zk-0.tiny-cluster-zk
+    druid.zk.service.host=extra-common-config-zk-0.extra-common-config-zk
     druid.zk.paths.base=/druid
     druid.zk.service.compress=false
 
@@ -410,7 +410,7 @@ roleRef:
 apiVersion: v1
 kind: Service
 metadata:
-  name: tiny-cluster-zk
+  name: extra-common-config-zk
 spec:
   clusterIP: None
   ports:
@@ -421,33 +421,33 @@ spec:
     - name: zk-elec-port
       port: 3888
   selector:
-    zk_cluster: tiny-cluster-zk
+    zk_cluster: extra-common-config-zk
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   labels:
-    zk_cluster: tiny-cluster-zk
-  name: tiny-cluster-zk
+    zk_cluster: extra-common-config-zk
+  name: extra-common-config-zk
 spec:
   replicas: 1
   selector:
     matchLabels:
-      zk_cluster: tiny-cluster-zk
-  serviceName: tiny-cluster-zk
+      zk_cluster: extra-common-config-zk
+  serviceName: extra-common-config-zk
   template:
     metadata:
       labels:
-        zk_cluster: tiny-cluster-zk
+        zk_cluster: extra-common-config-zk
     spec:
       containers:
         - env:
             - name: ZOO_SERVERS
-              value: server.1=tiny-cluster-zk-0.tiny-cluster-zk:2888:3888;2181
+              value: server.1=extra-common-config-zk-0.extra-common-config-zk:2888:3888;2181
             - name: SERVER_JVMFLAGS
               value: -Xms256m -Xmx256m
           image: zookeeper:3.7.0
-          name: tiny-cluster-zk
+          name: extra-common-config-zk
           command:
             - /bin/sh
           args:
