@@ -53,7 +53,7 @@ make deploy-testjob
 kubectl delete -f e2e/configs/druid-cr.yaml -n ${NAMESPACE}
 
 # Test: `ExtraCommonConfig`
-sed -e "s/NAMESPACE/${NAMESPACE}/g" e2e/configs/extra-common-config.yaml | kubectl apply -f -
+sed -e "s/NAMESPACE/${NAMESPACE}/g" e2e/configs/extra-common-config.yaml | kubectl apply -n ${NAMESPACE} -f -
 # hack for druid pods
 sleep 30
 # wait for druid pods
