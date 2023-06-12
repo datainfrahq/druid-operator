@@ -35,7 +35,7 @@ const (
 
 var logger = logf.Log.WithName("druid_operator_handler")
 
-func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmitter) error {
+func (r *DruidReconciler) deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmitter) error {
 
 	if err := verifyDruidSpec(m); err != nil {
 		e := fmt.Errorf("invalid DruidSpec[%s:%s] due to [%s]", m.Kind, m.Name, err.Error())
@@ -61,7 +61,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 
 	ls := makeLabelsForDruid(m.Name)
 
-	commonConfig, err := makeCommonConfigMap(m, ls)
+	commonConfig, err := r.makeCommonConfigMap(ctx, m, ls)
 	if err != nil {
 		return err
 	}
@@ -70,8 +70,8 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		return err
 	}
 
-	if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
-		func() (object, error) { return makeCommonConfigMap(m, ls) },
+	if _, err := r.sdkCreateOrUpdateAsNeeded(ctx,
+		func() (object, error) { return r.makeCommonConfigMap(ctx, m, ls) },
 		func() object { return &v1.ConfigMap{} },
 		alwaysTrueIsEqualsFn, noopUpdaterFn, m, configMapNames, emitEvents); err != nil {
 		return err
@@ -79,7 +79,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 
 	/*
 		Default Behavior: Finalizer shall be always executed resulting in deletion of pvc post deletion of Druid CR
-		When the object (druid CR) has for deletion time stamp set, execute the finalizer
+		When the object (druid CR) has for deletion time stamp set, execute the finalizer.
 		Finalizer shall execute the following flow :
 		1. Get sts List and PVC List
 		2. Range and Delete sts first and then delete pvc. PVC must be deleted after sts termination has been executed
@@ -129,7 +129,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 			return err
 		}
 
-		if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
+		if _, err := r.sdkCreateOrUpdateAsNeeded(ctx,
 			func() (object, error) { return nodeConfig, nil },
 			func() object { return &v1.ConfigMap{} },
 			alwaysTrueIsEqualsFn, noopUpdaterFn, m, configMapNames, emitEvents); err != nil {
@@ -140,7 +140,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		firstServiceName := ""
 		services := firstNonNilValue(nodeSpec.Services, m.Spec.Services).([]v1.Service)
 		for _, svc := range services {
-			if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
+			if _, err := r.sdkCreateOrUpdateAsNeeded(ctx,
 				func() (object, error) { return makeService(&svc, &nodeSpec, m, lm, nodeSpecUniqueStr) },
 				func() object { return &v1.Service{} }, alwaysTrueIsEqualsFn,
 				func(prev, curr object) { (curr.(*v1.Service)).Spec.ClusterIP = (prev.(*v1.Service)).Spec.ClusterIP },
@@ -155,7 +155,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		nodeSpec.Ports = append(nodeSpec.Ports, v1.ContainerPort{ContainerPort: nodeSpec.DruidPort, Name: "druid-port"})
 
 		if nodeSpec.Kind == "Deployment" {
-			if deployCreateUpdateStatus, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
+			if deployCreateUpdateStatus, err := r.sdkCreateOrUpdateAsNeeded(ctx,
 				func() (object, error) {
 					return makeDeployment(&nodeSpec, m, lm, nodeSpecUniqueStr, fmt.Sprintf("%s-%s", commonConfigSHA, nodeConfigSHA), firstServiceName)
 				},
@@ -181,7 +181,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 			}
 		} else {
 
-			//	scalePVCForSTS to be only called only if volumeExpansion is supported by the storage class.
+			//	scalePVCForSTS to be called only if volumeExpansion is supported by the storage class.
 			//  Ignore for the first iteration ie cluster creation, else get sts shall unnecessary log errors.
 
 			if m.Generation > 1 && m.Spec.ScalePvcSts {
@@ -194,7 +194,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 			}
 
 			// Create/Update StatefulSet
-			if stsCreateUpdateStatus, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
+			if stsCreateUpdateStatus, err := r.sdkCreateOrUpdateAsNeeded(ctx,
 				func() (object, error) {
 					return makeStatefulSet(&nodeSpec, m, lm, nodeSpecUniqueStr, fmt.Sprintf("%s-%s", commonConfigSHA, nodeConfigSHA), firstServiceName)
 				},
@@ -229,7 +229,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 
 		// Create Ingress Spec
 		if nodeSpec.Ingress != nil {
-			if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
+			if _, err := r.sdkCreateOrUpdateAsNeeded(ctx,
 				func() (object, error) {
 					return makeIngress(&nodeSpec, m, ls, nodeSpecUniqueStr)
 				},
@@ -241,7 +241,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 
 		// Create PodDisruptionBudget
 		if nodeSpec.PodDisruptionBudgetSpec != nil {
-			if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
+			if _, err := r.sdkCreateOrUpdateAsNeeded(ctx,
 				func() (object, error) { return makePodDisruptionBudget(&nodeSpec, m, lm, nodeSpecUniqueStr) },
 				func() object { return &policyv1.PodDisruptionBudget{} },
 				alwaysTrueIsEqualsFn, noopUpdaterFn, m, podDisruptionBudgetNames, emitEvents); err != nil {
@@ -251,7 +251,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 
 		// Create HPA Spec
 		if nodeSpec.HPAutoScaler != nil {
-			if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
+			if _, err := r.sdkCreateOrUpdateAsNeeded(ctx,
 				func() (object, error) {
 					return makeHorizontalPodAutoscaler(&nodeSpec, m, ls, nodeSpecUniqueStr)
 				},
@@ -263,7 +263,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 
 		if nodeSpec.PersistentVolumeClaim != nil {
 			for _, pvc := range nodeSpec.PersistentVolumeClaim {
-				if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
+				if _, err := r.sdkCreateOrUpdateAsNeeded(ctx,
 					func() (object, error) { return makePersistentVolumeClaim(&pvc, &nodeSpec, m, lm, nodeSpecUniqueStr) },
 					func() object { return &v1.PersistentVolumeClaim{} }, alwaysTrueIsEqualsFn,
 					noopUpdaterFn,
@@ -647,9 +647,8 @@ func noopUpdaterFn(prev, curr object) {
 	// do nothing
 }
 
-func sdkCreateOrUpdateAsNeeded(
+func (r *DruidReconciler) sdkCreateOrUpdateAsNeeded(
 	ctx context.Context,
-	sdk client.Client,
 	objFn func() (object, error),
 	emptyObjFn func() object,
 	isEqualFn func(prev, curr object) bool,
@@ -657,19 +656,23 @@ func sdkCreateOrUpdateAsNeeded(
 	drd *v1alpha1.Druid,
 	names map[string]bool,
 	emitEvent EventEmitter) (DruidNodeStatus, error) {
+
 	if obj, err := objFn(); err != nil {
 		return "", err
 	} else {
 		names[obj.GetName()] = true
 
 		addOwnerRefToObject(obj, asOwner(drd))
-		addHashToObject(obj)
+		err := addHashToObject(obj)
+		if err != nil {
+			return "", err
+		}
 
 		prevObj := emptyObjFn()
-		if err := sdk.Get(ctx, *namespacedName(obj.GetName(), obj.GetNamespace()), prevObj); err != nil {
+		if err := r.Client.Get(ctx, *namespacedName(obj.GetName(), obj.GetNamespace()), prevObj); err != nil {
 			if apierrors.IsNotFound(err) {
 				// resource does not exist, create it.
-				create, err := writers.Create(ctx, sdk, drd, obj, emitEvent)
+				create, err := writers.Create(ctx, r.Client, drd, obj, emitEvent)
 				if err != nil {
 					return "", err
 				} else {
@@ -687,7 +690,7 @@ func sdkCreateOrUpdateAsNeeded(
 
 				obj.SetResourceVersion(prevObj.GetResourceVersion())
 				updaterFn(prevObj, obj)
-				update, err := writers.Update(ctx, sdk, drd, obj, emitEvent)
+				update, err := writers.Update(ctx, r.Client, drd, obj, emitEvent)
 				if err != nil {
 					return "", err
 				} else {
@@ -917,87 +920,6 @@ func makeNodeSpecificUniqueString(m *v1alpha1.Druid, key string) string {
 	return fmt.Sprintf("druid-%s-%s", m.Name, key)
 }
 
-func makeCommonConfigMap(m *v1alpha1.Druid, ls map[string]string) (*v1.ConfigMap, error) {
-	prop := m.Spec.CommonRuntimeProperties
-
-	if m.Spec.Zookeeper != nil {
-		if zm, err := createZookeeperManager(m.Spec.Zookeeper); err != nil {
-			return nil, err
-		} else {
-			prop = prop + "\n" + zm.Configuration() + "\n"
-		}
-	}
-
-	if m.Spec.MetadataStore != nil {
-		if msm, err := createMetadataStoreManager(m.Spec.MetadataStore); err != nil {
-			return nil, err
-		} else {
-			prop = prop + "\n" + msm.Configuration() + "\n"
-		}
-	}
-
-	if m.Spec.DeepStorage != nil {
-		if dsm, err := createDeepStorageManager(m.Spec.DeepStorage); err != nil {
-			return nil, err
-		} else {
-			prop = prop + "\n" + dsm.Configuration() + "\n"
-		}
-	}
-
-	data := map[string]string{
-		"common.runtime.properties": prop,
-	}
-
-	if m.Spec.DimensionsMapPath != "" {
-		data["metricDimensions.json"] = m.Spec.DimensionsMapPath
-	}
-	if m.Spec.HdfsSite != "" {
-		data["hdfs-site.xml"] = m.Spec.HdfsSite
-	}
-	if m.Spec.CoreSite != "" {
-		data["core-site.xml"] = m.Spec.CoreSite
-	}
-	cfg, err := makeConfigMap(
-		fmt.Sprintf("%s-druid-common-config", m.ObjectMeta.Name),
-		m.Namespace,
-		ls,
-		data)
-	return cfg, err
-}
-
-func makeConfigMapForNodeSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, lm map[string]string, nodeSpecUniqueStr string) (*v1.ConfigMap, error) {
-
-	data := map[string]string{
-		"runtime.properties": fmt.Sprintf("druid.port=%d\n%s", nodeSpec.DruidPort, nodeSpec.RuntimeProperties),
-		"jvm.config":         fmt.Sprintf("%s\n%s", firstNonEmptyStr(nodeSpec.JvmOptions, m.Spec.JvmOptions), nodeSpec.ExtraJvmOptions),
-	}
-	log4jconfig := firstNonEmptyStr(nodeSpec.Log4jConfig, m.Spec.Log4jConfig)
-	if log4jconfig != "" {
-		data["log4j2.xml"] = log4jconfig
-	}
-
-	return makeConfigMap(
-		fmt.Sprintf("%s-config", nodeSpecUniqueStr),
-		m.Namespace,
-		lm,
-		data)
-}
-
-func makeConfigMap(name string, namespace string, labels map[string]string, data map[string]string) (*v1.ConfigMap, error) {
-	return &v1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "ConfigMap",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-			Labels:    labels,
-		},
-		Data: data,
-	}, nil
-}
-
 func makeService(svc *v1.Service, nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[string]string, nodeSpecUniqueStr string) (*v1.Service, error) {
 	svc.TypeMeta = metav1.TypeMeta{
 		APIVersion: "v1",
@@ -1077,10 +999,6 @@ func getVolumeMounts(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) []v1.V
 	volumeMount = append(volumeMount, m.Spec.VolumeMounts...)
 	volumeMount = append(volumeMount, nodeSpec.VolumeMounts...)
 	return volumeMount
-}
-
-func getNodeConfigMountPath(nodeSpec *v1alpha1.DruidNodeSpec) string {
-	return fmt.Sprintf("/druid/conf/druid/%s", nodeSpec.NodeType)
 }
 
 func getTolerations(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) []v1.Toleration {

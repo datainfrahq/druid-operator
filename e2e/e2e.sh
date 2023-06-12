@@ -48,3 +48,23 @@ done
 
 # Running test job with an example dataset 
 make deploy-testjob
+
+# Test: `ExtraCommonConfig`
+sed -i -e "s/NAMESPACE/${NAMESPACE}/g" e2e/configs/extra-common-config.yaml
+kubectl apply -f e2e/configs/extra-common-config.yaml
+# hack for druid pods
+sleep 30
+# wait for druid pods
+declare -a sts=($( kubectl get sts -n ${NAMESPACE} -l app=${NAMESPACE} -o name| sort -r))
+for s in ${sts[@]}; do
+  echo $s
+  kubectl rollout status $s -n ${NAMESPACE}  --timeout=300s
+done
+
+extraData=$(kubectl get configmap -n $NAMESPACE extra-common-config-druid-common-config -o 'jsonpath={.data.test\.txt}')
+if [[ "$extraData" != "This Is Test"]]
+then
+  echo "Test: ExtraCommonConfig => FAILED!"
+fi
+
+kubectl delete -f e2e/configs/extra-common-config.yaml

@@ -84,6 +84,10 @@ type DruidSpec struct {
 	// +required
 	CommonRuntimeProperties string `json:"common.runtime.properties"`
 
+	// References to ConfigMaps holding more files to mount to the CommonConfigMountPath.
+	// +optional
+	ExtraCommonConfig []*v1.ObjectReference `json:"extraCommonConfig"`
+
 	// Optional: Default is true, will delete the sts pod if sts is set to ordered ready to ensure
 	// issue: https://github.com/kubernetes/kubernetes/issues/67250
 	// doc: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#forced-rollback
