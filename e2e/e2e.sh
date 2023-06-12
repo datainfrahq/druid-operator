@@ -62,7 +62,7 @@ sleep 30
 declare -a sts=($( kubectl get sts -n ${NAMESPACE} -l app=${NAMESPACE} -l druid_cr=extra-common-config -o name| sort -r))
 for s in ${sts[@]}; do
   echo $s
-  kubectl rollout status $s -n ${NAMESPACE}  --timeout=300s
+  kubectl rollout status $s -n ${NAMESPACE}  --timeout=360s
 done
 
 extraDataTXT=$(kubectl get configmap -n $NAMESPACE extra-common-config-druid-common-config -o 'jsonpath={.data.test\.txt}')
