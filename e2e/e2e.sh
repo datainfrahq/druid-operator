@@ -42,16 +42,14 @@ sleep 30
 # wait for druid pods
 declare -a sts=($( kubectl get sts -n ${NAMESPACE} -l app=${NAMESPACE} -o name| sort -r))
 for s in ${sts[@]}; do
-  echo $s 
+  echo $s
   kubectl rollout status $s -n ${NAMESPACE}  --timeout=300s
 done
 
 # Running test job with an example dataset 
 make deploy-testjob
 
-# Delete tiny cluster and start testing use-cases
-kubectl delete -f e2e/configs/druid-cr.yaml -n ${NAMESPACE}
-
+# Start testing use-cases
 # Test: `ExtraCommonConfig`
 sed -e "s/NAMESPACE/${NAMESPACE}/g" e2e/configs/extra-common-config.yaml | kubectl apply -n ${NAMESPACE} -f -
 # hack for druid pods
@@ -63,14 +61,14 @@ for s in ${sts[@]}; do
   kubectl rollout status $s -n ${NAMESPACE}  --timeout=300s
 done
 
-extraDataTXT=$(kubectl get configmap -n $NAMESPACE extra-common-config-druid-common-config -o 'jsonpath={.data.test\.txt}')
+extraDataTXT=$(kubectl get configmap -n $NAMESPACE tiny-cluster-druid-common-config -o 'jsonpath={.data.test\.txt}')
 if [[ "${extraDataTXT}" != "This Is Test" ]]
 then
   echo "Bad value for key: test.txt"
   echo "Test: ExtraCommonConfig => FAILED!"
 fi
 
-extraDataYAML=$(kubectl get configmap -n $NAMESPACE extra-common-config-druid-common-config -o 'jsonpath={.data.test\.yaml}')
+extraDataYAML=$(kubectl get configmap -n $NAMESPACE tiny-cluster-druid-common-config -o 'jsonpath={.data.test\.yaml}')
 if [[ "${extraDataYAML}" != "YAML" ]]
 then
   echo "Bad value for key: test.yaml"
@@ -78,4 +76,4 @@ then
 fi
 
 echo "Test: ExtraCommonConfig => SUCCESS!"
-kubectl delete -f e2e/configs/extra-common-config.yaml
+kind delete cluster
