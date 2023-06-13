@@ -8,6 +8,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func makeConfigMap(name string, namespace string, labels map[string]string, data map[string]string) (*v1.ConfigMap, error) {
@@ -25,7 +26,7 @@ func makeConfigMap(name string, namespace string, labels map[string]string, data
 	}, nil
 }
 
-func (r *DruidReconciler) makeCommonConfigMap(ctx context.Context, m *v1alpha1.Druid, ls map[string]string) (*v1.ConfigMap, error) {
+func makeCommonConfigMap(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, ls map[string]string) (*v1.ConfigMap, error) {
 	prop := m.Spec.CommonRuntimeProperties
 
 	if m.Spec.Zookeeper != nil {
@@ -66,7 +67,7 @@ func (r *DruidReconciler) makeCommonConfigMap(ctx context.Context, m *v1alpha1.D
 		data["core-site.xml"] = m.Spec.CoreSite
 	}
 
-	if err := r.addExtraCommonConfig(ctx, m, data); err != nil {
+	if err := addExtraCommonConfig(ctx, sdk, m, data); err != nil {
 		return nil, err
 	}
 
@@ -78,18 +79,16 @@ func (r *DruidReconciler) makeCommonConfigMap(ctx context.Context, m *v1alpha1.D
 	return cfg, err
 }
 
-func (r *DruidReconciler) addExtraCommonConfig(ctx context.Context, m *v1alpha1.Druid, data map[string]string) error {
+func addExtraCommonConfig(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, data map[string]string) error {
 	if m.Spec.ExtraCommonConfig == nil {
 		return nil
 	}
 
 	for _, cmRef := range m.Spec.ExtraCommonConfig {
 		cm := &v1.ConfigMap{}
-		if err := r.Client.Get(ctx, types.NamespacedName{
+		if err := sdk.Get(ctx, types.NamespacedName{
 			Name:      cmRef.Name,
 			Namespace: cmRef.Namespace}, cm); err != nil {
-			r.Log.WithValues("Name", cmRef.Name, "Namespace", cmRef.Namespace).
-				Error(err, "failed getting extra ConfigMap")
 			// If a configMap is not found - output error and keep reconciliation
 			continue
 		}
@@ -97,9 +96,6 @@ func (r *DruidReconciler) addExtraCommonConfig(ctx context.Context, m *v1alpha1.
 		for fileName, fileContent := range cm.Data {
 			data[fileName] = fileContent
 		}
-
-		r.Log.WithValues("Name", cmRef.Name, "Namespace", cmRef.Namespace).
-			Info("Added extra configuration successfully.")
 	}
 
 	return nil

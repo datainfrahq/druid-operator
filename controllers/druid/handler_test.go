@@ -137,8 +137,7 @@ var _ = Describe("Test handler", func() {
 			filePath := "testdata/druid-test-cr.yaml"
 			clusterSpec, err := readDruidClusterSpecFromFile(filePath)
 			Expect(err).Should(BeNil())
-			dr := &DruidReconciler{}
-			actual, _ := dr.makeCommonConfigMap(ctx, clusterSpec, makeLabelsForDruid(clusterSpec.Name))
+			actual, _ := makeCommonConfigMap(ctx, k8sClient, clusterSpec, makeLabelsForDruid(clusterSpec.Name))
 			addHashToObject(actual)
 
 			expected := new(corev1.ConfigMap)

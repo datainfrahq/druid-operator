@@ -61,7 +61,7 @@ func (r *DruidReconciler) deployDruidCluster(ctx context.Context, sdk client.Cli
 
 	ls := makeLabelsForDruid(m.Name)
 
-	commonConfig, err := r.makeCommonConfigMap(ctx, m, ls)
+	commonConfig, err := makeCommonConfigMap(ctx, sdk, m, ls)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (r *DruidReconciler) deployDruidCluster(ctx context.Context, sdk client.Cli
 	}
 
 	if _, err := r.sdkCreateOrUpdateAsNeeded(ctx,
-		func() (object, error) { return r.makeCommonConfigMap(ctx, m, ls) },
+		func() (object, error) { return makeCommonConfigMap(ctx, sdk, m, ls) },
 		func() object { return &v1.ConfigMap{} },
 		alwaysTrueIsEqualsFn, noopUpdaterFn, m, configMapNames, emitEvents); err != nil {
 		return err
