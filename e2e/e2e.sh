@@ -29,21 +29,28 @@ make uninstall
 make helm-install-druid-operator
 # install minio-operator and tenant
 make helm-minio-install
-# hack for minio pod to get started
-sleep 60
+sleep 10
+for m in $(kubectl get pod -n minio-operator -o name)
+do
+  kubectl wait -n minio-operator "$m" --for=condition=Ready --timeout=5m
+done
+sleep 10
+kubectl wait pod -n ${NAMESPACE} -l app=minio --for=condition=Ready --timeout=5m
 # wait for minio pods
-kubectl rollout status sts $MINIO_STS_NAME -n ${NAMESPACE}  --timeout=300s
+kubectl rollout status sts $MINIO_STS_NAME -n ${NAMESPACE} --timeout=5m
 # output pods
 kubectl get pods -n ${NAMESPACE}
 # apply druid cr
 kubectl apply -f e2e/configs/druid-cr.yaml -n ${NAMESPACE}
-# hack for druid pods
-sleep 30
+sleep 10
+for d in $(kubectl get pods -n ${NAMESPACE} -l app=druid -l druid_cr=tiny-cluster -o name)
+do
+  kubectl wait -n ${NAMESPACE} "$d" --for=condition=Ready --timeout=5m
+done
 # wait for druid pods
-declare -a sts=($( kubectl get sts -n ${NAMESPACE} -l app=${NAMESPACE} -o name| sort -r))
-for s in ${sts[@]}; do
-  echo $s
-  kubectl rollout status $s -n ${NAMESPACE}  --timeout=300s
+for s in $(kubectl get sts -n ${NAMESPACE} -l app=${NAMESPACE} -l druid_cr=tiny-cluster -o name)
+do
+  kubectl rollout status "$s" -n ${NAMESPACE}  --timeout=5m
 done
 
 # Running test job with an example dataset 
@@ -51,34 +58,45 @@ make deploy-testjob
 
 # Delete old druid
 kubectl delete -f e2e/configs/druid-cr.yaml -n ${NAMESPACE}
-sleep 30
+for d in $(kubectl get pods -n ${NAMESPACE} -l app=druid -l druid_cr=tiny-cluster -o name)
+do
+  kubectl wait -n ${NAMESPACE} "$d" --for=delete --timeout=5m
+done
 
 # Start testing use-cases
 # Test: `ExtraCommonConfig`
 sed -e "s/NAMESPACE/${NAMESPACE}/g" e2e/configs/extra-common-config.yaml | kubectl apply -n ${NAMESPACE} -f -
-# hack for druid pods
-sleep 30
+sleep 10
+# Wait for ZooKeeper
+for z in $(kubectl get pods -n ${NAMESPACE} -l zk_cluster=extra-common-config-zk -o name)
+do
+  kubectl wait -n ${NAMESPACE} "$z" --for=condition=Ready --timeout=5m
+done
+# Wait for Druid
+for d in $(kubectl get pods -n ${NAMESPACE} -l app=druid -l druid_cr=extra-common-config -o name)
+do
+  kubectl wait -n ${NAMESPACE} "$d" --for=condition=Ready --timeout=5m
+done
 # wait for druid pods
-declare -a sts=($( kubectl get sts -n ${NAMESPACE} -l app=${NAMESPACE} -l druid_cr=extra-common-config -o name| sort -r))
-for s in ${sts[@]}; do
-  echo $s
-  kubectl rollout status $s -n ${NAMESPACE}  --timeout=360s
+for s in $(kubectl get sts -n ${NAMESPACE} -l app=${NAMESPACE} -l druid_cr=extra-common-config -o name)
+do
+  kubectl rollout status "$s" -n ${NAMESPACE}  --timeout=5m
 done
 
 extraDataTXT=$(kubectl get configmap -n $NAMESPACE extra-common-config-druid-common-config -o 'jsonpath={.data.test\.txt}')
 if [[ "${extraDataTXT}" != "This Is Test" ]]
 then
   echo "Bad value for key: test.txt"
-  echo "Test: ExtraCommonConfig => FAILED!"
+  echo "Test: ExtraCommonConfig => FAILED\!"
 fi
 
 extraDataYAML=$(kubectl get configmap -n $NAMESPACE extra-common-config-druid-common-config -o 'jsonpath={.data.test\.yaml}')
 if [[ "${extraDataYAML}" != "YAML" ]]
 then
   echo "Bad value for key: test.yaml"
-  echo "Test: ExtraCommonConfig => FAILED!"
+  echo "Test: ExtraCommonConfig => FAILED\!"
 fi
 
-echo "Test: ExtraCommonConfig => SUCCESS!"
+echo "Test: ExtraCommonConfig => SUCCESS\!"
 kind delete cluster
 
