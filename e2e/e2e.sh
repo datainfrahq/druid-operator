@@ -65,6 +65,8 @@ done
 
 # Start testing use-cases
 # Test: `ExtraCommonConfig`
+docker pull zookeeper:3.7.0
+kind load docker-image zookeeper:3.7.0
 sed -e "s/NAMESPACE/${NAMESPACE}/g" e2e/configs/extra-common-config.yaml | kubectl apply -n ${NAMESPACE} -f -
 sleep 10
 # Wait for ZooKeeper
