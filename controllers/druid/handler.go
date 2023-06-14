@@ -35,7 +35,7 @@ const (
 
 var logger = logf.Log.WithName("druid_operator_handler")
 
-func (r *DruidReconciler) deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmitter) error {
+func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmitter) error {
 
 	if err := verifyDruidSpec(m); err != nil {
 		e := fmt.Errorf("invalid DruidSpec[%s:%s] due to [%s]", m.Kind, m.Name, err.Error())
@@ -70,7 +70,7 @@ func (r *DruidReconciler) deployDruidCluster(ctx context.Context, sdk client.Cli
 		return err
 	}
 
-	if _, err := r.sdkCreateOrUpdateAsNeeded(ctx,
+	if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
 		func() (object, error) { return makeCommonConfigMap(ctx, sdk, m, ls) },
 		func() object { return &v1.ConfigMap{} },
 		alwaysTrueIsEqualsFn, noopUpdaterFn, m, configMapNames, emitEvents); err != nil {
@@ -129,7 +129,7 @@ func (r *DruidReconciler) deployDruidCluster(ctx context.Context, sdk client.Cli
 			return err
 		}
 
-		if _, err := r.sdkCreateOrUpdateAsNeeded(ctx,
+		if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
 			func() (object, error) { return nodeConfig, nil },
 			func() object { return &v1.ConfigMap{} },
 			alwaysTrueIsEqualsFn, noopUpdaterFn, m, configMapNames, emitEvents); err != nil {
@@ -140,7 +140,7 @@ func (r *DruidReconciler) deployDruidCluster(ctx context.Context, sdk client.Cli
 		firstServiceName := ""
 		services := firstNonNilValue(nodeSpec.Services, m.Spec.Services).([]v1.Service)
 		for _, svc := range services {
-			if _, err := r.sdkCreateOrUpdateAsNeeded(ctx,
+			if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
 				func() (object, error) { return makeService(&svc, &nodeSpec, m, lm, nodeSpecUniqueStr) },
 				func() object { return &v1.Service{} }, alwaysTrueIsEqualsFn,
 				func(prev, curr object) { (curr.(*v1.Service)).Spec.ClusterIP = (prev.(*v1.Service)).Spec.ClusterIP },
@@ -155,7 +155,7 @@ func (r *DruidReconciler) deployDruidCluster(ctx context.Context, sdk client.Cli
 		nodeSpec.Ports = append(nodeSpec.Ports, v1.ContainerPort{ContainerPort: nodeSpec.DruidPort, Name: "druid-port"})
 
 		if nodeSpec.Kind == "Deployment" {
-			if deployCreateUpdateStatus, err := r.sdkCreateOrUpdateAsNeeded(ctx,
+			if deployCreateUpdateStatus, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
 				func() (object, error) {
 					return makeDeployment(&nodeSpec, m, lm, nodeSpecUniqueStr, fmt.Sprintf("%s-%s", commonConfigSHA, nodeConfigSHA), firstServiceName)
 				},
@@ -194,7 +194,7 @@ func (r *DruidReconciler) deployDruidCluster(ctx context.Context, sdk client.Cli
 			}
 
 			// Create/Update StatefulSet
-			if stsCreateUpdateStatus, err := r.sdkCreateOrUpdateAsNeeded(ctx,
+			if stsCreateUpdateStatus, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
 				func() (object, error) {
 					return makeStatefulSet(&nodeSpec, m, lm, nodeSpecUniqueStr, fmt.Sprintf("%s-%s", commonConfigSHA, nodeConfigSHA), firstServiceName)
 				},
@@ -229,7 +229,7 @@ func (r *DruidReconciler) deployDruidCluster(ctx context.Context, sdk client.Cli
 
 		// Create Ingress Spec
 		if nodeSpec.Ingress != nil {
-			if _, err := r.sdkCreateOrUpdateAsNeeded(ctx,
+			if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
 				func() (object, error) {
 					return makeIngress(&nodeSpec, m, ls, nodeSpecUniqueStr)
 				},
@@ -241,7 +241,7 @@ func (r *DruidReconciler) deployDruidCluster(ctx context.Context, sdk client.Cli
 
 		// Create PodDisruptionBudget
 		if nodeSpec.PodDisruptionBudgetSpec != nil {
-			if _, err := r.sdkCreateOrUpdateAsNeeded(ctx,
+			if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
 				func() (object, error) { return makePodDisruptionBudget(&nodeSpec, m, lm, nodeSpecUniqueStr) },
 				func() object { return &policyv1.PodDisruptionBudget{} },
 				alwaysTrueIsEqualsFn, noopUpdaterFn, m, podDisruptionBudgetNames, emitEvents); err != nil {
@@ -251,7 +251,7 @@ func (r *DruidReconciler) deployDruidCluster(ctx context.Context, sdk client.Cli
 
 		// Create HPA Spec
 		if nodeSpec.HPAutoScaler != nil {
-			if _, err := r.sdkCreateOrUpdateAsNeeded(ctx,
+			if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
 				func() (object, error) {
 					return makeHorizontalPodAutoscaler(&nodeSpec, m, ls, nodeSpecUniqueStr)
 				},
@@ -263,7 +263,7 @@ func (r *DruidReconciler) deployDruidCluster(ctx context.Context, sdk client.Cli
 
 		if nodeSpec.PersistentVolumeClaim != nil {
 			for _, pvc := range nodeSpec.PersistentVolumeClaim {
-				if _, err := r.sdkCreateOrUpdateAsNeeded(ctx,
+				if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
 					func() (object, error) { return makePersistentVolumeClaim(&pvc, &nodeSpec, m, lm, nodeSpecUniqueStr) },
 					func() object { return &v1.PersistentVolumeClaim{} }, alwaysTrueIsEqualsFn,
 					noopUpdaterFn,
@@ -647,8 +647,9 @@ func noopUpdaterFn(prev, curr object) {
 	// do nothing
 }
 
-func (r *DruidReconciler) sdkCreateOrUpdateAsNeeded(
+func sdkCreateOrUpdateAsNeeded(
 	ctx context.Context,
+	sdk client.Client,
 	objFn func() (object, error),
 	emptyObjFn func() object,
 	isEqualFn func(prev, curr object) bool,
@@ -669,10 +670,10 @@ func (r *DruidReconciler) sdkCreateOrUpdateAsNeeded(
 		}
 
 		prevObj := emptyObjFn()
-		if err := r.Client.Get(ctx, *namespacedName(obj.GetName(), obj.GetNamespace()), prevObj); err != nil {
+		if err := sdk.Get(ctx, *namespacedName(obj.GetName(), obj.GetNamespace()), prevObj); err != nil {
 			if apierrors.IsNotFound(err) {
 				// resource does not exist, create it.
-				create, err := writers.Create(ctx, r.Client, drd, obj, emitEvent)
+				create, err := writers.Create(ctx, sdk, drd, obj, emitEvent)
 				if err != nil {
 					return "", err
 				} else {
@@ -690,7 +691,7 @@ func (r *DruidReconciler) sdkCreateOrUpdateAsNeeded(
 
 				obj.SetResourceVersion(prevObj.GetResourceVersion())
 				updaterFn(prevObj, obj)
-				update, err := writers.Update(ctx, r.Client, drd, obj, emitEvent)
+				update, err := writers.Update(ctx, sdk, drd, obj, emitEvent)
 				if err != nil {
 					return "", err
 				} else {
