@@ -664,10 +664,7 @@ func sdkCreateOrUpdateAsNeeded(
 		names[obj.GetName()] = true
 
 		addOwnerRefToObject(obj, asOwner(drd))
-		err := addHashToObject(obj)
-		if err != nil {
-			return "", err
-		}
+		addHashToObject(obj)
 
 		prevObj := emptyObjFn()
 		if err := sdk.Get(ctx, *namespacedName(obj.GetName(), obj.GetNamespace()), prevObj); err != nil {
