@@ -44,7 +44,7 @@
 - ```NOTE: User must be aware of this feature, there might be cases where crashloopback might be caused due probe failure, fault image etc, the operator shall keep on deleting on each re-concile loop. Default Behavior is True ```
 
 ## Scaling of Druid Nodes
-- Operator supports ```HPA autosaling/v2beta2``` Spec in the nodeSpec for druid nodes. In case HPA deployed, HPA controller maintains the replica count/state for the particular statefulset referenced.  Refer to ```examples.md``` for HPA configuration. 
+- Operator supports ```HPA autosaling/v2``` Spec in the nodeSpec for druid nodes. In case HPA deployed, HPA controller maintains the replica count/state for the particular statefulset referenced.  Refer to ```examples.md``` for HPA configuration. 
 - ```NOTE: Prefered to scale only brokers using HPA.```
 - In order to scale MM with HPA, its recommended not to use HPA. Refer to these discussions which have adderessed the issues in details.
 1. https://github.com/apache/druid/issues/8801#issuecomment-664020630
