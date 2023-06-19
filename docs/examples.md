@@ -364,3 +364,4 @@ spec:
         druid.metadata.storage.connector.user=<USERNAME>
         druid.metadata.storage.connector.password={ "type": "environment", "variable": "METADATA_STORAGE_PASSWORD" }
 ```
+
