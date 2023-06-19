@@ -335,3 +335,32 @@ spec:
         - mountPath: /hadoop-dependencies
           name: hadoop-dependencies
 ```
+
+## Secure Metadata Storage password
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: metadata-storage-password
+  namespace: <NAMESPACE>
+type: Opaque
+data:
+  METADATA_STORAGE_PASSWORD: <PASSWORD>
+---
+spec:
+  envFrom:
+    - secretRef:
+        name: metadata-storage-password
+  nodes:
+    master:
+      runtime.properties: |
+        # General
+        druid.service=druid/coordinator
+
+        # Metadata Storage
+        druid.metadata.storage.type=<TYPE>
+        druid.metadata.storage.connector.connectURI=<URI>
+        druid.metadata.storage.connector.user=<USERNAME>
+        druid.metadata.storage.connector.password={ "type": "environment", "variable": "METADATA_STORAGE_PASSWORD" }
+```
