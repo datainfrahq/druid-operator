@@ -509,8 +509,6 @@ func deleteOrphanPVC(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid
 					err = setPVCLabels(ctx, sdk, drd, emitEvents, pvcList[i], getPvcLabels, true)
 					if err != nil {
 						return err
-					} else {
-						// do nothing
 					}
 				}
 			} else {
@@ -523,8 +521,6 @@ func deleteOrphanPVC(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid
 					err = setPVCLabels(ctx, sdk, drd, emitEvents, pvcList[i], getPvcLabels, false)
 					if err != nil {
 						return err
-					} else {
-						// do nothing
 					}
 				}
 			}
