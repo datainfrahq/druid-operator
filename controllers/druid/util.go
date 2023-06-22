@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func firstNonEmptyStr(s1 string, s2 string) string {
@@ -76,4 +77,13 @@ func Str2Int(s string) int {
 		return 1
 	}
 	return i
+}
+
+// to find the time difference between two epoch times
+func timeDifference(epochTime1, epochTime2 int64) int64 {
+	t1 := time.Unix(epochTime1, 0)
+	t2 := time.Unix(epochTime2, 0)
+
+	diff := time.Duration(t2.Sub(t1))
+	return int64(diff.Seconds())
 }
