@@ -332,3 +332,63 @@ spec:
     - name: hadoop-mapred-site.xml
       namespace: druid
 ```
+
+## Install hadoop-dependencies With Init Container
+
+```yaml
+spec:
+  volumeMounts:
+    - mountPath: /opt/druid/hadoop-dependencies
+      name: hadoop-dependencies
+  volumes:
+    - emptyDir:
+        sizeLimit: 500Mi
+      name: hadoop-dependencies
+  additionalContainer:
+    - command:
+        - java
+        - -cp
+        - lib/*
+        - -Ddruid.extensions.hadoopDependenciesDir=/hadoop-dependencies
+        - org.apache.druid.cli.Main
+        - tools
+        - pull-deps
+        - -h
+        - org.apache.hadoop:hadoop-client:3.3.0
+        - --no-default-hadoop
+      containerName: hadoop-dependencies
+      image: apache/druid:25.0.0
+      runAsInit: true
+      volumeMounts:
+        - mountPath: /hadoop-dependencies
+          name: hadoop-dependencies
+```
+
+## Secure Metadata Storage password
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: metadata-storage-password
+  namespace: <NAMESPACE>
+type: Opaque
+data:
+  METADATA_STORAGE_PASSWORD: <PASSWORD>
+---
+spec:
+  envFrom:
+    - secretRef:
+        name: metadata-storage-password
+  nodes:
+    master:
+      runtime.properties: |
+        # General
+        druid.service=druid/coordinator
+
+        # Metadata Storage
+        druid.metadata.storage.type=<TYPE>
+        druid.metadata.storage.connector.connectURI=<URI>
+        druid.metadata.storage.connector.user=<USERNAME>
+        druid.metadata.storage.connector.password={ "type": "environment", "variable": "METADATA_STORAGE_PASSWORD" }
+```
