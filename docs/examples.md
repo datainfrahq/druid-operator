@@ -304,3 +304,31 @@
         - -instance=instance
         - -logFiles=logFiles
 ```
+
+## Add additional configuration file into _common directory
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hadoop-mapred-site.xml
+data:
+  mapred-site.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+    <configuration>
+        <property>
+            <name>dfs.nameservices</name>
+            <value>...</value>
+        </property>
+    </configuration>
+---
+apiVersion: druid.apache.org/v1alpha1
+kind: Druid
+metadata:
+  name: druid
+spec:
+  extraCommonConfig:
+    - name: hadoop-mapred-site.xml
+      namespace: druid
+```
