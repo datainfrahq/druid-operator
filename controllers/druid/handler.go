@@ -65,7 +65,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 
 	ls := makeLabelsForDruid(m.Name)
 
-	commonConfig, err := makeCommonConfigMap(m, ls)
+	commonConfig, err := makeCommonConfigMap(ctx, sdk, m, ls)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 	}
 
 	if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
-		func() (object, error) { return makeCommonConfigMap(m, ls) },
+		func() (object, error) { return makeCommonConfigMap(ctx, sdk, m, ls) },
 		func() object { return &v1.ConfigMap{} },
 		alwaysTrueIsEqualsFn, noopUpdaterFn, m, configMapNames, emitEvents); err != nil {
 		return err
@@ -83,7 +83,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 
 	/*
 		Default Behavior: Finalizer shall be always executed resulting in deletion of pvc post deletion of Druid CR
-		When the object (druid CR) has for deletion time stamp set, execute the finalizer
+		When the object (druid CR) has for deletion time stamp set, execute the finalizer.
 		Finalizer shall execute the following flow :
 		1. Get sts List and PVC List
 		2. Range and Delete sts first and then delete pvc. PVC must be deleted after sts termination has been executed
@@ -185,7 +185,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 			}
 		} else {
 
-			//	scalePVCForSTS to be only called only if volumeExpansion is supported by the storage class.
+			//	scalePVCForSTS to be called only if volumeExpansion is supported by the storage class.
 			//  Ignore for the first iteration ie cluster creation, else get sts shall unnecessary log errors.
 
 			if m.Generation > 1 && m.Spec.ScalePvcSts {
@@ -732,6 +732,7 @@ func sdkCreateOrUpdateAsNeeded(
 	drd *v1alpha1.Druid,
 	names map[string]bool,
 	emitEvent EventEmitter) (DruidNodeStatus, error) {
+
 	if obj, err := objFn(); err != nil {
 		return "", err
 	} else {
@@ -992,87 +993,6 @@ func makeNodeSpecificUniqueString(m *v1alpha1.Druid, key string) string {
 	return fmt.Sprintf("druid-%s-%s", m.Name, key)
 }
 
-func makeCommonConfigMap(m *v1alpha1.Druid, ls map[string]string) (*v1.ConfigMap, error) {
-	prop := m.Spec.CommonRuntimeProperties
-
-	if m.Spec.Zookeeper != nil {
-		if zm, err := createZookeeperManager(m.Spec.Zookeeper); err != nil {
-			return nil, err
-		} else {
-			prop = prop + "\n" + zm.Configuration() + "\n"
-		}
-	}
-
-	if m.Spec.MetadataStore != nil {
-		if msm, err := createMetadataStoreManager(m.Spec.MetadataStore); err != nil {
-			return nil, err
-		} else {
-			prop = prop + "\n" + msm.Configuration() + "\n"
-		}
-	}
-
-	if m.Spec.DeepStorage != nil {
-		if dsm, err := createDeepStorageManager(m.Spec.DeepStorage); err != nil {
-			return nil, err
-		} else {
-			prop = prop + "\n" + dsm.Configuration() + "\n"
-		}
-	}
-
-	data := map[string]string{
-		"common.runtime.properties": prop,
-	}
-
-	if m.Spec.DimensionsMapPath != "" {
-		data["metricDimensions.json"] = m.Spec.DimensionsMapPath
-	}
-	if m.Spec.HdfsSite != "" {
-		data["hdfs-site.xml"] = m.Spec.HdfsSite
-	}
-	if m.Spec.CoreSite != "" {
-		data["core-site.xml"] = m.Spec.CoreSite
-	}
-	cfg, err := makeConfigMap(
-		fmt.Sprintf("%s-druid-common-config", m.ObjectMeta.Name),
-		m.Namespace,
-		ls,
-		data)
-	return cfg, err
-}
-
-func makeConfigMapForNodeSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, lm map[string]string, nodeSpecUniqueStr string) (*v1.ConfigMap, error) {
-
-	data := map[string]string{
-		"runtime.properties": fmt.Sprintf("druid.port=%d\n%s", nodeSpec.DruidPort, nodeSpec.RuntimeProperties),
-		"jvm.config":         fmt.Sprintf("%s\n%s", firstNonEmptyStr(nodeSpec.JvmOptions, m.Spec.JvmOptions), nodeSpec.ExtraJvmOptions),
-	}
-	log4jconfig := firstNonEmptyStr(nodeSpec.Log4jConfig, m.Spec.Log4jConfig)
-	if log4jconfig != "" {
-		data["log4j2.xml"] = log4jconfig
-	}
-
-	return makeConfigMap(
-		fmt.Sprintf("%s-config", nodeSpecUniqueStr),
-		m.Namespace,
-		lm,
-		data)
-}
-
-func makeConfigMap(name string, namespace string, labels map[string]string, data map[string]string) (*v1.ConfigMap, error) {
-	return &v1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "ConfigMap",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-			Labels:    labels,
-		},
-		Data: data,
-	}, nil
-}
-
 func makeService(svc *v1.Service, nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[string]string, nodeSpecUniqueStr string) (*v1.Service, error) {
 	svc.TypeMeta = metav1.TypeMeta{
 		APIVersion: "v1",
@@ -1152,10 +1072,6 @@ func getVolumeMounts(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) []v1.V
 	volumeMount = append(volumeMount, m.Spec.VolumeMounts...)
 	volumeMount = append(volumeMount, nodeSpec.VolumeMounts...)
 	return volumeMount
-}
-
-func getNodeConfigMountPath(nodeSpec *v1alpha1.DruidNodeSpec) string {
-	return fmt.Sprintf("/druid/conf/druid/%s", nodeSpec.NodeType)
 }
 
 func getTolerations(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) []v1.Toleration {

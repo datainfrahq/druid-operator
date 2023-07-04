@@ -29,22 +29,41 @@ make uninstall
 make helm-install-druid-operator
 # install minio-operator and tenant
 make helm-minio-install
-# hack for minio pod to get started
-sleep 60
+sleep 10
+for m in $(kubectl get pod -n minio-operator -o name)
+do
+  kubectl wait -n minio-operator "$m" --for=condition=Ready --timeout=5m
+done
+sleep 10
+kubectl wait pod -n ${NAMESPACE} -l app=minio --for=condition=Ready --timeout=5m
 # wait for minio pods
-kubectl rollout status sts $MINIO_STS_NAME -n ${NAMESPACE}  --timeout=300s
+kubectl rollout status sts $MINIO_STS_NAME -n ${NAMESPACE} --timeout=5m
 # output pods
 kubectl get pods -n ${NAMESPACE}
 # apply druid cr
 kubectl apply -f e2e/configs/druid-cr.yaml -n ${NAMESPACE}
-# hack for druid pods
-sleep 30
+sleep 10
+for d in $(kubectl get pods -n ${NAMESPACE} -l app=druid -l druid_cr=tiny-cluster -o name)
+do
+  kubectl wait -n ${NAMESPACE} "$d" --for=condition=Ready --timeout=5m
+done
 # wait for druid pods
-declare -a sts=($( kubectl get sts -n ${NAMESPACE} -l app=${NAMESPACE} -o name| sort -r))
-for s in ${sts[@]}; do
-  echo $s 
-  kubectl rollout status $s -n ${NAMESPACE}  --timeout=300s
+for s in $(kubectl get sts -n ${NAMESPACE} -l app=${NAMESPACE} -l druid_cr=tiny-cluster -o name)
+do
+  kubectl rollout status "$s" -n ${NAMESPACE}  --timeout=5m
 done
 
-# Running test job with an example dataset 
+# Running test job with an example dataset
 make deploy-testjob
+
+# Delete old druid
+kubectl delete -f e2e/configs/druid-cr.yaml -n ${NAMESPACE}
+for d in $(kubectl get pods -n ${NAMESPACE} -l app=druid -l druid_cr=tiny-cluster -o name)
+do
+  kubectl wait -n ${NAMESPACE} "$d" --for=delete --timeout=5m
+done
+
+# Start testing use-cases
+bash e2e/test-extra-common-config.sh
+kind delete cluster
+
