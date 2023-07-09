@@ -224,8 +224,9 @@ type DruidSpec struct {
 	// If set to true then operator checks the rollout status of previous version StateSets before updating next.
 	// Used only for updates.
 
-	// +optional
-	RollingDeploy bool `json:"rollingDeploy,omitempty"`
+	// +required
+	// +kubebuilder:default:=true
+	RollingDeploy bool `json:"rollingDeploy"`
 
 	// futuristic stuff to make Druid dependency setup extensible from within Druid operator
 	// ignore for now.
