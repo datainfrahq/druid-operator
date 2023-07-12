@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strconv"
+	"time"
 
 	autoscalev2 "k8s.io/api/autoscaling/v2"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -31,6 +33,8 @@ import (
 const (
 	druidOpResourceHash          = "druidOpResourceHash"
 	defaultCommonConfigMountPath = "/druid/conf/druid/_common"
+	toBeDeletedLabel             = "toBeDeleted"
+	deletionTSLabel              = "deletionTS"
 )
 
 var logger = logf.Log.WithName("druid_operator_handler")
@@ -61,7 +65,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 
 	ls := makeLabelsForDruid(m.Name)
 
-	commonConfig, err := makeCommonConfigMap(m, ls)
+	commonConfig, err := makeCommonConfigMap(ctx, sdk, m, ls)
 	if err != nil {
 		return err
 	}
@@ -71,7 +75,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 	}
 
 	if _, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
-		func() (object, error) { return makeCommonConfigMap(m, ls) },
+		func() (object, error) { return makeCommonConfigMap(ctx, sdk, m, ls) },
 		func() object { return &v1.ConfigMap{} },
 		alwaysTrueIsEqualsFn, noopUpdaterFn, m, configMapNames, emitEvents); err != nil {
 		return err
@@ -79,7 +83,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 
 	/*
 		Default Behavior: Finalizer shall be always executed resulting in deletion of pvc post deletion of Druid CR
-		When the object (druid CR) has for deletion time stamp set, execute the finalizer
+		When the object (druid CR) has for deletion time stamp set, execute the finalizer.
 		Finalizer shall execute the following flow :
 		1. Get sts List and PVC List
 		2. Range and Delete sts first and then delete pvc. PVC must be deleted after sts termination has been executed
@@ -181,7 +185,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 			}
 		} else {
 
-			//	scalePVCForSTS to be only called only if volumeExpansion is supported by the storage class.
+			//	scalePVCForSTS to be called only if volumeExpansion is supported by the storage class.
 			//  Ignore for the first iteration ie cluster creation, else get sts shall unnecessary log errors.
 
 			if m.Generation > 1 && m.Spec.ScalePvcSts {
@@ -394,7 +398,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		}
 	}
 
-	err = druidClusterStatusPatcher(sdk, updatedStatus, m, emitEvents)
+	err = druidClusterStatusPatcher(ctx, sdk, updatedStatus, m, emitEvents)
 	if err != nil {
 		return err
 	}
@@ -490,14 +494,85 @@ func deleteOrphanPVC(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid
 		for i, pvc := range pvcList {
 
 			if !ContainsString(mountedPVC, pvc.GetName()) {
-				err := writers.Delete(ctx, sdk, drd, pvcList[i], emitEvents, &client.DeleteAllOfOptions{})
-				if err != nil {
-					return err
+
+				if _, ok := pvc.GetLabels()[toBeDeletedLabel]; ok {
+					err := checkPVCLabelsAndDelete(ctx, sdk, drd, emitEvents, pvcList[i])
+					if err != nil {
+						return err
+					}
 				} else {
-					msg := fmt.Sprintf("Deleted orphaned pvc [%s:%s] successfully", pvcList[i].GetName(), drd.Namespace)
-					logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
+					// set labels when pvc comes for deletion for the first time
+					getPvcLabels := pvc.GetLabels()
+					getPvcLabels[toBeDeletedLabel] = "yes"
+					getPvcLabels[deletionTSLabel] = strconv.FormatInt(time.Now().Unix(), 10)
+
+					err = setPVCLabels(ctx, sdk, drd, emitEvents, pvcList[i], getPvcLabels, true)
+					if err != nil {
+						return err
+					}
+				}
+			} else {
+				// do not delete pvc
+				if _, ok := pvc.GetLabels()[toBeDeletedLabel]; ok {
+					getPvcLabels := pvc.GetLabels()
+					delete(getPvcLabels, toBeDeletedLabel)
+					delete(getPvcLabels, deletionTSLabel)
+
+					err = setPVCLabels(ctx, sdk, drd, emitEvents, pvcList[i], getPvcLabels, false)
+					if err != nil {
+						return err
+					}
 				}
 			}
+		}
+	}
+	return nil
+}
+
+func checkPVCLabelsAndDelete(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid, emitEvents EventEmitter, pvc object) error {
+	deletionTS := pvc.GetLabels()[deletionTSLabel]
+
+	parsedDeletionTS, err := strconv.ParseInt(deletionTS, 10, 64)
+
+	if err != nil {
+		msg := fmt.Sprintf("Unable to parse label %s [%s:%s]", deletionTSLabel, deletionTS, pvc.GetName())
+		logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
+		return err
+	}
+
+	timeNow := time.Now().Unix()
+	timeDiff := timeDifference(parsedDeletionTS, timeNow)
+
+	if timeDiff >= int64(time.Second/time.Second)*60 {
+		// delete pvc
+		err = writers.Delete(ctx, sdk, drd, pvc, emitEvents, &client.DeleteAllOfOptions{})
+		if err != nil {
+			return err
+		} else {
+			msg := fmt.Sprintf("Deleted orphaned pvc [%s:%s] successfully", pvc.GetName(), drd.Namespace)
+			logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
+		}
+	} else {
+		// wait for 60s
+		msg := fmt.Sprintf("pvc [%s:%s] marked to be deleted after %ds", pvc.GetName(), drd.Namespace, 60-timeDiff)
+		logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
+	}
+	return nil
+}
+
+func setPVCLabels(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid, emitEvents EventEmitter, pvc object, labels map[string]string, isSetLabel bool) error {
+
+	pvc.SetLabels(labels)
+	_, err := writers.Update(ctx, sdk, drd, pvc, emitEvents)
+	if err != nil {
+		return err
+	} else {
+		if isSetLabel {
+			msg := fmt.Sprintf("marked pvc for deletion , added labels %s and %s successfully [%s]", toBeDeletedLabel, deletionTSLabel, pvc.GetName())
+			logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
+		} else {
+			msg := fmt.Sprintf("unmarked pvc for deletion, removed labels %s and %s successfully in pvc [%s]", toBeDeletedLabel, deletionTSLabel, pvc.GetName())
+			logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
 		}
 	}
 	return nil
@@ -657,6 +732,7 @@ func sdkCreateOrUpdateAsNeeded(
 	drd *v1alpha1.Druid,
 	names map[string]bool,
 	emitEvent EventEmitter) (DruidNodeStatus, error) {
+
 	if obj, err := objFn(); err != nil {
 		return "", err
 	} else {
@@ -917,82 +993,6 @@ func makeNodeSpecificUniqueString(m *v1alpha1.Druid, key string) string {
 	return fmt.Sprintf("druid-%s-%s", m.Name, key)
 }
 
-func makeCommonConfigMap(m *v1alpha1.Druid, ls map[string]string) (*v1.ConfigMap, error) {
-	prop := m.Spec.CommonRuntimeProperties
-
-	if m.Spec.Zookeeper != nil {
-		if zm, err := createZookeeperManager(m.Spec.Zookeeper); err != nil {
-			return nil, err
-		} else {
-			prop = prop + "\n" + zm.Configuration() + "\n"
-		}
-	}
-
-	if m.Spec.MetadataStore != nil {
-		if msm, err := createMetadataStoreManager(m.Spec.MetadataStore); err != nil {
-			return nil, err
-		} else {
-			prop = prop + "\n" + msm.Configuration() + "\n"
-		}
-	}
-
-	if m.Spec.DeepStorage != nil {
-		if dsm, err := createDeepStorageManager(m.Spec.DeepStorage); err != nil {
-			return nil, err
-		} else {
-			prop = prop + "\n" + dsm.Configuration() + "\n"
-		}
-	}
-
-	data := map[string]string{
-		"common.runtime.properties": prop,
-	}
-
-	if m.Spec.DimensionsMapPath != "" {
-		data["metricDimensions.json"] = m.Spec.DimensionsMapPath
-	}
-
-	cfg, err := makeConfigMap(
-		fmt.Sprintf("%s-druid-common-config", m.ObjectMeta.Name),
-		m.Namespace,
-		ls,
-		data)
-	return cfg, err
-}
-
-func makeConfigMapForNodeSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, lm map[string]string, nodeSpecUniqueStr string) (*v1.ConfigMap, error) {
-
-	data := map[string]string{
-		"runtime.properties": fmt.Sprintf("druid.port=%d\n%s", nodeSpec.DruidPort, nodeSpec.RuntimeProperties),
-		"jvm.config":         fmt.Sprintf("%s\n%s", firstNonEmptyStr(nodeSpec.JvmOptions, m.Spec.JvmOptions), nodeSpec.ExtraJvmOptions),
-	}
-	log4jconfig := firstNonEmptyStr(nodeSpec.Log4jConfig, m.Spec.Log4jConfig)
-	if log4jconfig != "" {
-		data["log4j2.xml"] = log4jconfig
-	}
-
-	return makeConfigMap(
-		fmt.Sprintf("%s-config", nodeSpecUniqueStr),
-		m.Namespace,
-		lm,
-		data)
-}
-
-func makeConfigMap(name string, namespace string, labels map[string]string, data map[string]string) (*v1.ConfigMap, error) {
-	return &v1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "ConfigMap",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-			Labels:    labels,
-		},
-		Data: data,
-	}, nil
-}
-
 func makeService(svc *v1.Service, nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[string]string, nodeSpecUniqueStr string) (*v1.Service, error) {
 	svc.TypeMeta = metav1.TypeMeta{
 		APIVersion: "v1",
@@ -1072,10 +1072,6 @@ func getVolumeMounts(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) []v1.V
 	volumeMount = append(volumeMount, m.Spec.VolumeMounts...)
 	volumeMount = append(volumeMount, nodeSpec.VolumeMounts...)
 	return volumeMount
-}
-
-func getNodeConfigMountPath(nodeSpec *v1alpha1.DruidNodeSpec) string {
-	return fmt.Sprintf("/druid/conf/druid/%s", nodeSpec.NodeType)
 }
 
 func getTolerations(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) []v1.Toleration {
@@ -1306,28 +1302,46 @@ func makePodSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, nodeSpecUn
 		},
 	)
 
+	var initContainer []v1.Container
+
 	if m.Spec.AdditionalContainer != nil {
-
 		for _, containerList := range m.Spec.AdditionalContainer {
-
-			containers = append(containers,
-				v1.Container{
-					Image:           containerList.Image,
-					Name:            containerList.ContainerName,
-					Resources:       containerList.Resources,
-					VolumeMounts:    containerList.VolumeMounts,
-					Command:         containerList.Command,
-					Args:            containerList.Args,
-					ImagePullPolicy: containerList.ImagePullPolicy,
-					SecurityContext: containerList.ContainerSecurityContext,
-					Env:             containerList.Env,
-					EnvFrom:         containerList.EnvFrom,
-				},
-			)
+			if containerList.RunAsInit {
+				initContainer = append(initContainer,
+					v1.Container{
+						Image:           containerList.Image,
+						Name:            containerList.ContainerName,
+						Resources:       containerList.Resources,
+						VolumeMounts:    containerList.VolumeMounts,
+						Command:         containerList.Command,
+						Args:            containerList.Args,
+						ImagePullPolicy: containerList.ImagePullPolicy,
+						SecurityContext: containerList.ContainerSecurityContext,
+						Env:             containerList.Env,
+						EnvFrom:         containerList.EnvFrom,
+					},
+				)
+			} else {
+				containers = append(containers,
+					v1.Container{
+						Image:           containerList.Image,
+						Name:            containerList.ContainerName,
+						Resources:       containerList.Resources,
+						VolumeMounts:    containerList.VolumeMounts,
+						Command:         containerList.Command,
+						Args:            containerList.Args,
+						ImagePullPolicy: containerList.ImagePullPolicy,
+						SecurityContext: containerList.ContainerSecurityContext,
+						Env:             containerList.Env,
+						EnvFrom:         containerList.EnvFrom,
+					},
+				)
+			}
 		}
 	}
 
 	spec := v1.PodSpec{
+		InitContainers:                initContainer,
 		NodeSelector:                  firstNonNilValue(nodeSpec.NodeSelector, m.Spec.NodeSelector).(map[string]string),
 		TopologySpreadConstraints:     getTopologySpreadConstraints(nodeSpec),
 		Tolerations:                   getTolerations(nodeSpec, m),

@@ -28,6 +28,8 @@ import (
 type AdditionalContainer struct {
 	// List of configurations to use which are not present or to override default implementation configurations
 
+	// +optional
+	RunAsInit bool `json:"runAsInit"`
 	// This is the image for the additional container to run.
 	// +required
 	Image string `json:"image"`
@@ -81,6 +83,10 @@ type DruidSpec struct {
 	// common.runtime.properties contents
 	// +required
 	CommonRuntimeProperties string `json:"common.runtime.properties"`
+
+	// References to ConfigMaps holding more files to mount to the CommonConfigMountPath.
+	// +optional
+	ExtraCommonConfig []*v1.ObjectReference `json:"extraCommonConfig"`
 
 	// Optional: Default is true, will delete the sts pod if sts is set to ordered ready to ensure
 	// issue: https://github.com/kubernetes/kubernetes/issues/67250
@@ -218,8 +224,9 @@ type DruidSpec struct {
 	// If set to true then operator checks the rollout status of previous version StateSets before updating next.
 	// Used only for updates.
 
-	// +optional
-	RollingDeploy bool `json:"rollingDeploy,omitempty"`
+	// +required
+	// +kubebuilder:default:=true
+	RollingDeploy bool `json:"rollingDeploy"`
 
 	// futuristic stuff to make Druid dependency setup extensible from within Druid operator
 	// ignore for now.
@@ -233,6 +240,12 @@ type DruidSpec struct {
 	// Custom Dimension Map Path for statsd emitter
 	// +optional
 	DimensionsMapPath string `json:"metricDimensions.json,omitempty"`
+	// HDFS common config
+	// +optional
+	HdfsSite string `json:"hdfs-site.xml,omitempty"`
+
+	// +optional
+	CoreSite string `json:"core-site.xml,omitempty"`
 }
 
 type DruidNodeSpec struct {

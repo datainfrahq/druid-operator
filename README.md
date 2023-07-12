@@ -1,6 +1,6 @@
 <h2 align="center">
   <picture>
-    <img alt="DataInfra Logo" src="https://raw.githubusercontent.com/datainfrahq/.github/main/images/logo.svg">
+    <img alt="DataInfra Logo" src="https://raw.githubusercontent.com/datainfrahq/.github/main/images/druid-operator.png"width="200" height="200">
   </picture>
   <br>
   Kubernetes Operator For Apache Druid
@@ -29,6 +29,7 @@ Feel free to join Kubernetes slack and join [druid-operator](https://kubernetes.
 - [Druid Summit](https://youtu.be/UqPrttXRBDg)
 - [Druid Operator Blog](https://www.cloudnatively.com/apache-druid-on-kubernetes/)
 - [Druid On K8s Without ZK](https://youtu.be/TRYOvkz5Wuw)
+- [Building Apache Druid on Kubernetes: How Dailymotion Serves Partner Data](https://youtu.be/FYFq-tGJOQk)
 
 ### Supported CR
 

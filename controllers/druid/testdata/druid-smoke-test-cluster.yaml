@@ -27,6 +27,30 @@ spec:
         type: ClusterIP
         clusterIP: None
   commonConfigMountPath: "/opt/druid/conf/druid/cluster/_common"
+  hdfs-site.xml: |-
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <Configuration>
+      <Property>
+        <Name>dfs.replication</Name>
+        <Value>1</Value>
+      </Property>
+      <Property>
+        <Name>dfs.client.use.datanode.hostname</Name>
+        <Value>true</Value>
+      </Property>
+      <Property>
+        <Name>dfs.datanode.use.datanode.hostname</Name>
+        <Value>true</Value>
+      </Property>
+    </Configuration>
+  core-site.xml: |-
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <Configuration>
+      <Property>
+        <Name>fs.defaultFS</Name>
+        <Value>hdfs://HOSTNAME:9000</Value>
+      </Property>
+    </Configuration>
   jvm.options: |-
     -server
     -XX:MaxDirectMemorySize=10240g
@@ -206,7 +230,7 @@ spec:
         tls:
         - hosts:
           - broker.myhostname.com
-      secretName: tls-broker-druid-cluster
+          secretName: tls-broker-druid-cluster
       runtime.properties: |
         druid.service=druid/router
 

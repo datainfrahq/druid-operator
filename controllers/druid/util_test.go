@@ -13,7 +13,7 @@ import (
 // +kubebuilder:docs-gen:collapse=Imports
 
 /*
-	util test
+util test
 */
 var _ = Describe("Test util", func() {
 	Context("When testing util", func() {
