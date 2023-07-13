@@ -10,6 +10,8 @@
   - [Scaling of Druid Nodes](#scaling-of-druid-nodes)
   - [Volume Expansion of Druid Nodes Running As StatefulSets](#volume-expansion-of-druid-nodes-running-as-statefulsets)
   - [Add Additional Containers in Druid Nodes](#add-additional-containers-in-druid-nodes)
+  - [Setup default probe by default](#setup-default-probe-by-default)
+
 
 ## Deny List in Operator
 
@@ -78,3 +80,119 @@
 - This can be used for init containers or sidecars or proxies etc.
 - To enable this features users just need to add a new container to the container list.
 - This is scoped at cluster scope only, which means that additional container will be common to all the nodes.
+- This can be used for init containers or sidecars or proxies etc. 
+- To enable this features users just need to add a new container to the container list 
+- This is scoped at cluster scope only, which means that additional container will be common to all the nodes
+
+## Setup default probe by default
+
+The operator create deployments and statefullset with a default set of probes for each druid components.
+Theses probes are overrided if you specify a global or specific probe in the druid resource.
+All the probes definitions are documented bellow:
+
+<details>
+
+<summary>Coordinator, Overlord, Middlemanager, Router and Indexer probes</summary>
+
+```yaml
+  livenessProbe:
+    failureThreshold: 10
+    httpGet:
+      path: /status/health
+      port: $druid.port
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
+  readinessProbe:
+    failureThreshold: 10
+    httpGet:
+      path: /status/health
+      port: $druid.port
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
+  startupProbe:
+    failureThreshold: 10
+    httpGet:
+      path: /status/health
+      port: $druid.port
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
+```
+
+</details>
+
+<details>
+
+<summary>Broker probes </summary>
+
+  ```yaml
+      livenessProbe:
+        failureThreshold: 10
+        httpGet:
+          path: /status/health
+          port: $druid.port
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 5
+      readinessProbe:
+        failureThreshold: 20
+        httpGet:
+          path: /druid/broker/v1/readiness
+          port: $druid.port
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 5
+      startupProbe:
+        failureThreshold: 20
+        httpGet:
+          path: /druid/broker/v1/readiness
+          port: $druid.port
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 5
+  ```
+</details>
+
+<details>
+
+<summary>Historical probes</summary>
+
+```yaml
+  livenessProbe:
+    failureThreshold: 10
+    httpGet:
+      path: /status/health
+      port: $druid.port
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
+  readinessProbe:
+    failureThreshold: 20
+    httpGet:
+      path: /druid/historical/v1/loadstatus
+      port: $druid.port
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
+  startupProbe:
+    failureThreshold: 20
+    httpGet:
+      path: /druid/historical/v1/loadstatus
+      port: $druid.port
+    initialDelaySeconds: 180
+    periodSeconds: 30
+    successThreshold: 1
+    timeoutSeconds: 10
+```
+
+</details>
