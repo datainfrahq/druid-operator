@@ -1138,24 +1138,36 @@ func getAffinity(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) *v1.Affini
 	return affinity
 }
 
-func getLivenessProbe(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) *v1.Probe {
+func setLivenessProbe(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) *v1.Probe {
+	probeType := "liveness"
 	livenessProbe := updateDefaultPortInProbe(
 		firstNonNilValue(nodeSpec.LivenessProbe, m.Spec.LivenessProbe).(*v1.Probe),
 		nodeSpec.DruidPort)
+	if livenessProbe == nil {
+		livenessProbe = setDefaultProbe(nodeSpec.DruidPort, nodeSpec.NodeType, probeType)
+	}
 	return livenessProbe
 }
 
-func getReadinessProbe(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) *v1.Probe {
+func setReadinessProbe(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) *v1.Probe {
+	probeType := "readiness"
 	readinessProbe := updateDefaultPortInProbe(
 		firstNonNilValue(nodeSpec.ReadinessProbe, m.Spec.ReadinessProbe).(*v1.Probe),
 		nodeSpec.DruidPort)
+	if readinessProbe == nil {
+		readinessProbe = setDefaultProbe(nodeSpec.DruidPort, nodeSpec.NodeType, probeType)
+	}
 	return readinessProbe
 }
 
-func getStartUpProbe(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) *v1.Probe {
+func setStartUpProbe(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) *v1.Probe {
+	probeType := "startup"
 	startUpProbe := updateDefaultPortInProbe(
 		firstNonNilValue(nodeSpec.StartUpProbes, m.Spec.StartUpProbe).(*v1.Probe),
 		nodeSpec.DruidPort)
+	if startUpProbe == nil {
+		startUpProbe = setDefaultProbe(nodeSpec.DruidPort, nodeSpec.NodeType, probeType)
+	}
 	return startUpProbe
 }
 
@@ -1294,9 +1306,9 @@ func makePodSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, nodeSpecUn
 			Env:             getEnv(nodeSpec, m, configMapSHA),
 			EnvFrom:         getEnvFrom(nodeSpec, m),
 			VolumeMounts:    getVolumeMounts(nodeSpec, m),
-			LivenessProbe:   getLivenessProbe(nodeSpec, m),
-			ReadinessProbe:  getReadinessProbe(nodeSpec, m),
-			StartupProbe:    getStartUpProbe(nodeSpec, m),
+			LivenessProbe:   setLivenessProbe(nodeSpec, m),
+			ReadinessProbe:  setReadinessProbe(nodeSpec, m),
+			StartupProbe:    setStartUpProbe(nodeSpec, m),
 			Lifecycle:       nodeSpec.Lifecycle,
 			SecurityContext: firstNonNilValue(nodeSpec.ContainerSecurityContext, m.Spec.ContainerSecurityContext).(*v1.SecurityContext),
 		},
@@ -1354,6 +1366,40 @@ func makePodSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, nodeSpecUn
 		ServiceAccountName:            m.Spec.ServiceAccount,
 	}
 	return spec
+}
+
+func setDefaultProbe(defaultPort int32, nodeType string, probeType string) *v1.Probe {
+	probe := &v1.Probe{
+		ProbeHandler: v1.ProbeHandler{
+			HTTPGet: &v1.HTTPGetAction{
+				Path: "/status/health",
+				Port: intstr.IntOrString{
+					IntVal: defaultPort,
+				},
+			},
+		},
+		InitialDelaySeconds: 5,
+		TimeoutSeconds:      5,
+		PeriodSeconds:       10,
+		SuccessThreshold:    1,
+		FailureThreshold:    10,
+	}
+
+	if nodeType == historical && probeType != "liveness" {
+		probe.HTTPGet.Path = "/druid/historical/v1/loadstatus"
+		probe.FailureThreshold = 20
+	}
+	if nodeType == broker && probeType != "liveness" {
+		probe.HTTPGet.Path = "/druid/broker/v1/readiness"
+		probe.FailureThreshold = 20
+	}
+
+	if nodeType == historical && probeType == "startup" {
+		probe.InitialDelaySeconds = 180
+		probe.PeriodSeconds = 30
+		probe.TimeoutSeconds = 10
+	}
+	return probe
 }
 
 func updateDefaultPortInProbe(probe *v1.Probe, defaultPort int32) *v1.Probe {
