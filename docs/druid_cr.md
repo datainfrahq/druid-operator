@@ -5,7 +5,6 @@
 - For full details on spec refer to ```pkg/apis/druid/v1alpha1/druid_types.go```
 - The operator supports both deployments and statefulsets for druid Nodes. ```kind``` can be specified in the druid NodeSpec's to ```Deployment``` / ```StatefulSet```.
 - ```NOTE: The default behavior shall provision all the nodes as statefulsets.```
-
 - The following are cluster scoped and common to all the druid nodes.
 
 ```yaml
@@ -46,13 +45,13 @@ spec:
   common.runtime.properties: |
  ```
 
- - The following are specific to a node.
+- The following are specific to a node.
 
  ```yaml
   nodes:
     # String value, can be anything to define a node name.
     brokers:
-      # nodeType can be broker,historical, middleManager, indexer, router, coordinator and overlord.
+      # nodeType can be broker, historical, middleManager, indexer, router, coordinator and overlord.
       # Required Key
       nodeType: "broker"
       # Optionally specify for broker nodes
@@ -67,4 +66,5 @@ spec:
       # Runtime Properties for the node
       # Required Key
       runtime.properties: |
+      ...
 ```

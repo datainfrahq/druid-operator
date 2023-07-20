@@ -4,8 +4,8 @@
 
 env:
   DENY_LIST: "default,kube-system" # Comma-separated list of namespaces to ignore
-  RECONCILE_WAIT: "10s"            # Reconciliation delay
-  WATCH_NAMESPACE: ""              # Namespace to watch or empty string to watch all namespaces, To watch multiple namespaces add , into string. Ex: WATCH_NAMESPACE: "ns1,ns2,ns3"
+  RECONCILE_WAIT: "10s" # Reconciliation delay
+  WATCH_NAMESPACE: "" # Namespace to watch or empty string to watch all namespaces, To watch multiple namespaces add , into string. Ex: WATCH_NAMESPACE: "ns1,ns2,ns3"
   #MAX_CONCURRENT_RECONCILES:: ""  # MaxConcurrentReconciles is the maximum number of concurrent Reconciles which can be run.
 
 replicaCount: 1
@@ -46,6 +46,9 @@ podAnnotations: {}
 
 podSecurityContext:
   runAsNonRoot: true
+  fsGroup: 65532
+  runAsUser: 65532
+  runAsGroup: 65532
 
 securityContext:
   allowPrivilegeEscalation: false
