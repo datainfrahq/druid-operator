@@ -1,49 +1,52 @@
 # Features
 
-- [Features](#features)
-  - [Deny List in Operator](#deny-list-in-operator)
-  - [Reconcile Time in Operator](#reconcile-time-in-operator)
-  - [Finalizer in Druid CR](#finalizer-in-druid-cr)
-  - [Deletetion of Orphan PVC's](#deletetion-of-orphan-pvcs)
-  - [Rolling Deploy](#rolling-deploy)
-  - [Force Delete of Sts Pods](#force-delete-of-sts-pods)
-  - [Scaling of Druid Nodes](#scaling-of-druid-nodes)
-  - [Volume Expansion of Druid Nodes Running As StatefulSets](#volume-expansion-of-druid-nodes-running-as-statefulsets)
-  - [Add Additional Containers in Druid Nodes](#add-additional-containers-in-druid-nodes)
-  - [Setup default probe by default](#setup-default-probe-by-default)
+- [Deny List in Operator](#deny-list-in-operator)
+- [Reconcile Time in Operator](#reconcile-time-in-operator)
+- [Finalizer in Druid CR](#finalizer-in-druid-cr)
+- [Deletetion of Orphan PVC's](#deletetion-of-orphan-pvcs)
+- [Rolling Deploy](#rolling-deploy)
+- [Force Delete of Sts Pods](#force-delete-of-sts-pods)
+- [Scaling of Druid Nodes](#scaling-of-druid-nodes)
+- [Volume Expansion of Druid Nodes Running As StatefulSets](#volume-expansion-of-druid-nodes-running-as-statefulsets)
+- [Add Additional Containers in Druid Nodes](#add-additional-containers-in-druid-nodes)
+- [Setup default probe by default](#setup-default-probe-by-default)
 
 
 ## Deny List in Operator
-
-- There may be use cases where we want the operator to watch all namespaces but restrict few namespaces, due to security, testing flexibility etc reasons.
-- The druid operator supports such cases. In ```deploy/operator.yaml```, user can enable ```DENY_LIST``` env and pass the namespaces to be excluded.
-- Each namespace to be seperated using a comma.
+There may be use cases where we want the operator to watch all namespaces except a few 
+(might be due to security, testing flexibility, etc. reasons).  
+Druid operator supports such cases - in the chart, edit `env.DENY_LIST` to be a comma-seperated list.  
+For example: "default,kube-system"
 
 ## Reconcile Time in Operator
-
-- As per operator pattern, the druid operator reconciles every 10s ( default reconcile time ) to make sure the desired state ( druid CR ) in sync with current state.
-- In case user wants to adjust the reconcile time, it can be adjusted by adding an ENV variable in ```deploy/operator.yaml```, user can enable ```RECONCILE_WAIT``` env and pass in the value suffixed with ```s``` string ( example: 30s). The default time is 10s.
+As per operator pattern, the druid operator reconciles every 10s (default reconciliation time) to make sure 
+the desired state (in that case, the druid CR's spec) is in sync with the current state.  
+The reconciliation time can be adjusted - in the chart, add `env.RECONCILE_WAIT` to be a duration
+in seconds.  
+Examples: "10s", "30s", "120s"
 
 ## Finalizer in Druid CR
+The Druid operator supports provisioning of StatefulSets and Deployments. When a StatefulSet is created, 
+a PVC is created along. When the Druid CR is deleted, the StatefulSet controller does not delete the PVC's 
+associated with it.  
+In case the PVC data is important and you wish to reclaim it, you can enable: `DisablePVCDeletionFinalizer: true`
+in the Druid CR.  
+The default behavior is to trigger finalizers and pre-delete hooks that will be executed. They will first clean up the 
+StatefulSet and then the PVCs referenced to it. That means that after a 
+deletion of a Druid CR, any PVCs provisioned by a StatefulSet will be deleted.
 
-- Druid Operator supports provisioning of sts as well as deployments. When sts is created a pvc is created along. When druid CR is deleted the sts controller does not delete pvc's associated with sts.
-- In case user does care about pvc data and wishes  to reclaim it, user can enable ```DisablePVCDeletionFinalizer: true``` in druid CR.
-- Default behavior shall trigger finalizers and pre-delete hooks that shall be executed which shall first clean up sts and then pvc referenced by sts.
-- Default behavior is set to true ie after deletion of CR, any pvc's provisioned by sts shall be deleted.
-
-## Deletetion of Orphan PVC's
-
-- Assume ingestion is kicked off on druid, the sts MiddleManagers nodes are scaled to a certain number of replicas, and when the ingestion is completed. The middlemanagers are scaled down to avoid costs etc.
-- Sts on scale down, just terminates the pods it owns not the PVC. PVC are left orpahned and are of little or no use.
-- In such cases druid-operator supports deletion of pvc orphaned by the sts.
-- To enable this feature users need to add a flag in the druid cluster spec ```deleteOrphanPvc: true```.
+## Deletion of Orphan PVCs
+There are some use-cases (the most popular is horizontal auto-scaling) where a StatefulSet scales down. In that case,
+the statefulSet will terminate its owned pods but nit their attached PVCs which left orphaned and unused.  
+The operator support the ability to auto delete these PVCs. This can be enabled by setting `deleteOrphanPvc: true`.
 
 ## Rolling Deploy
-
-- Operator supports ```rollingDeploy```, in case specified to ```true``` at the clusterSpec, the operator does incremental updates in the order as mentioned [here](http://druid.io/docs/latest/operations/rolling-updates.html)
-- In rollingDeploy each node is update one by one, and incase any of the node goes in pending/crashing state during update the operator halts the update and does not update the other nodes. This requires manual intervation.
-- Default updates and cluster creation is in parallel.
-- Regardless of rolling deploy enabled, cluster creation always happens in parallel.
+The operator supports Apache Druid's recommended rolling updates. It will do incremental updates in the order
+specified in Druid's [documentation](https://druid.apache.org/docs/latest/operations/rolling-updates.html).  
+In case any of the node goes in pending/crashing state during an update, the operator halts the update and does
+not continue with the update - this will require a manual intervention.  
+Default updates are done in parallel. Since cluster creation does not require a rolling update, they will be done
+in parallel anyway. To enable this feature, set `rollingDeploy: true` in the Druid CR.
 
 ## Force Delete of Sts Pods
 

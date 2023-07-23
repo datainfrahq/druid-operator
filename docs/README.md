@@ -13,7 +13,6 @@ The operator simplifies the management of Druid clusters with its custom logic t
 * [Example Specs](./example_specs.md)
 * [Migration To Kubebuilder V3 in the Upcoming Version](./kubebuilder_v3_migration.md)
 * [Developer Documentation](./dev_doc.md)
-
 ---
 
 :warning: You won't find any documentation about druid itself in this repository.
