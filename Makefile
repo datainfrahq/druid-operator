@@ -151,7 +151,7 @@ helm-template: ## Run Helm template.
 
 .PHONY: api-docs
 api-docs: gen-crd-api-reference-docs ## Generate API reference documentation
-	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./apis/druid/v1alpha1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api-references/druid.md
+	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./apis/druid/v1alpha1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api_specifications/druid.md
 
 ##@ Build Dependencies
 

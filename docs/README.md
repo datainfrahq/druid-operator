@@ -2,9 +2,7 @@
 
 Druid Operator is a Kubernetes controller that manages the lifecycle of [Apache Druid](https://druid.apache.org/) clusters.
 The operator simplifies the management of Druid clusters with its custom logic that is configurable via custom API
-(Kubernetes CRD),
-
-To get started, follow the [getting started](./getting_started.md) guide.
+(Kubernetes CRD).
 
 ## Druid Operator Documentation
 

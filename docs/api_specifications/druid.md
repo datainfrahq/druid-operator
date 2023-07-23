@@ -14,7 +14,9 @@ Resource Types:
 (<em>Appears on:</em>
 <a href="#druid.apache.org/v1alpha1.DruidSpec">DruidSpec</a>)
 </p>
-<p>AdditionalContainer defines the additional sidecar container</p>
+<p>AdditionalContainer defines additional sidecar containers to be deployed with the <code>Druid</code> pods.
+(will be part of Kubernetes native in the future:
+<a href="https://github.com/kubernetes/enhancements/blob/master/keps/sig-node/753-sidecar-containers/README.md#summary)">https://github.com/kubernetes/enhancements/blob/master/keps/sig-node/753-sidecar-containers/README.md#summary)</a>.</p>
 <div class="md-typeset__scrollwrap">
 <div class="md-typeset__table">
 <table>
@@ -34,6 +36,7 @@ bool
 </td>
 <td>
 <em>(Optional)</em>
+<p>RunAsInit indicate whether this should be an init container.</p>
 </td>
 </tr>
 <tr>
@@ -44,7 +47,7 @@ string
 </em>
 </td>
 <td>
-<p>This is the image for the additional container to run.</p>
+<p>Image</p>
 </td>
 </tr>
 <tr>
@@ -55,7 +58,7 @@ string
 </em>
 </td>
 <td>
-<p>This is the name of the additional container.</p>
+<p>ContainerName name of the additional container.</p>
 </td>
 </tr>
 <tr>
@@ -66,7 +69,7 @@ string
 </em>
 </td>
 <td>
-<p>This is the command for the additional container to run.</p>
+<p>Command</p>
 </td>
 </tr>
 <tr>
@@ -80,7 +83,7 @@ Kubernetes core/v1.PullPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>If not present, will be taken from top level spec</p>
+<p>ImagePullPolicy If not present, will be taken from top level spec</p>
 </td>
 </tr>
 <tr>
@@ -92,7 +95,7 @@ Kubernetes core/v1.PullPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>Argument to call the command</p>
+<p>Args Arguments to call the command.</p>
 </td>
 </tr>
 <tr>
@@ -106,7 +109,7 @@ Kubernetes core/v1.SecurityContext
 </td>
 <td>
 <em>(Optional)</em>
-<p>ContainerSecurityContext. If not present, will be taken from top level pod</p>
+<p>ContainerSecurityContext If not present, will be taken from top level pod.</p>
 </td>
 </tr>
 <tr>
@@ -120,7 +123,7 @@ Kubernetes core/v1.ResourceRequirements
 </td>
 <td>
 <em>(Optional)</em>
-<p>CPU/Memory Resources</p>
+<p>Resources Kubernetes Native resource requirements specification.</p>
 </td>
 </tr>
 <tr>
@@ -134,7 +137,7 @@ Kubernetes core/v1.ResourceRequirements
 </td>
 <td>
 <em>(Optional)</em>
-<p>Volumes etc for the Druid pods</p>
+<p>VolumeMounts Kubernetes Native volume mounts specification.</p>
 </td>
 </tr>
 <tr>
@@ -148,7 +151,7 @@ Kubernetes core/v1.ResourceRequirements
 </td>
 <td>
 <em>(Optional)</em>
-<p>Environment variables for the Additional Container</p>
+<p>Env Environment variables for the additional container.</p>
 </td>
 </tr>
 <tr>
@@ -162,7 +165,7 @@ Kubernetes core/v1.ResourceRequirements
 </td>
 <td>
 <em>(Optional)</em>
-<p>Extra environment variables</p>
+<p>EnvFrom Extra environment variables from remote source (ConfigMaps, Secrets&hellip;).</p>
 </td>
 </tr>
 </tbody>
@@ -175,6 +178,7 @@ Kubernetes core/v1.ResourceRequirements
 (<em>Appears on:</em>
 <a href="#druid.apache.org/v1alpha1.DruidSpec">DruidSpec</a>)
 </p>
+<p>DeepStorageSpec IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.</p>
 <div class="md-typeset__scrollwrap">
 <div class="md-typeset__table">
 <table>
@@ -263,7 +267,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Ignored is now deprecated API. In order to avoid reconciliation of objects use the
-druid.apache.org/ignored: &ldquo;true&rdquo; annotation</p>
+<code>druid.apache.org/ignored: &quot;true&quot;</code> annotation.</p>
 </td>
 </tr>
 <tr>
@@ -274,7 +278,7 @@ string
 </em>
 </td>
 <td>
-<p>common.runtime.properties contents</p>
+<p>CommonRuntimeProperties Content fo the <code>common.runtime.properties</code> configuration file.</p>
 </td>
 </tr>
 <tr>
@@ -288,7 +292,8 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>References to ConfigMaps holding more files to mount to the CommonConfigMountPath.</p>
+<p>ExtraCommonConfig References to ConfigMaps holding more configuration files to mount to the
+common configuration path.</p>
 </td>
 </tr>
 <tr>
@@ -300,6 +305,9 @@ bool
 </td>
 <td>
 <em>(Optional)</em>
+<p>ForceDeleteStsPodOnError Delete the StatefulSet&rsquo;s pods if the StatefulSet is set to ordered ready.
+issue: <a href="https://github.com/kubernetes/kubernetes/issues/67250">https://github.com/kubernetes/kubernetes/issues/67250</a>
+doc: <a href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#forced-rollback">https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#forced-rollback</a></p>
 </td>
 </tr>
 <tr>
@@ -311,7 +319,7 @@ bool
 </td>
 <td>
 <em>(Optional)</em>
-<p>ScalePvcSts, defaults to false. When enabled, operator will allow volume expansion of sts and pvc&rsquo;s.</p>
+<p>ScalePvcSts When enabled, operator will allow volume expansion of StatefulSet&rsquo;s PVCs.</p>
 </td>
 </tr>
 <tr>
@@ -322,7 +330,8 @@ string
 </em>
 </td>
 <td>
-<p>In-container directory to mount with common.runtime.properties</p>
+<em>(Optional)</em>
+<p>CommonConfigMountPath In-container directory to mount the Druid common configuration</p>
 </td>
 </tr>
 <tr>
@@ -334,7 +343,7 @@ bool
 </td>
 <td>
 <em>(Optional)</em>
-<p>Default is set to false, pvc shall be deleted on deletion of CR</p>
+<p>DisablePVCDeletionFinalizer Whether PVCs shall be deleted on the deletion of the Druid cluster.</p>
 </td>
 </tr>
 <tr>
@@ -346,7 +355,7 @@ bool
 </td>
 <td>
 <em>(Optional)</em>
-<p>Default is set to true, orphaned ( unmounted pvc&rsquo;s ) shall be cleaned up by the operator.</p>
+<p>DeleteOrphanPvc Orphaned (unmounted PVCs) shall be cleaned up by the operator.</p>
 </td>
 </tr>
 <tr>
@@ -357,7 +366,8 @@ string
 </em>
 </td>
 <td>
-<p>Path to druid start script to be run on container start</p>
+<em>(Optional)</em>
+<p>StartScript Path to Druid&rsquo;s start script to be run on start.</p>
 </td>
 </tr>
 <tr>
@@ -369,7 +379,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Required here or at nodeSpec level</p>
+<p>Image Required here or at the NodeSpec level.</p>
 </td>
 </tr>
 <tr>
@@ -381,7 +391,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>ServiceAccount for the druid cluster</p>
+<p>ServiceAccount</p>
 </td>
 </tr>
 <tr>
@@ -395,7 +405,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>imagePullSecrets for private registries</p>
+<p>ImagePullSecrets</p>
 </td>
 </tr>
 <tr>
@@ -409,6 +419,7 @@ Kubernetes core/v1.PullPolicy
 </td>
 <td>
 <em>(Optional)</em>
+<p>ImagePullPolicy</p>
 </td>
 </tr>
 <tr>
@@ -422,7 +433,7 @@ Kubernetes core/v1.PullPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>Environment variables for druid containers</p>
+<p>Env Environment variables for druid containers.</p>
 </td>
 </tr>
 <tr>
@@ -436,7 +447,7 @@ Kubernetes core/v1.PullPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>Extra environment variables</p>
+<p>EnvFrom Extra environment variables from remote source (ConfigMaps, Secrets&hellip;).</p>
 </td>
 </tr>
 <tr>
@@ -448,7 +459,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>jvm options for druid jvm processes</p>
+<p>JvmOptions Contents of the shared <code>jvm.options</code> configuration file for druid JVM processes.</p>
 </td>
 </tr>
 <tr>
@@ -460,7 +471,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>log4j config contents</p>
+<p>Log4jConfig contents <code>log4j.config</code> configuration file.</p>
 </td>
 </tr>
 <tr>
@@ -474,7 +485,7 @@ Kubernetes core/v1.PodSecurityContext
 </td>
 <td>
 <em>(Optional)</em>
-<p>druid pods pod-security-context</p>
+<p>PodSecurityContext</p>
 </td>
 </tr>
 <tr>
@@ -488,7 +499,7 @@ Kubernetes core/v1.SecurityContext
 </td>
 <td>
 <em>(Optional)</em>
-<p>druid pods container-security-context</p>
+<p>ContainerSecurityContext</p>
 </td>
 </tr>
 <tr>
@@ -502,7 +513,7 @@ Kubernetes core/v1.SecurityContext
 </td>
 <td>
 <em>(Optional)</em>
-<p>volumes etc for the Druid pods</p>
+<p>VolumeClaimTemplates Kubernetes Native <code>VolumeClaimTemplate</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -516,6 +527,7 @@ Kubernetes core/v1.SecurityContext
 </td>
 <td>
 <em>(Optional)</em>
+<p>VolumeMounts Kubernetes Native <code>VolumeMount</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -529,6 +541,7 @@ Kubernetes core/v1.SecurityContext
 </td>
 <td>
 <em>(Optional)</em>
+<p>Volumes Kubernetes Native <code>Volume</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -540,7 +553,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Custom annotations to be populated in Druid pods</p>
+<p>PodAnnotations Custom annotations to be populated in <code>Druid</code> pods.</p>
 </td>
 </tr>
 <tr>
@@ -554,7 +567,7 @@ Kubernetes apps/v1.PodManagementPolicyType
 </td>
 <td>
 <em>(Optional)</em>
-<p>By default, it is set to &ldquo;parallel&rdquo;</p>
+<p>PodManagementPolicy</p>
 </td>
 </tr>
 <tr>
@@ -566,7 +579,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Custom labels to be populated in Druid pods</p>
+<p>PodLabels Custom labels to be populated in <code>Druid</code> pods.</p>
 </td>
 </tr>
 <tr>
@@ -580,6 +593,7 @@ Kubernetes apps/v1.StatefulSetUpdateStrategy
 </td>
 <td>
 <em>(Optional)</em>
+<p>UpdateStrategy</p>
 </td>
 </tr>
 <tr>
@@ -593,7 +607,8 @@ Kubernetes core/v1.Probe
 </td>
 <td>
 <em>(Optional)</em>
-<p>Port is set to druid.port if not specified with httpGet handler</p>
+<p>LivenessProbe
+Port is set to <code>druid.port</code> if not specified with httpGet handler.</p>
 </td>
 </tr>
 <tr>
@@ -607,7 +622,8 @@ Kubernetes core/v1.Probe
 </td>
 <td>
 <em>(Optional)</em>
-<p>Port is set to druid.port if not specified with httpGet handler</p>
+<p>ReadinessProbe
+Port is set to <code>druid.port</code> if not specified with httpGet handler.</p>
 </td>
 </tr>
 <tr>
@@ -621,7 +637,7 @@ Kubernetes core/v1.Probe
 </td>
 <td>
 <em>(Optional)</em>
-<p>StartupProbe for nodeSpec</p>
+<p>StartUpProbe</p>
 </td>
 </tr>
 <tr>
@@ -635,7 +651,7 @@ Kubernetes core/v1.Probe
 </td>
 <td>
 <em>(Optional)</em>
-<p>k8s service resources to be created for each Druid statefulsets</p>
+<p>Services Kubernetes services to be created for each workload.</p>
 </td>
 </tr>
 <tr>
@@ -647,7 +663,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Node selector to be used by Druid statefulsets</p>
+<p>NodeSelector Kubernetes native <code>nodeSelector</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -661,7 +677,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Toleration to be used in order to run Druid on nodes tainted</p>
+<p>Tolerations Kubernetes native <code>toleration</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -675,7 +691,7 @@ Kubernetes core/v1.Affinity
 </td>
 <td>
 <em>(Optional)</em>
-<p>Affinity to be used to for enabling node, pod affinity and anti-affinity</p>
+<p>Affinity Kubernetes native <code>affinity</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -688,6 +704,9 @@ map[string]druid-operator/apis/druid/v1alpha1.DruidNodeSpec
 </em>
 </td>
 <td>
+<p>Nodes a list of <code>Druid</code> Node types and their configurations.
+<code>DruidSpec</code> is used to create Kubernetes workload specs. Many of the fields above can be overridden at the specific
+<code>NodeSpec</code> level.</p>
 </td>
 </tr>
 <tr>
@@ -701,7 +720,7 @@ map[string]druid-operator/apis/druid/v1alpha1.DruidNodeSpec
 </td>
 <td>
 <em>(Optional)</em>
-<p>Operator deploys the sidecar container based on these properties. Sidecar will be deployed for all the Druid pods.</p>
+<p>AdditionalContainer defines additional sidecar containers to be deployed with the <code>Druid</code> pods.</p>
 </td>
 </tr>
 <tr>
@@ -712,6 +731,11 @@ bool
 </em>
 </td>
 <td>
+<em>(Optional)</em>
+<p>RollingDeploy Whether to deploy the components in a rolling update as described in the documentation:
+<a href="https://druid.apache.org/docs/latest/operations/rolling-updates.html">https://druid.apache.org/docs/latest/operations/rolling-updates.html</a>
+If set to true then operator checks the rollout status of previous version workloads before updating the next.
+This will be done only for update actions.</p>
 </td>
 </tr>
 <tr>
@@ -725,8 +749,7 @@ ZookeeperSpec
 </td>
 <td>
 <em>(Optional)</em>
-<p>futuristic stuff to make Druid dependency setup extensible from within Druid operator
-ignore for now.</p>
+<p>Zookeeper IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.</p>
 </td>
 </tr>
 <tr>
@@ -740,6 +763,7 @@ MetadataStoreSpec
 </td>
 <td>
 <em>(Optional)</em>
+<p>MetadataStore IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.</p>
 </td>
 </tr>
 <tr>
@@ -753,6 +777,7 @@ DeepStorageSpec
 </td>
 <td>
 <em>(Optional)</em>
+<p>DeepStorage IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.</p>
 </td>
 </tr>
 <tr>
@@ -764,7 +789,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Custom Dimension Map Path for statsd emitter</p>
+<p>DimensionsMapPath Custom Dimension Map Path for statsd emitter.</p>
 </td>
 </tr>
 <tr>
@@ -776,7 +801,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>HDFS common config</p>
+<p>HdfsSite Contents of <code>hdfs-site.xml</code>.</p>
 </td>
 </tr>
 <tr>
@@ -788,6 +813,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
+<p>CoreSite Contents of <code>core-site.xml</code>.</p>
 </td>
 </tr>
 </table>
@@ -815,7 +841,7 @@ DruidClusterStatus
 (<em>Appears on:</em>
 <a href="#druid.apache.org/v1alpha1.Druid">Druid</a>)
 </p>
-<p>DruidStatus defines the observed state of Druid</p>
+<p>DruidClusterStatus Defines the observed state of Druid.</p>
 <div class="md-typeset__scrollwrap">
 <div class="md-typeset__table">
 <table>
@@ -946,6 +972,11 @@ Important: Run &ldquo;make&rdquo; to regenerate code after modifying this file</
 (<em>Appears on:</em>
 <a href="#druid.apache.org/v1alpha1.DruidSpec">DruidSpec</a>)
 </p>
+<p>DruidNodeSpec Specification of <code>Druid</code> Node type and its configurations.
+The key in following map can be arbitrary string that helps you identify resources for a specific nodeSpec.
+It is used in the Kubernetes resources&rsquo; names, so it must be compliant with restrictions
+placed on Kubernetes resource names:
+<a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names/">https://kubernetes.io/docs/concepts/overview/working-with-objects/names/</a></p>
 <div class="md-typeset__scrollwrap">
 <div class="md-typeset__table">
 <table>
@@ -964,7 +995,7 @@ string
 </em>
 </td>
 <td>
-<p>Druid node type</p>
+<p>NodeDruid <code>Druid</code> node type.</p>
 </td>
 </tr>
 <tr>
@@ -975,7 +1006,7 @@ int32
 </em>
 </td>
 <td>
-<p>Port used by Druid Process</p>
+<p>DruidPort Used by the <code>Druid</code> process.</p>
 </td>
 </tr>
 <tr>
@@ -987,7 +1018,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Defaults to statefulsets.
+<p>Kind Can be StatefulSet or Deployment.
 Note: volumeClaimTemplates are ignored when kind=Deployment</p>
 </td>
 </tr>
@@ -999,6 +1030,8 @@ int32
 </em>
 </td>
 <td>
+<em>(Optional)</em>
+<p>Replicas replica of the workload</p>
 </td>
 </tr>
 <tr>
@@ -1010,6 +1043,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
+<p>PodLabels Custom labels to be populated in the workload&rsquo;s pods.</p>
 </td>
 </tr>
 <tr>
@@ -1023,6 +1057,7 @@ Kubernetes policy/v1.PodDisruptionBudgetSpec
 </td>
 <td>
 <em>(Optional)</em>
+<p>PodDisruptionBudgetSpec Kubernetes native <code>podDisruptionBudget</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -1033,6 +1068,7 @@ string
 </em>
 </td>
 <td>
+<p>RuntimeProperties Additional runtime configuration for the specific workload.</p>
 </td>
 </tr>
 <tr>
@@ -1044,7 +1080,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>This overrides JvmOptions at top level</p>
+<p>JvmOptions overrides <code>JvmOptions</code> at top level.</p>
 </td>
 </tr>
 <tr>
@@ -1056,7 +1092,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>This appends extra jvm options to JvmOptions field</p>
+<p>ExtraJvmOptions Appends extra jvm options to the <code>JvmOptions</code> field.</p>
 </td>
 </tr>
 <tr>
@@ -1068,7 +1104,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>This overrides Log4jConfig at top level</p>
+<p>Log4jConfig Overrides <code>Log4jConfig</code> at top level.</p>
 </td>
 </tr>
 <tr>
@@ -1079,7 +1115,7 @@ string
 </em>
 </td>
 <td>
-<p>in-container directory to mount with runtime.properties, jvm.config, log4j2.xml files</p>
+<p>NodeConfigMountPath in-container directory to mount with runtime.properties, jvm.config, log4j2.xml files.</p>
 </td>
 </tr>
 <tr>
@@ -1093,7 +1129,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Overrides services at top level</p>
+<p>Services Overrides services at top level.</p>
 </td>
 </tr>
 <tr>
@@ -1107,7 +1143,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Toleration to be used in order to run Druid on nodes tainted</p>
+<p>Tolerations Kubernetes native <code>tolerations</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -1121,7 +1157,7 @@ Kubernetes core/v1.Affinity
 </td>
 <td>
 <em>(Optional)</em>
-<p>Affinity to be used to for enabling node, pod affinity and anti-affinity</p>
+<p>Affinity Kubernetes native <code>affinity</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -1133,7 +1169,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Node selector to be used by Druid statefulsets</p>
+<p>NodeSelector Kubernetes native <code>nodeSelector</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -1145,6 +1181,7 @@ int64
 </td>
 <td>
 <em>(Optional)</em>
+<p>TerminationGracePeriodSeconds</p>
 </td>
 </tr>
 <tr>
@@ -1158,7 +1195,7 @@ int64
 </td>
 <td>
 <em>(Optional)</em>
-<p>Extra ports to be added to pod spec</p>
+<p>Ports Extra ports to be added to pod spec.</p>
 </td>
 </tr>
 <tr>
@@ -1170,7 +1207,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Overrides image from top level, Required if no image specified at top level</p>
+<p>Image Overrides image from top level, Required if no image specified at top level.</p>
 </td>
 </tr>
 <tr>
@@ -1184,7 +1221,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Overrides imagePullSecrets from top level</p>
+<p>ImagePullSecrets Overrides <code>imagePullSecrets</code> from top level.</p>
 </td>
 </tr>
 <tr>
@@ -1198,7 +1235,7 @@ Kubernetes core/v1.PullPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>Overrides imagePullPolicy from top level</p>
+<p>ImagePullPolicy Overrides <code>imagePullPolicy</code> from top level.</p>
 </td>
 </tr>
 <tr>
@@ -1212,7 +1249,7 @@ Kubernetes core/v1.PullPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>Extra environment variables</p>
+<p>Env Environment variables for druid containers.</p>
 </td>
 </tr>
 <tr>
@@ -1226,7 +1263,7 @@ Kubernetes core/v1.PullPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>Extra environment variables</p>
+<p>EnvFrom Extra environment variables from remote source (ConfigMaps, Secrets&hellip;).</p>
 </td>
 </tr>
 <tr>
@@ -1240,7 +1277,7 @@ Kubernetes core/v1.ResourceRequirements
 </td>
 <td>
 <em>(Optional)</em>
-<p>CPU/Memory Resources</p>
+<p>Resources Kubernetes Native resource requirements specification.</p>
 </td>
 </tr>
 <tr>
@@ -1254,7 +1291,7 @@ Kubernetes core/v1.PodSecurityContext
 </td>
 <td>
 <em>(Optional)</em>
-<p>Overrides securityContext at top level</p>
+<p>PodSecurityContext Overrides <code>securityContext</code> at top level.</p>
 </td>
 </tr>
 <tr>
@@ -1268,7 +1305,7 @@ Kubernetes core/v1.SecurityContext
 </td>
 <td>
 <em>(Optional)</em>
-<p>Druid pods container-security-context</p>
+<p>ContainerSecurityContext</p>
 </td>
 </tr>
 <tr>
@@ -1280,7 +1317,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Custom annotations to be populated in Druid pods</p>
+<p>PodAnnotations Custom annotation to be populated in the workload&rsquo;s pods.</p>
 </td>
 </tr>
 <tr>
@@ -1294,7 +1331,7 @@ Kubernetes apps/v1.PodManagementPolicyType
 </td>
 <td>
 <em>(Optional)</em>
-<p>By default, it is set to &ldquo;parallel&rdquo;</p>
+<p>PodManagementPolicy By default, it is set to &ldquo;parallel&rdquo;</p>
 </td>
 </tr>
 <tr>
@@ -1306,7 +1343,8 @@ int32
 </td>
 <td>
 <em>(Optional)</em>
-<p>maxSurge for deployment object, only applicable if kind=Deployment, by default set to 25%</p>
+<p>MaxSurge For Deployment object only.
+Set to 25% by default.</p>
 </td>
 </tr>
 <tr>
@@ -1318,7 +1356,8 @@ int32
 </td>
 <td>
 <em>(Optional)</em>
-<p>maxUnavailable for deployment object, only applicable if kind=Deployment, by default set to 25%</p>
+<p>MaxUnavailable For deployment object only.
+Set to 25% by default</p>
 </td>
 </tr>
 <tr>
@@ -1332,6 +1371,7 @@ Kubernetes apps/v1.StatefulSetUpdateStrategy
 </td>
 <td>
 <em>(Optional)</em>
+<p>UpdateStrategy</p>
 </td>
 </tr>
 <tr>
@@ -1345,6 +1385,8 @@ Kubernetes core/v1.Probe
 </td>
 <td>
 <em>(Optional)</em>
+<p>LivenessProbe
+Port is set to <code>druid.port</code> if not specified with httpGet handler.</p>
 </td>
 </tr>
 <tr>
@@ -1358,6 +1400,8 @@ Kubernetes core/v1.Probe
 </td>
 <td>
 <em>(Optional)</em>
+<p>ReadinessProbe
+Port is set to <code>druid.port</code> if not specified with httpGet handler.</p>
 </td>
 </tr>
 <tr>
@@ -1371,7 +1415,7 @@ Kubernetes core/v1.Probe
 </td>
 <td>
 <em>(Optional)</em>
-<p>StartupProbe for nodeSpec</p>
+<p>StartUpProbes</p>
 </td>
 </tr>
 <tr>
@@ -1383,7 +1427,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Ingress Annoatations to be populated in ingress spec</p>
+<p>IngressAnnotations <code>Ingress</code> annotations to be populated in ingress spec.</p>
 </td>
 </tr>
 <tr>
@@ -1397,7 +1441,7 @@ Kubernetes networking/v1.IngressSpec
 </td>
 <td>
 <em>(Optional)</em>
-<p>Ingress Spec</p>
+<p>Ingress Kubernetes Native <code>Ingress</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -1411,6 +1455,7 @@ Kubernetes networking/v1.IngressSpec
 </td>
 <td>
 <em>(Optional)</em>
+<p>VolumeClaimTemplates Kubernetes Native <code>VolumeClaimTemplate</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -1424,6 +1469,7 @@ Kubernetes core/v1.Lifecycle
 </td>
 <td>
 <em>(Optional)</em>
+<p>Lifecycle</p>
 </td>
 </tr>
 <tr>
@@ -1437,6 +1483,7 @@ Kubernetes autoscaling/v2.HorizontalPodAutoscalerSpec
 </td>
 <td>
 <em>(Optional)</em>
+<p>HPAutoScaler Kubernetes Native <code>HorizontalPodAutoscaler</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -1450,6 +1497,7 @@ Kubernetes autoscaling/v2.HorizontalPodAutoscalerSpec
 </td>
 <td>
 <em>(Optional)</em>
+<p>TopologySpreadConstraints Kubernetes Native <code>topologySpreadConstraints</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -1463,6 +1511,7 @@ Kubernetes autoscaling/v2.HorizontalPodAutoscalerSpec
 </td>
 <td>
 <em>(Optional)</em>
+<p>VolumeClaimTemplates Kubernetes Native <code>volumeClaimTemplates</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -1476,6 +1525,7 @@ Kubernetes autoscaling/v2.HorizontalPodAutoscalerSpec
 </td>
 <td>
 <em>(Optional)</em>
+<p>VolumeMounts Kubernetes Native <code>volumeMounts</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -1489,6 +1539,7 @@ Kubernetes autoscaling/v2.HorizontalPodAutoscalerSpec
 </td>
 <td>
 <em>(Optional)</em>
+<p>Volumes Kubernetes Native <code>volumes</code> specification.</p>
 </td>
 </tr>
 </tbody>
@@ -1565,7 +1616,7 @@ string
 (<em>Appears on:</em>
 <a href="#druid.apache.org/v1alpha1.Druid">Druid</a>)
 </p>
-<p>DruidSpec defines the desired state of Druid</p>
+<p>DruidSpec defines the desired state of the Druid cluster.</p>
 <div class="md-typeset__scrollwrap">
 <div class="md-typeset__table">
 <table>
@@ -1586,7 +1637,7 @@ bool
 <td>
 <em>(Optional)</em>
 <p>Ignored is now deprecated API. In order to avoid reconciliation of objects use the
-druid.apache.org/ignored: &ldquo;true&rdquo; annotation</p>
+<code>druid.apache.org/ignored: &quot;true&quot;</code> annotation.</p>
 </td>
 </tr>
 <tr>
@@ -1597,7 +1648,7 @@ string
 </em>
 </td>
 <td>
-<p>common.runtime.properties contents</p>
+<p>CommonRuntimeProperties Content fo the <code>common.runtime.properties</code> configuration file.</p>
 </td>
 </tr>
 <tr>
@@ -1611,7 +1662,8 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>References to ConfigMaps holding more files to mount to the CommonConfigMountPath.</p>
+<p>ExtraCommonConfig References to ConfigMaps holding more configuration files to mount to the
+common configuration path.</p>
 </td>
 </tr>
 <tr>
@@ -1623,6 +1675,9 @@ bool
 </td>
 <td>
 <em>(Optional)</em>
+<p>ForceDeleteStsPodOnError Delete the StatefulSet&rsquo;s pods if the StatefulSet is set to ordered ready.
+issue: <a href="https://github.com/kubernetes/kubernetes/issues/67250">https://github.com/kubernetes/kubernetes/issues/67250</a>
+doc: <a href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#forced-rollback">https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#forced-rollback</a></p>
 </td>
 </tr>
 <tr>
@@ -1634,7 +1689,7 @@ bool
 </td>
 <td>
 <em>(Optional)</em>
-<p>ScalePvcSts, defaults to false. When enabled, operator will allow volume expansion of sts and pvc&rsquo;s.</p>
+<p>ScalePvcSts When enabled, operator will allow volume expansion of StatefulSet&rsquo;s PVCs.</p>
 </td>
 </tr>
 <tr>
@@ -1645,7 +1700,8 @@ string
 </em>
 </td>
 <td>
-<p>In-container directory to mount with common.runtime.properties</p>
+<em>(Optional)</em>
+<p>CommonConfigMountPath In-container directory to mount the Druid common configuration</p>
 </td>
 </tr>
 <tr>
@@ -1657,7 +1713,7 @@ bool
 </td>
 <td>
 <em>(Optional)</em>
-<p>Default is set to false, pvc shall be deleted on deletion of CR</p>
+<p>DisablePVCDeletionFinalizer Whether PVCs shall be deleted on the deletion of the Druid cluster.</p>
 </td>
 </tr>
 <tr>
@@ -1669,7 +1725,7 @@ bool
 </td>
 <td>
 <em>(Optional)</em>
-<p>Default is set to true, orphaned ( unmounted pvc&rsquo;s ) shall be cleaned up by the operator.</p>
+<p>DeleteOrphanPvc Orphaned (unmounted PVCs) shall be cleaned up by the operator.</p>
 </td>
 </tr>
 <tr>
@@ -1680,7 +1736,8 @@ string
 </em>
 </td>
 <td>
-<p>Path to druid start script to be run on container start</p>
+<em>(Optional)</em>
+<p>StartScript Path to Druid&rsquo;s start script to be run on start.</p>
 </td>
 </tr>
 <tr>
@@ -1692,7 +1749,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Required here or at nodeSpec level</p>
+<p>Image Required here or at the NodeSpec level.</p>
 </td>
 </tr>
 <tr>
@@ -1704,7 +1761,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>ServiceAccount for the druid cluster</p>
+<p>ServiceAccount</p>
 </td>
 </tr>
 <tr>
@@ -1718,7 +1775,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>imagePullSecrets for private registries</p>
+<p>ImagePullSecrets</p>
 </td>
 </tr>
 <tr>
@@ -1732,6 +1789,7 @@ Kubernetes core/v1.PullPolicy
 </td>
 <td>
 <em>(Optional)</em>
+<p>ImagePullPolicy</p>
 </td>
 </tr>
 <tr>
@@ -1745,7 +1803,7 @@ Kubernetes core/v1.PullPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>Environment variables for druid containers</p>
+<p>Env Environment variables for druid containers.</p>
 </td>
 </tr>
 <tr>
@@ -1759,7 +1817,7 @@ Kubernetes core/v1.PullPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>Extra environment variables</p>
+<p>EnvFrom Extra environment variables from remote source (ConfigMaps, Secrets&hellip;).</p>
 </td>
 </tr>
 <tr>
@@ -1771,7 +1829,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>jvm options for druid jvm processes</p>
+<p>JvmOptions Contents of the shared <code>jvm.options</code> configuration file for druid JVM processes.</p>
 </td>
 </tr>
 <tr>
@@ -1783,7 +1841,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>log4j config contents</p>
+<p>Log4jConfig contents <code>log4j.config</code> configuration file.</p>
 </td>
 </tr>
 <tr>
@@ -1797,7 +1855,7 @@ Kubernetes core/v1.PodSecurityContext
 </td>
 <td>
 <em>(Optional)</em>
-<p>druid pods pod-security-context</p>
+<p>PodSecurityContext</p>
 </td>
 </tr>
 <tr>
@@ -1811,7 +1869,7 @@ Kubernetes core/v1.SecurityContext
 </td>
 <td>
 <em>(Optional)</em>
-<p>druid pods container-security-context</p>
+<p>ContainerSecurityContext</p>
 </td>
 </tr>
 <tr>
@@ -1825,7 +1883,7 @@ Kubernetes core/v1.SecurityContext
 </td>
 <td>
 <em>(Optional)</em>
-<p>volumes etc for the Druid pods</p>
+<p>VolumeClaimTemplates Kubernetes Native <code>VolumeClaimTemplate</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -1839,6 +1897,7 @@ Kubernetes core/v1.SecurityContext
 </td>
 <td>
 <em>(Optional)</em>
+<p>VolumeMounts Kubernetes Native <code>VolumeMount</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -1852,6 +1911,7 @@ Kubernetes core/v1.SecurityContext
 </td>
 <td>
 <em>(Optional)</em>
+<p>Volumes Kubernetes Native <code>Volume</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -1863,7 +1923,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Custom annotations to be populated in Druid pods</p>
+<p>PodAnnotations Custom annotations to be populated in <code>Druid</code> pods.</p>
 </td>
 </tr>
 <tr>
@@ -1877,7 +1937,7 @@ Kubernetes apps/v1.PodManagementPolicyType
 </td>
 <td>
 <em>(Optional)</em>
-<p>By default, it is set to &ldquo;parallel&rdquo;</p>
+<p>PodManagementPolicy</p>
 </td>
 </tr>
 <tr>
@@ -1889,7 +1949,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Custom labels to be populated in Druid pods</p>
+<p>PodLabels Custom labels to be populated in <code>Druid</code> pods.</p>
 </td>
 </tr>
 <tr>
@@ -1903,6 +1963,7 @@ Kubernetes apps/v1.StatefulSetUpdateStrategy
 </td>
 <td>
 <em>(Optional)</em>
+<p>UpdateStrategy</p>
 </td>
 </tr>
 <tr>
@@ -1916,7 +1977,8 @@ Kubernetes core/v1.Probe
 </td>
 <td>
 <em>(Optional)</em>
-<p>Port is set to druid.port if not specified with httpGet handler</p>
+<p>LivenessProbe
+Port is set to <code>druid.port</code> if not specified with httpGet handler.</p>
 </td>
 </tr>
 <tr>
@@ -1930,7 +1992,8 @@ Kubernetes core/v1.Probe
 </td>
 <td>
 <em>(Optional)</em>
-<p>Port is set to druid.port if not specified with httpGet handler</p>
+<p>ReadinessProbe
+Port is set to <code>druid.port</code> if not specified with httpGet handler.</p>
 </td>
 </tr>
 <tr>
@@ -1944,7 +2007,7 @@ Kubernetes core/v1.Probe
 </td>
 <td>
 <em>(Optional)</em>
-<p>StartupProbe for nodeSpec</p>
+<p>StartUpProbe</p>
 </td>
 </tr>
 <tr>
@@ -1958,7 +2021,7 @@ Kubernetes core/v1.Probe
 </td>
 <td>
 <em>(Optional)</em>
-<p>k8s service resources to be created for each Druid statefulsets</p>
+<p>Services Kubernetes services to be created for each workload.</p>
 </td>
 </tr>
 <tr>
@@ -1970,7 +2033,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Node selector to be used by Druid statefulsets</p>
+<p>NodeSelector Kubernetes native <code>nodeSelector</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -1984,7 +2047,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Toleration to be used in order to run Druid on nodes tainted</p>
+<p>Tolerations Kubernetes native <code>toleration</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -1998,7 +2061,7 @@ Kubernetes core/v1.Affinity
 </td>
 <td>
 <em>(Optional)</em>
-<p>Affinity to be used to for enabling node, pod affinity and anti-affinity</p>
+<p>Affinity Kubernetes native <code>affinity</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -2011,6 +2074,9 @@ map[string]druid-operator/apis/druid/v1alpha1.DruidNodeSpec
 </em>
 </td>
 <td>
+<p>Nodes a list of <code>Druid</code> Node types and their configurations.
+<code>DruidSpec</code> is used to create Kubernetes workload specs. Many of the fields above can be overridden at the specific
+<code>NodeSpec</code> level.</p>
 </td>
 </tr>
 <tr>
@@ -2024,7 +2090,7 @@ map[string]druid-operator/apis/druid/v1alpha1.DruidNodeSpec
 </td>
 <td>
 <em>(Optional)</em>
-<p>Operator deploys the sidecar container based on these properties. Sidecar will be deployed for all the Druid pods.</p>
+<p>AdditionalContainer defines additional sidecar containers to be deployed with the <code>Druid</code> pods.</p>
 </td>
 </tr>
 <tr>
@@ -2035,6 +2101,11 @@ bool
 </em>
 </td>
 <td>
+<em>(Optional)</em>
+<p>RollingDeploy Whether to deploy the components in a rolling update as described in the documentation:
+<a href="https://druid.apache.org/docs/latest/operations/rolling-updates.html">https://druid.apache.org/docs/latest/operations/rolling-updates.html</a>
+If set to true then operator checks the rollout status of previous version workloads before updating the next.
+This will be done only for update actions.</p>
 </td>
 </tr>
 <tr>
@@ -2048,8 +2119,7 @@ ZookeeperSpec
 </td>
 <td>
 <em>(Optional)</em>
-<p>futuristic stuff to make Druid dependency setup extensible from within Druid operator
-ignore for now.</p>
+<p>Zookeeper IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.</p>
 </td>
 </tr>
 <tr>
@@ -2063,6 +2133,7 @@ MetadataStoreSpec
 </td>
 <td>
 <em>(Optional)</em>
+<p>MetadataStore IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.</p>
 </td>
 </tr>
 <tr>
@@ -2076,6 +2147,7 @@ DeepStorageSpec
 </td>
 <td>
 <em>(Optional)</em>
+<p>DeepStorage IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.</p>
 </td>
 </tr>
 <tr>
@@ -2087,7 +2159,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Custom Dimension Map Path for statsd emitter</p>
+<p>DimensionsMapPath Custom Dimension Map Path for statsd emitter.</p>
 </td>
 </tr>
 <tr>
@@ -2099,7 +2171,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>HDFS common config</p>
+<p>HdfsSite Contents of <code>hdfs-site.xml</code>.</p>
 </td>
 </tr>
 <tr>
@@ -2111,6 +2183,7 @@ string
 </td>
 <td>
 <em>(Optional)</em>
+<p>CoreSite Contents of <code>core-site.xml</code>.</p>
 </td>
 </tr>
 </tbody>
@@ -2123,6 +2196,7 @@ string
 (<em>Appears on:</em>
 <a href="#druid.apache.org/v1alpha1.DruidSpec">DruidSpec</a>)
 </p>
+<p>MetadataStoreSpec IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.</p>
 <div class="md-typeset__scrollwrap">
 <div class="md-typeset__table">
 <table>
@@ -2167,6 +2241,7 @@ encoding/json.RawMessage
 (<em>Appears on:</em>
 <a href="#druid.apache.org/v1alpha1.DruidSpec">DruidSpec</a>)
 </p>
+<p>ZookeeperSpec IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.</p>
 <div class="md-typeset__scrollwrap">
 <div class="md-typeset__table">
 <table>
