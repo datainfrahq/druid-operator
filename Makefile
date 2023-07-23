@@ -147,6 +147,11 @@ helm-lint: ## Lint Helm chart.
 helm-template: ## Run Helm template.
 	helm -n druid-operator-system template --create-namespace ${NAMESPACE_DRUID_OPERATOR} ./chart --debug
 
+##@ Documentation
+
+.PHONY: api-docs
+api-docs: gen-crd-api-reference-docs ## Generate API reference documentation
+	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./apis/druid/v1alpha1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api-references/druid.md
 
 ##@ Build Dependencies
 
@@ -158,11 +163,13 @@ $(LOCALBIN):
 ## Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
+GEN_CRD_API_REFERENCE_DOCS = $(LOCALBIN)/gen-crd-api-reference-docs
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v3.8.7
 CONTROLLER_TOOLS_VERSION ?= v0.11.2
+GEN_CRD_API_REF_VERSION ?= v0.3.0
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -184,6 +191,11 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+.PHONY: gen-crd-api-reference-docs
+gen-crd-api-reference-docs: $(GEN_CRD_API_REFERENCE_DOCS)
+$(GEN_CRD_API_REFERENCE_DOCS): $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install github.com/ahmetb/gen-crd-api-reference-docs@$(GEN_CRD_API_REF_VERSION)
 
 ## e2e deployment
 .PHONY: e2e

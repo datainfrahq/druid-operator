@@ -1,47 +1,12 @@
-## Install the operator
+# Installation
 
-```bash
-# This will deploy kind to test the stack locally
-make kind
-# This will deploy the operator into the druid-operator-system namespace
-make deploy
-# Check the deployed druid-operator-system
-kubectl describe deployment -n druid-operator-system druid-operator-controller-manager
-```
+The operator installation is available as a [Helm chart](https://operatorhub.io/operator/druid-operator).  
 
-Operator can be deployed with namespaced scope or clutser scope. By default, the operator is namespaced scope.
-For the operator to be cluster scope, do the following changes:
+The operator can be deployed in one of the following modes:
+- namespace scope (default)
+- cluster scope
 
-- Edit the `config/default/manager_config_patch.yaml` so the `patchesStrategicMerge:` will look like this:
-
-```yaml
-patchesStrategicMerge:
-- manager_auth_proxy_patch.yaml
-- manager_config_patch.yaml
-```
-
-- Edit the `config/default/manager_config_patch.yaml` to look like this:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: controller-manager
-  namespace: system
-spec:
-  template:
-    spec:
-      containers:
-      - name: manager
-        env:
-        - name: WATCH_NAMESPACE
-          value: ""
-```
-
-## Install the operator using Helm chart
-
-- Install cluster scope operator into the `druid-operator-system` namespace:
-
+### Cluster Scope Installation 
 ```bash
 # Install Druid operator using Helm
 helm -n druid-operator-system upgrade -i --create-namespace cluster-druid-operator ./chart
@@ -50,8 +15,7 @@ helm -n druid-operator-system upgrade -i --create-namespace cluster-druid-operat
 helm -n druid-operator-system template --create-namespace cluster-druid-operator ./chart > manifest.yaml
 ```
 
-- Install namespaced operator into the `druid-operator-system` namespace:
-
+### Custom Namespaces Installation
 ```bash
 # Install Druid operator using Helm
 kubectl create ns mynamespace
