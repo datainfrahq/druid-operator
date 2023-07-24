@@ -1,3 +1,128 @@
+## Configure Hot/Cold for Historical Pods
+```yaml
+...
+  nodes:
+    hot:
+      druid.port: 8083
+      env:
+      - name: DRUID_XMS
+        value: 2g
+      - name: DRUID_XMX
+        value: 2g
+      - name: DRUID_MAXDIRECTMEMORYSIZE
+        value: 2g
+      livenessProbe:
+          failureThreshold: 3
+          httpGet:
+          path: /status/health
+          port: 8083
+          initialDelaySeconds: 1800
+          periodSeconds: 5
+      nodeConfigMountPath: /opt/druid/conf/druid/cluster/data/historical
+      nodeType: historical
+      podDisruptionBudgetSpec:
+          maxUnavailable: 1
+      readinessProbe:
+          failureThreshold: 18
+          httpGet:
+          path: /druid/historical/v1/readiness
+          port: 8083
+          periodSeconds: 10
+      replicas: 1
+      resources:
+          limits:
+            cpu: 3
+            memory: 6Gi
+          requests:
+            cpu: 1
+            memory: 1Gi
+      runtime.properties: 
+          druid.plaintextPort=8083
+          druid.service=druid/historical/hot
+    cold:
+      druid.port: 8083
+      env:
+      - name: DRUID_XMS
+        value: 1500m
+      - name: DRUID_XMX
+        value: 1500m
+      - name: DRUID_MAXDIRECTMEMORYSIZE
+        value: 2g
+      livenessProbe:
+        failureThreshold: 3
+        httpGet:
+          path: /status/health
+          port: 8083
+        initialDelaySeconds: 1800
+        periodSeconds: 5
+      nodeConfigMountPath: /opt/druid/conf/druid/cluster/data/historical
+      nodeType: historical
+      podDisruptionBudgetSpec:
+        maxUnavailable: 1
+      readinessProbe:
+        failureThreshold: 18
+        httpGet:
+          path: /druid/historical/v1/readiness
+          port: 8083
+        periodSeconds: 10
+      replicas: 1
+      resources:
+        limits:
+          cpu: 4
+          memory: 3.5Gi
+        requests:
+          cpu: 1
+          memory: 1Gi
+      runtime.properties: 
+        druid.plaintextPort=8083
+        druid.service=druid/historical/cold
+...
+```
+
+## Override default Probes
+```yaml
+...
+  nodes:
+    brokers:
+      kind: Deployment
+      nodeType: "broker"
+      druid.port: 8088
+      nodeConfigMountPath: "/opt/druid/conf/druid/cluster/query/broker"
+      replicas: 2
+      podDisruptionBudgetSpec:
+        maxUnavailable: 1
+        selector:
+          matchLabels:
+            app: druid
+            component: broker
+      livenessProbe:
+        httpGet:
+          path: /status/health
+          port: 8088
+        failureThreshold: 10
+        initialDelaySeconds: 60
+        periodSeconds: 30
+        successThreshold: 1
+        timeoutSeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /status/health
+          port: 8088
+        failureThreshold: 10
+        initialDelaySeconds: 60
+        periodSeconds: 30
+        successThreshold: 1
+        timeoutSeconds: 10
+      resources:
+        limits:
+          cpu: "4"
+          memory: "8Gi"
+        requests:
+          cpu: "2"
+          memory: "4Gi"
+...
+```
+
 ## Configure Ingress
 ```yaml
 ...
@@ -24,86 +149,6 @@
         - hosts:
           - broker.myhostname.com
           secretName: tls-broker-druid-cluster
-...
-```
-
-## Configure Hot/Cold for Historicals
-```yaml
-...
-  hot:
-    druid.port: 8083
-    env:
-    - name: DRUID_XMS
-      value: 2g
-    - name: DRUID_XMX
-      value: 2g
-    - name: DRUID_MAXDIRECTMEMORYSIZE
-      value: 2g
-    livenessProbe:
-        failureThreshold: 3
-        httpGet:
-        path: /status/health
-        port: 8083
-        initialDelaySeconds: 1800
-        periodSeconds: 5
-    nodeConfigMountPath: /opt/druid/conf/druid/cluster/data/historical
-    nodeType: historical
-    podDisruptionBudgetSpec:
-        maxUnavailable: 1
-    readinessProbe:
-        failureThreshold: 18
-        httpGet:
-        path: /druid/historical/v1/readiness
-        port: 8083
-        periodSeconds: 10
-    replicas: 1
-    resources:
-        limits:
-          cpu: 3
-          memory: 6Gi
-        requests:
-          cpu: 1
-          memory: 1Gi
-    runtime.properties: 
-        druid.plaintextPort=8083
-        druid.service=druid/historical/hot
-  cold:
-    druid.port: 8083
-    env:
-    - name: DRUID_XMS
-      value: 1500m
-    - name: DRUID_XMX
-      value: 1500m
-    - name: DRUID_MAXDIRECTMEMORYSIZE
-      value: 2g
-    livenessProbe:
-      failureThreshold: 3
-      httpGet:
-        path: /status/health
-        port: 8083
-      initialDelaySeconds: 1800
-      periodSeconds: 5
-    nodeConfigMountPath: /opt/druid/conf/druid/cluster/data/historical
-    nodeType: historical
-    podDisruptionBudgetSpec:
-      maxUnavailable: 1
-    readinessProbe:
-      failureThreshold: 18
-      httpGet:
-        path: /druid/historical/v1/readiness
-        port: 8083
-      periodSeconds: 10
-    replicas: 1
-    resources:
-      limits:
-        cpu: 4
-        memory: 3.5Gi
-      requests:
-        cpu: 1
-        memory: 1Gi
-    runtime.properties: 
-      druid.plaintextPort=8083
-      druid.service=druid/historical/cold
 ...
 ```
 
