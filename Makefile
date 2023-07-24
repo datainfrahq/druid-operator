@@ -51,6 +51,10 @@ help: ## Display this help.
 
 ##@ Development
 
+.PHONY: kind
+kind: ## Bootstrap Kind Locally
+	sh e2e/kind.sh
+
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) crd:generateEmbeddedObjectMeta=true rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
@@ -68,10 +72,51 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+##@ Test
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
 
+.PHONY: e2e
+e2e: ## Runs e2e tests
+	e2e/e2e.sh
+
+.PHONY: docker-build-local-test
+docker-build-local-test: ## Build docker image with the manager for test on kind.
+	docker build -t ${IMG_KIND}:${TEST_IMG_TAG} -f e2e/Dockerfile-testpod .
+
+.PHONY: docker-push-local-test
+docker-push-local-test: ## Push docker image with the manager to kind registry.
+	docker push ${IMG_KIND}:${TEST_IMG_TAG}
+
+.PHONY: deploy-testjob
+deploy-testjob: ## Run a wikipedia test pod
+	kubectl create job wiki-test --image=${IMG_KIND}:${TEST_IMG_TAG}  -- sh /wikipedia-test.sh
+	bash e2e/monitor-task.sh
+
+.PHONY: helm-install-druid-operator
+helm-install-druid-operator: ## Helm install to deploy the druid operator
+	helm upgrade --install \
+	--namespace ${NAMESPACE_DRUID_OPERATOR} \
+	--create-namespace \
+	${NAMESPACE_DRUID_OPERATOR} chart/ \
+	--set image.repository=${IMG_KIND} \
+	--set image.tag=${IMG_TAG}
+
+.PHONY: helm-minio-install
+helm-minio-install: ## Helm deploy minio operator and minio
+	helm repo add minio https://operator.min.io/
+	helm repo update minio
+	helm upgrade --install \
+	--namespace ${NAMESPACE_MINIO_OPERATOR} \
+	--create-namespace \
+	 ${NAMESPACE_MINIO_OPERATOR} minio/operator \
+	-f e2e/configs/minio-operator-override.yaml
+	helm upgrade --install \
+	--namespace ${NAMESPACE_DRUID} \
+	--create-namespace \
+  	${NAMESPACE_DRUID}-minio minio/tenant \
+	-f e2e/configs/minio-tenant-override.yaml
 
 ##@ Build
 
@@ -93,6 +138,14 @@ docker-build: test ## Build docker image with the manager.
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}:${IMG_TAG}
+
+.PHONY: docker-build-local
+docker-build-local: ## Build docker image with the manager for kind registry.
+	docker build -t ${IMG_KIND}:${IMG_TAG} .
+
+.PHONY: docker-push-local
+docker-push-local: ## Push docker image with the manager to kind registry.
+	docker push ${IMG_KIND}:${IMG_TAG}
 
 # PLATFORMS defines the target platforms for  the manager image be build to provide support to multiple
 # architectures. (i.e. make docker-buildx IMG=myregistry/mypoperator:0.0.1). To use this option you need to:
@@ -196,65 +249,3 @@ $(ENVTEST): $(LOCALBIN)
 gen-crd-api-reference-docs: $(GEN_CRD_API_REFERENCE_DOCS)
 $(GEN_CRD_API_REFERENCE_DOCS): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install github.com/ahmetb/gen-crd-api-reference-docs@$(GEN_CRD_API_REF_VERSION)
-
-## e2e deployment
-.PHONY: e2e
-e2e: ## Runs e2e tests
-	e2e/e2e.sh
-
-## Build Kind
-.PHONY: kind 
-kind: ## Bootstrap Kind Locally
-	sh e2e/kind.sh
-
-## Make Docker build for kind registery
-.PHONY: docker-build-local
-docker-build-local: ## Build docker image with the manager.
-	docker build -t ${IMG_KIND}:${IMG_TAG} .
-
-## Make Docker push locally to kind registery
-.PHONY: docker-push-local
-docker-push-local: ## Build docker image with the manager.
-	docker push ${IMG_KIND}:${IMG_TAG}
-
-## Make Docker build for test image
-.PHONY: docker-build-local-test
-docker-build-local-test: ## Build docker image with the manager.
-	docker build -t ${IMG_KIND}:${TEST_IMG_TAG} -f e2e/Dockerfile-testpod .
-
-## Make Docker push  locally to kind registery
-.PHONY: docker-push-local-test
-docker-push-local-test: ## Build docker image with the manager.
-	docker push ${IMG_KIND}:${TEST_IMG_TAG}
-
-## Helm install to deploy the druid operator
-.PHONY: helm-install-druid-operator
-helm-install-druid-operator: ## helm upgrade/install
-	helm upgrade --install \
-	--namespace ${NAMESPACE_DRUID_OPERATOR} \
-	--create-namespace \
-	${NAMESPACE_DRUID_OPERATOR} chart/ \
-	--set image.repository=${IMG_KIND} \
-	--set image.tag=${IMG_TAG}
-
-## Helm deploy minio operator and minio
-.PHONY: helm-minio-install
-helm-minio-install:
-	helm repo add minio https://operator.min.io/
-	helm repo update minio
-	helm upgrade --install \
-	--namespace ${NAMESPACE_MINIO_OPERATOR} \
-	--create-namespace \
-	 ${NAMESPACE_MINIO_OPERATOR} minio/operator \
-	-f e2e/configs/minio-operator-override.yaml
-	helm upgrade --install \
-	--namespace ${NAMESPACE_DRUID} \
-	--create-namespace \
-  	${NAMESPACE_DRUID}-minio minio/tenant \
-	-f e2e/configs/minio-tenant-override.yaml
-
-## Run the test pod
-.PHONY: deploy-testjob
-deploy-testjob:
-	kubectl create job wiki-test --image=${IMG_KIND}:${TEST_IMG_TAG}  -- sh /wikipedia-test.sh
-	bash e2e/monitor-task.sh

@@ -9,10 +9,10 @@ The operator simplifies the management of Druid clusters with its custom logic t
 * [Getting Started](./getting_started.md)
 * API Specifications
   * [Druid API](./api_specifications/druid.md)
-* [Feature Supported by Druid Operator](./features.md)
+* [Supported Features](./features.md)
 * [Example Specs](./example_specs.md)
-* [Migration To Kubebuilder V3 in the Upcoming Version](./kubebuilder_v3_migration.md)
 * [Developer Documentation](./dev_doc.md)
+* [Migration To Kubebuilder V3 in the Upcoming Version](./kubebuilder_v3_migration.md)
 ---
 
 :warning: You won't find any documentation about druid itself in this repository.
