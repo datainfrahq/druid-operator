@@ -49,53 +49,72 @@ Default updates are done in parallel. Since cluster creation does not require a 
 in parallel anyway. To enable this feature, set `rollingDeploy: true` in the Druid CR.
 
 ## Force Delete of Sts Pods
+During upgradeS, if THE StatefulSet is set to `OrderedReady` - the StatefulSet controller will not recover from 
+crash-loopback state. The issues is referenced [here](https://github.com/kubernetes/kubernetes/issues/67250). 
+Documentation reference: [doc](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#forced-rollback)
+The operator solves this by using the `forceDeleteStsPodOnError` key, the operator will delete the sts pod if its in 
+crash-loopback state.  
+Example scenario: During upgrade, user rolls out a faulty configuration causing the historical pod going in crashing 
+state. Then, the user rolls out a valid configuration - the new configuration will not be applied unless user manually 
+delete the pods. To solve this scenario, the operator will delete the pod automatically without user intervention.  
 
-- During upgrade if sts is set to ordered ready, the sts controller will not recover from crashloopback state. The issues is referenced [here](https://github.com/kubernetes/kubernetes/issues/67250), and here's a reference [doc](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#forced-rollback)
-- How operator solves this is using the ```forceDeleteStsPodOnError``` key, the operator will delete the sts pod if its in crashloopback state. Example Scenario: During upgrade, user rolls out a faulty configuration causing the historical pod going in crashing state, user rolls out a valid configuration, the new configuration will not be applied unless user manual delete pods, so solve this scenario operator shall delete the pod automatically without user intervention.
-- ```NOTE: User must be aware of this feature, there might be cases where crashloopback might be caused due probe failure, fault image etc, the operator shall keep on deleting on each re-concile loop. Default Behavior is True ```
+```
+NOTE: User must be aware of this feature, there might be cases where crash-loopback might be caused due probe failure, 
+fault image etc, the operator will keep on deleting on each re-concile loop. Default Behavior is True.
+```
 
-## Scaling of Druid Nodes
+## Horizontal Scaling of Druid Pods
+The operator supports the `HPA autosaling/v2` specification in the `nodeSpec` for druid nodes. In case an HPA deployed, 
+the HPA controller maintains the replica count/state for the particular workload referenced.  
+Refer to `examples.md` for HPA configuration. 
 
-- Operator supports ```HPA autosaling/v2``` Spec in the nodeSpec for druid nodes. In case HPA deployed, HPA controller maintains the replica count/state for the particular statefulset referenced.  Refer to ```examples.md``` for HPA configuration. 
-- ```NOTE: Prefered to scale only brokers using HPA.```
-- In order to scale MM with HPA, its recommended not to use HPA. Refer to these discussions which have adderessed the issues in details.
-
+```
+NOTE: This option in currently prefered to scale only brokers using HPA. In order to scale Middle Managers with HPA, 
+its recommended not to use HPA. Refer to these discussions which have adderessed the issues in details:
+```
 1. <https://github.com/apache/druid/issues/8801#issuecomment-664020630>
 2. <https://github.com/apache/druid/issues/8801#issuecomment-664648399>
 
-## Volume Expansion of Druid Nodes Running As StatefulSets
+## Volume Expansion of Druid Pods Running As StatefulSets
+```
+NOTE: This feature has been tested only on cloud environments and storage classes which have supported volume expansion.
+This feature uses cascade=orphan strategy to make sure that only the StatefulSet is deleted and recreated and pods 
+are not deleted.
+```
+Druid Nodes (specifically historical nodes) run as StatefulSets. Each StatefulSet replica has a PVC attached. The 
+`NodeSpec` in Druid CR has the key `volumeClaimTemplates` where users can define the PVC's storage class as well 
+as size. Currently, in Kubernetes, in case a user wants to increase the size in the node, the StatefulSets cannot 
+be directly updated. The Druid operator can perform a seamless update of the StatefulSet, and patch the 
+PVCs with the desired size defined in the druid CR. Behind the scenes, the operator performs a cascade deletion of the 
+StatefulSet, and patches the PVC. Cascade deletion has no affect to the pods running (queries are served and no 
+downtime is experienced).  
+While enabling this feature, the operator will check if volume expansion is supported in the storage class mentioned 
+in the druid CR, only then will it perform expansion. 
+This feature is disabled by default. To enable it set `scalePvcSts: true` in the Druid CR.
+By default, this feature is disabled.
 
-```NOTE: This feature has been tested only on cloud environments and storage classes which have supported volume expansion. This feature uses cascade=orphan strategy to make sure only Stateful is deleted and recreated and pods are not deleted.```
+```
+IMPORTANT: Shrinkage of pvc's isnt supported - desiredSize cannot be less than currentSize as well as counts. 
+```
 
-- Druid Nodes specifically historicals run as statefulsets. Each statefulset replica has a pvc attached.
-- NodeSpec in druid CR has key ```volumeClaimTemplates``` where users can define the pvc's storage class as well as size.
-- In case a user wants to increase size in the node, the statefulsets cannot be directly updated.
-- Druid Operator behind the scenes performs seamless update of the statefulset, plus patch the pvc's with desired size defined in the druid CR.
-- Druid operator shall perform a cascade deletion of the sts, and shall patch the pvc. Cascade deletion has no affect to the pods running, queries are served and no downtime is experienced.
-- While enabling this feature, druid operator will check if volume expansion is supported in the storage class mentioned in the druid CR, only then will it perform expansion.
-- Shrinkage of pvc's isnt supported, **desiredSize cannot be less than currentSize as well as counts**.
-- To enable this feature ```scalePvcSts``` needs to be enabled to ```true```.
-- By default, this feature is disabled.
+## Add Additional Containers to Druid Pods
+The operator supports adding additional containers to run along with the druid pods. This helps support co-located, 
+co-managed helper processes for the primary druid application. This can be used for init containers, sidecars, 
+proxies etc.  
+To enable this features users just need to add new containers to the `AdditionalContainers` in the Druid spec API.
+```
+NOTE: This is scoped at cluster scope only, which means that additional container will be common to all the nodes. 
+```
 
-## Add Additional Containers in Druid Nodes
-
-- The Druid operator supports additional containers to run along with the druid services. This helps support co-located, co-managed helper processes for the primary druid application
-- This can be used for init containers or sidecars or proxies etc.
-- To enable this features users just need to add a new container to the container list.
-- This is scoped at cluster scope only, which means that additional container will be common to all the nodes.
-- This can be used for init containers or sidecars or proxies etc. 
-- To enable this features users just need to add a new container to the container list 
-- This is scoped at cluster scope only, which means that additional container will be common to all the nodes
-
-## Setup default probe by default
-
-The operator create deployments and statefullset with a default set of probes for each druid components.
-Theses probes are overrided if you specify a global or specific probe in the druid resource.
+## Default Yet Configurable Probes
+The operator create the Deployments and StatefulSets with a default set of probes for each druid components.
+These probes can be overriden by adding one of the probes in the `DruidSpec` (global) or under the
+`NodeSpec` (component-scope). 
 All the probes definitions are documented bellow:
 
 <details>
 
-<summary>Coordinator, Overlord, Middlemanager, Router and Indexer probes</summary>
+<summary>Coordinator, Overlord, MiddleManager, Router and Indexer probes</summary>
 
 ```yaml
   livenessProbe:
