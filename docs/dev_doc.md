@@ -47,6 +47,12 @@ make test
 make e2e
 ```
 
+## Documentation
+If you changed the CRD API, please make sure the documentation is also updated:
+```shell
+make api-docs 
+```
+
 ## Help
 The `Makefile` should contain all commands with explanations. You can also run:
 ```shell
