@@ -1,32 +1,37 @@
 # Installation
 
-The operator installation is available as a [Helm chart](https://operatorhub.io/operator/druid-operator).  
+The Helm chart is available at the [DataInfra chart repository](https://charts.datainfra.io).
 
 The operator can be deployed in one of the following modes:
 - namespace scope (default)
 - cluster scope
 
+### Add the Helm repository
+```shell
+helm repo add datainfra https://charts.datainfra.io
+```
+
 ### Cluster Scope Installation 
 `NOTE:` the default installation restrics the reconciliation on the default and kube-system namespaces 
 ```bash
 # Install Druid operator using Helm
-helm -n druid-operator-system upgrade -i --create-namespace cluster-druid-operator ./chart
+helm -n druid-operator-system upgrade -i --create-namespace cluster-druid-operator datainfra/druid-operator
 
 # ... or generate manifest.yaml to install using other means:
-helm -n druid-operator-system template --create-namespace cluster-druid-operator ./chart > manifest.yaml
+helm -n druid-operator-system template --create-namespace cluster-druid-operator datainfra/druid-operator > manifest.yaml
 ```
 
 ### Custom Namespaces Installation
 ```bash
 # Install Druid operator using Helm
 kubectl create ns mynamespace
-helm -n druid-operator-system upgrade -i --create-namespace --set env.WATCH_NAMESPACE="mynamespace" namespaced-druid-operator ./chart
+helm -n druid-operator-system upgrade -i --create-namespace --set env.WATCH_NAMESPACE="mynamespace" namespaced-druid-operator datainfra/druid-operator
 
 # Override the default namespace DENY_LIST
-helm -n druid-operator-system upgrade -i --create-namespace --set env.DENY_LIST="kube-system" namespaced-druid-operator ./chart
+helm -n druid-operator-system upgrade -i --create-namespace --set env.DENY_LIST="kube-system" namespaced-druid-operator datainfra/druid-operator
 
 # ... or generate manifest.yaml to install using other means:
-helm -n druid-operator-system template --set env.WATCH_NAMESPACE=""  namespaced-druid-operator ./chart --create-namespace > manifest.yaml
+helm -n druid-operator-system template --set env.WATCH_NAMESPACE=""  namespaced-druid-operator datainfra/druid-operator --create-namespace > manifest.yaml
 ```
 
 ### Uninstall
