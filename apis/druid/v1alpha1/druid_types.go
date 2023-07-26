@@ -32,7 +32,7 @@ type AdditionalContainer struct {
 	// +optional
 	RunAsInit bool `json:"runAsInit"`
 
-	// Image
+	// Image Image of the additional container.
 	// +required
 	Image string `json:"image"`
 
