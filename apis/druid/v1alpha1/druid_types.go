@@ -40,7 +40,7 @@ type AdditionalContainer struct {
 	// +required
 	ContainerName string `json:"containerName"`
 
-	// Command
+	// Command command for the additional container.
 	// +required
 	Command []string `json:"command"`
 
