@@ -56,7 +56,7 @@ type AdditionalContainer struct {
 	// +optional
 	ContainerSecurityContext *v1.SecurityContext `json:"securityContext,omitempty"`
 
-	// Resources Kubernetes Native resource requirements specification.
+	// Resources Kubernetes Native `resources` specification.
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 
