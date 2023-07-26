@@ -172,7 +172,7 @@ type DruidSpec struct {
 	// +optional
 	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty"`
 
-	// Volumes Kubernetes Native `Volume` specification.
+	// Volumes Kubernetes Native `Volumes` specification.
 	// +optional
 	Volumes []v1.Volume `json:"volumes,omitempty"`
 
