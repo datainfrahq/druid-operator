@@ -472,8 +472,8 @@ type DeepStorageSpec struct {
 
 // These are valid conditions of a druid Node.
 const (
-	// DruidClusterReady indicates the underlying druid objects is fully deployed
-	// Underlying pods are able to service requests
+	// DruidClusterReady indicates the underlying druid objects is fully deployed.
+	// Underlying pods are able to handle requests.
 	DruidClusterReady DruidNodeConditionType = "DruidClusterReady"
 
 	// DruidNodeRollingUpdate means that Druid Node is rolling update.
