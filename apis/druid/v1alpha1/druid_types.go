@@ -182,6 +182,7 @@ type DruidSpec struct {
 
 	// PodManagementPolicy
 	// +optional
+	// +kubebuilder:default:="parallel"
 	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy,omitempty"`
 
 	// PodLabels Custom labels to be populated in `Druid` pods.
