@@ -60,7 +60,7 @@ type AdditionalContainer struct {
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 
-	// VolumeMounts Kubernetes Native volume mounts specification.
+	// VolumeMounts Kubernetes Native `VolumeMount` specification.
 	// +optional
 	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty"`
 
