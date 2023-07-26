@@ -215,7 +215,7 @@ type DruidSpec struct {
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
-	// Tolerations Kubernetes native `toleration` specification.
+	// Tolerations Kubernetes native `tolerations` specification.
 	// +optional
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 
