@@ -19,7 +19,7 @@ Druid operator supports such cases - in the chart, edit `env.DENY_LIST` to be a 
 For example: "default,kube-system"
 
 ## Reconcile Time in Operator
-As per operator pattern, the druid operator reconciles every 10s (default reconciliation time) to make sure 
+As per operator pattern, *the druid operator reconciles every 10s* (default reconciliation time) to make sure 
 the desired state (in that case, the druid CR's spec) is in sync with the current state.  
 The reconciliation time can be adjusted - in the chart, add `env.RECONCILE_WAIT` to be a duration
 in seconds.  
