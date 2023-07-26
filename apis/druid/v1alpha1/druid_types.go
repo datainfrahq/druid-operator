@@ -382,7 +382,7 @@ type DruidNodeSpec struct {
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 
-	// PodManagementPolicy By default, it is set to "parallel"
+	// PodManagementPolicy
 	// +optional
 	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy,omitempty"`
 
