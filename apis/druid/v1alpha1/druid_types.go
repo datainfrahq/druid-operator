@@ -44,7 +44,7 @@ type AdditionalContainer struct {
 	// +required
 	Command []string `json:"command"`
 
-	// ImagePullPolicy If not present, will be taken from top level spec
+	// ImagePullPolicy If not present, will be taken from top level spec.
 	// +optional
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
