@@ -9,6 +9,7 @@ The operator can be deployed in one of the following modes:
 ### Add the Helm repository
 ```shell
 helm repo add datainfra https://charts.datainfra.io
+helm repo update
 ```
 
 ### Cluster Scope Installation 
