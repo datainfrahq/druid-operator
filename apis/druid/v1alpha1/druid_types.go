@@ -384,6 +384,7 @@ type DruidNodeSpec struct {
 
 	// PodManagementPolicy
 	// +optional
+	// +kubebuilder:default:="parallel"
 	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy,omitempty"`
 
 	// MaxSurge For Deployment object only.
