@@ -508,7 +508,7 @@ type DruidClusterStatus struct {
 	PersistentVolumeClaims []string            `json:"persistentVolumeClaims,omitempty"`
 }
 
-// Druid is the Schema for the druids API
+// Druid is the Schema for the druids API.
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 type Druid struct {
