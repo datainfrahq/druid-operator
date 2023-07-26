@@ -254,7 +254,7 @@ type DruidSpec struct {
 	DeepStorage *DeepStorageSpec `json:"deepStorage,omitempty"`
 
 	// DimensionsMapPath Custom Dimension Map Path for statsd emitter.
-	// stastd documentation is described in the following documentation: 
+	// stastd documentation is described in the following documentation:
 	// https://druid.apache.org/docs/latest/development/extensions-contrib/statsd.html
 	// +optional
 	DimensionsMapPath string `json:"metricDimensions.json,omitempty"`
