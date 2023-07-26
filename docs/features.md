@@ -48,6 +48,7 @@ In case any of the node goes in pending/crashing state during an update, the ope
 not continue with the update - this will require a manual intervention.  
 Default updates are done in parallel. Since cluster creation does not require a rolling update, they will be done
 in parallel anyway. To enable this feature, set `rollingDeploy: true` in the Druid CR.
+⚠️ This feature is enabled by default.
 
 ## Force Delete of Sts Pods
 During upgradeS, if THE StatefulSet is set to `OrderedReady` - the StatefulSet controller will not recover from 
