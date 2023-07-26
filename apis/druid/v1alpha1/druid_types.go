@@ -137,6 +137,7 @@ type DruidSpec struct {
 
 	// ImagePullPolicy
 	// +optional
+	// +kubebuilder:default:="IfNotPresent"
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
 	// Env Environment variables for druid containers.
