@@ -39,6 +39,7 @@ deletion of a Druid CR, any PVCs provisioned by a StatefulSet will be deleted.
 There are some use-cases (the most popular is horizontal auto-scaling) where a StatefulSet scales down. In that case,
 the statefulSet will terminate its owned pods but nit their attached PVCs which left orphaned and unused.  
 The operator support the ability to auto delete these PVCs. This can be enabled by setting `deleteOrphanPvc: true`.
+⚠️ This feature is enabled by default.
 
 ## Rolling Deploy
 The operator supports Apache Druid's recommended rolling updates. It will do incremental updates in the order
