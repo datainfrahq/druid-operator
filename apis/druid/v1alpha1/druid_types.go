@@ -366,7 +366,7 @@ type DruidNodeSpec struct {
 	// +optional
 	EnvFrom []v1.EnvFromSource `json:"envFrom,omitempty"`
 
-	// Resources Kubernetes Native resource requirements specification.
+	// Resources Kubernetes Native `resources` specification.
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 
