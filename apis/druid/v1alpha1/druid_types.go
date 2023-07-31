@@ -24,409 +24,462 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// AdditionalContainer defines the additional sidecar container
+// AdditionalContainer defines additional sidecar containers to be deployed with the `Druid` pods.
+// (will be part of Kubernetes native in the future:
+// https://github.com/kubernetes/enhancements/blob/master/keps/sig-node/753-sidecar-containers/README.md#summary).
 type AdditionalContainer struct {
-	// List of configurations to use which are not present or to override default implementation configurations
-
+	// RunAsInit indicate whether this should be an init container.
 	// +optional
 	RunAsInit bool `json:"runAsInit"`
-	// This is the image for the additional container to run.
+
+	// Image Image of the additional container.
 	// +required
 	Image string `json:"image"`
 
-	// This is the name of the additional container.
+	// ContainerName name of the additional container.
 	// +required
 	ContainerName string `json:"containerName"`
 
-	// This is the command for the additional container to run.
+	// Command command for the additional container.
 	// +required
 	Command []string `json:"command"`
 
-	// If not present, will be taken from top level spec
+	// ImagePullPolicy If not present, will be taken from top level spec.
 	// +optional
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
-	// Argument to call the command
+	// Args Arguments to call the command.
 	// +optional
 	Args []string `json:"args,omitempty"`
 
-	// ContainerSecurityContext. If not present, will be taken from top level pod
+	// ContainerSecurityContext If not present, will be taken from top level pod.
 	// +optional
 	ContainerSecurityContext *v1.SecurityContext `json:"securityContext,omitempty"`
 
-	// CPU/Memory Resources
+	// Resources Kubernetes Native `resources` specification.
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 
-	// Volumes etc for the Druid pods
+	// VolumeMounts Kubernetes Native `VolumeMount` specification.
 	// +optional
 	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty"`
 
-	// Environment variables for the Additional Container
+	// Env Environment variables for the additional container.
 	// +optional
 	Env []v1.EnvVar `json:"env,omitempty"`
 
-	// Extra environment variables
+	// EnvFrom Extra environment variables from remote source (ConfigMaps, Secrets...).
 	// +optional
 	EnvFrom []v1.EnvFromSource `json:"envFrom,omitempty"`
 }
 
-// DruidSpec defines the desired state of Druid
+// DruidSpec defines the desired state of the Druid cluster.
 type DruidSpec struct {
 
 	// Ignored is now deprecated API. In order to avoid reconciliation of objects use the
-	// druid.apache.org/ignored: "true" annotation
+	// `druid.apache.org/ignored: "true"` annotation.
 	// +optional
 	// +kubebuilder:default:=false
 	Ignored bool `json:"ignored,omitempty"`
 
-	// common.runtime.properties contents
+	// CommonRuntimeProperties Content fo the `common.runtime.properties` configuration file.
 	// +required
 	CommonRuntimeProperties string `json:"common.runtime.properties"`
 
-	// References to ConfigMaps holding more files to mount to the CommonConfigMountPath.
+	// ExtraCommonConfig References to ConfigMaps holding more configuration files to mount to the
+	// common configuration path.
 	// +optional
 	ExtraCommonConfig []*v1.ObjectReference `json:"extraCommonConfig"`
 
-	// Optional: Default is true, will delete the sts pod if sts is set to ordered ready to ensure
+	// ForceDeleteStsPodOnError Delete the StatefulSet's pods if the StatefulSet is set to ordered ready.
 	// issue: https://github.com/kubernetes/kubernetes/issues/67250
 	// doc: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#forced-rollback
-
 	// +optional
+	// +kubebuilder:default:=true
 	ForceDeleteStsPodOnError bool `json:"forceDeleteStsPodOnError,omitempty"`
 
-	// ScalePvcSts, defaults to false. When enabled, operator will allow volume expansion of sts and pvc's.
+	// ScalePvcSts When enabled, operator will allow volume expansion of StatefulSet's PVCs.
 	// +optional
+	// +kubebuilder:default:=false
 	ScalePvcSts bool `json:"scalePvcSts,omitempty"`
 
-	// In-container directory to mount with common.runtime.properties
-	// +required
+	// CommonConfigMountPath In-container directory to mount the Druid common configuration
+	// +optional
+	// +kubebuilder:default:="/opt/druid/conf/druid/cluster/_common"
 	CommonConfigMountPath string `json:"commonConfigMountPath"`
 
-	// Default is set to false, pvc shall be deleted on deletion of CR
+	// DisablePVCDeletionFinalizer Whether PVCs shall be deleted on the deletion of the Druid cluster.
 	// +optional
+	// +kubebuilder:default:=false
 	DisablePVCDeletionFinalizer bool `json:"disablePVCDeletionFinalizer,omitempty"`
 
-	// Default is set to true, orphaned ( unmounted pvc's ) shall be cleaned up by the operator.
+	// DeleteOrphanPvc Orphaned (unmounted PVCs) shall be cleaned up by the operator.
 	// +optional
+	// +kubebuilder:default:=true
 	DeleteOrphanPvc bool `json:"deleteOrphanPvc"`
 
-	// Path to druid start script to be run on container start
-	// +required
+	// StartScript Path to Druid's start script to be run on start.
+	// +optional
+	// +kubebuilder:default:="/druid.sh"
 	StartScript string `json:"startScript"`
 
-	// Required here or at nodeSpec level
+	// Image Required here or at the NodeSpec level.
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// ServiceAccount for the druid cluster
+	// ServiceAccount
 	// +optional
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 
-	// imagePullSecrets for private registries
+	// ImagePullSecrets
 	// +optional
 	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
+	// ImagePullPolicy
 	// +optional
+	// +kubebuilder:default:="IfNotPresent"
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
-	// Environment variables for druid containers
+	// Env Environment variables for druid containers.
 	// +optional
 	Env []v1.EnvVar `json:"env,omitempty"`
 
-	// Extra environment variables
+	// EnvFrom Extra environment variables from remote source (ConfigMaps, Secrets...).
 	// +optional
 	EnvFrom []v1.EnvFromSource `json:"envFrom,omitempty"`
 
-	// jvm options for druid jvm processes
+	// JvmOptions Contents of the shared `jvm.options` configuration file for druid JVM processes.
 	// +optional
 	JvmOptions string `json:"jvm.options,omitempty"`
 
-	// log4j config contents
+	// Log4jConfig contents `log4j.config` configuration file.
 	// +optional
 	Log4jConfig string `json:"log4j.config,omitempty"`
 
-	// druid pods pod-security-context
+	// PodSecurityContext
 	// +optional
 	PodSecurityContext *v1.PodSecurityContext `json:"securityContext,omitempty"`
 
-	// druid pods container-security-context
+	// ContainerSecurityContext
 	// +optional
 	ContainerSecurityContext *v1.SecurityContext `json:"containerSecurityContext,omitempty"`
 
-	// volumes etc for the Druid pods
+	// VolumeClaimTemplates Kubernetes Native `VolumeClaimTemplate` specification.
 	// +optional
 	VolumeClaimTemplates []v1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
+
+	// VolumeMounts Kubernetes Native `VolumeMount` specification.
 	// +optional
 	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	// Volumes Kubernetes Native `Volumes` specification.
 	// +optional
 	Volumes []v1.Volume `json:"volumes,omitempty"`
 
-	// Custom annotations to be populated in Druid pods
+	// PodAnnotations Custom annotations to be populated in `Druid` pods.
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 
-	// By default, it is set to "parallel"
+	// PodManagementPolicy
 	// +optional
+	// +kubebuilder:default:="Parallel"
 	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy,omitempty"`
 
-	// Custom labels to be populated in Druid pods
+	// PodLabels Custom labels to be populated in `Druid` pods.
 	// +optional
 	PodLabels map[string]string `json:"podLabels,omitempty"`
 
+	// UpdateStrategy
 	// +optional
 	UpdateStrategy *appsv1.StatefulSetUpdateStrategy `json:"updateStrategy,omitempty"`
 
-	// Port is set to druid.port if not specified with httpGet handler
+	// LivenessProbe
+	// Port is set to `druid.port` if not specified with httpGet handler.
 	// +optional
 	LivenessProbe *v1.Probe `json:"livenessProbe,omitempty"`
 
-	// Port is set to druid.port if not specified with httpGet handler
+	// ReadinessProbe
+	// Port is set to `druid.port` if not specified with httpGet handler.
 	// +optional
 	ReadinessProbe *v1.Probe `json:"readinessProbe,omitempty"`
 
-	// StartupProbe for nodeSpec
+	// StartUpProbe
 	// +optional
 	StartUpProbe *v1.Probe `json:"startUpProbe,omitempty"`
 
-	// k8s service resources to be created for each Druid statefulsets
+	// Services Kubernetes services to be created for each workload.
 	// +optional
 	Services []v1.Service `json:"services,omitempty"`
 
-	// Node selector to be used by Druid statefulsets
+	// NodeSelector Kubernetes native `nodeSelector` specification.
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
-	// Toleration to be used in order to run Druid on nodes tainted
+	// Tolerations Kubernetes native `tolerations` specification.
 	// +optional
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 
-	// Affinity to be used to for enabling node, pod affinity and anti-affinity
+	// Affinity Kubernetes native `affinity` specification.
 	// +optional
 	Affinity *v1.Affinity `json:"affinity,omitempty"`
 
-	// Spec used to create StatefulSet specs etc, Many of the fields above can be overridden at the specific
-	// node spec level.
-	// Key in following map can be arbitrary string that helps you identify resources(pods, statefulsets etc) for specific nodeSpec.
-	// But, it is used in the k8s resource names, so it must be compliant with restrictions
-	// placed on k8s resource names.
-	// that is, it must match regex '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'
-
+	// Nodes a list of `Druid` Node types and their configurations.
+	// `DruidSpec` is used to create Kubernetes workload specs. Many of the fields above can be overridden at the specific
+	// `NodeSpec` level.
 	// +required
 	Nodes map[string]DruidNodeSpec `json:"nodes"`
 
-	// Operator deploys the sidecar container based on these properties. Sidecar will be deployed for all the Druid pods.
+	// AdditionalContainer defines additional sidecar containers to be deployed with the `Druid` pods.
 	// +optional
 	AdditionalContainer []AdditionalContainer `json:"additionalContainer,omitempty"`
 
-	// Operator deploys above list of nodes in the Druid prescribed order of Historical, Overlord, MiddleManager,
-	// Broker, Coordinator etc.
-	// If set to true then operator checks the rollout status of previous version StateSets before updating next.
-	// Used only for updates.
-
-	// +required
+	// RollingDeploy Whether to deploy the components in a rolling update as described in the documentation:
+	// https://druid.apache.org/docs/latest/operations/rolling-updates.html
+	// If set to true then operator checks the rollout status of previous version workloads before updating the next.
+	// This will be done only for update actions.
+	// +optional
 	// +kubebuilder:default:=true
 	RollingDeploy bool `json:"rollingDeploy"`
 
-	// futuristic stuff to make Druid dependency setup extensible from within Druid operator
-	// ignore for now.
+	// Zookeeper IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.
 	// +optional
 	Zookeeper *ZookeeperSpec `json:"zookeeper,omitempty"`
+
+	// MetadataStore IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.
 	// +optional
 	MetadataStore *MetadataStoreSpec `json:"metadataStore,omitempty"`
+
+	// DeepStorage IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.
 	// +optional
 	DeepStorage *DeepStorageSpec `json:"deepStorage,omitempty"`
 
-	// Custom Dimension Map Path for statsd emitter
+	// DimensionsMapPath Custom Dimension Map Path for statsd emitter.
+	// stastd documentation is described in the following documentation:
+	// https://druid.apache.org/docs/latest/development/extensions-contrib/statsd.html
 	// +optional
 	DimensionsMapPath string `json:"metricDimensions.json,omitempty"`
-	// HDFS common config
+
+	// HdfsSite Contents of `hdfs-site.xml`.
 	// +optional
 	HdfsSite string `json:"hdfs-site.xml,omitempty"`
 
+	// CoreSite Contents of `core-site.xml`.
 	// +optional
 	CoreSite string `json:"core-site.xml,omitempty"`
 }
 
+// DruidNodeSpec Specification of `Druid` Node type and its configurations.
+// The key in following map can be arbitrary string that helps you identify resources for a specific nodeSpec.
+// It is used in the Kubernetes resources' names, so it must be compliant with restrictions
+// placed on Kubernetes resource names:
+// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
 type DruidNodeSpec struct {
-	// Druid node type
+	// NodeDruid `Druid` node type.
 	// +required
 	// +kubebuilder:validation:Enum:=historical;overlord;middleManager;indexer;broker;coordinator;router
 	NodeType string `json:"nodeType"`
 
-	// Port used by Druid Process
+	// DruidPort Used by the `Druid` process.
 	// +required
 	DruidPort int32 `json:"druid.port"`
 
-	// Defaults to statefulsets.
+	// Kind Can be StatefulSet or Deployment.
 	// Note: volumeClaimTemplates are ignored when kind=Deployment
 	// +optional
+	// +kubebuilder:default:="StatefulSet"
 	Kind string `json:"kind,omitempty"`
 
-	// +required
+	// Replicas replica of the workload
+	// +optional
 	// +kubebuilder:validation:Minimum=0
 	Replicas int32 `json:"replicas"`
 
+	// PodLabels Custom labels to be populated in the workload's pods.
 	// +optional
 	PodLabels map[string]string `json:"podLabels,omitempty"`
 
+	// PodDisruptionBudgetSpec Kubernetes native `podDisruptionBudget` specification.
 	// +optional
 	PodDisruptionBudgetSpec *policyv1.PodDisruptionBudgetSpec `json:"podDisruptionBudgetSpec,omitempty"`
 
+	// RuntimeProperties Additional runtime configuration for the specific workload.
 	// +required
 	RuntimeProperties string `json:"runtime.properties"`
 
-	// This overrides JvmOptions at top level
+	// JvmOptions overrides `JvmOptions` at top level.
 	// +optional
 	JvmOptions string `json:"jvm.options,omitempty"`
 
-	// This appends extra jvm options to JvmOptions field
+	// ExtraJvmOptions Appends extra jvm options to the `JvmOptions` field.
 	// +optional
 	ExtraJvmOptions string `json:"extra.jvm.options,omitempty"`
 
-	// This overrides Log4jConfig at top level
+	// Log4jConfig Overrides `Log4jConfig` at top level.
 	// +optional
 	Log4jConfig string `json:"log4j.config,omitempty"`
 
-	// in-container directory to mount with runtime.properties, jvm.config, log4j2.xml files
+	// NodeConfigMountPath in-container directory to mount with runtime.properties, jvm.config, log4j2.xml files.
 	// +required
 	NodeConfigMountPath string `json:"nodeConfigMountPath"`
 
-	// Overrides services at top level
+	// Services Overrides services at top level.
 	// +optional
 	Services []v1.Service `json:"services,omitempty"`
 
-	// Toleration to be used in order to run Druid on nodes tainted
+	// Tolerations Kubernetes native `tolerations` specification.
 	// +optional
 	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
 
-	// Affinity to be used to for enabling node, pod affinity and anti-affinity
+	// Affinity Kubernetes native `affinity` specification.
 	// +optional
 	Affinity *v1.Affinity `json:"affinity,omitempty"`
 
-	// Node selector to be used by Druid statefulsets
+	// NodeSelector Kubernetes native `nodeSelector` specification.
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
+	// TerminationGracePeriodSeconds
 	// +optional
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
 
-	// Extra ports to be added to pod spec
+	// Ports Extra ports to be added to pod spec.
 	// +optional
 	Ports []v1.ContainerPort `json:"ports,omitempty"`
 
-	// Overrides image from top level, Required if no image specified at top level
+	// Image Overrides image from top level, Required if no image specified at top level.
 	// +optional
 	Image string `json:"image,omitempty"`
 
-	// Overrides imagePullSecrets from top level
+	// ImagePullSecrets Overrides `imagePullSecrets` from top level.
 	// +optional
 	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
-	// Overrides imagePullPolicy from top level
+	// ImagePullPolicy Overrides `imagePullPolicy` from top level.
 	// +optional
 	ImagePullPolicy v1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
-	// Extra environment variables
+	// Env Environment variables for druid containers.
 	// +optional
 	Env []v1.EnvVar `json:"env,omitempty"`
 
-	// Extra environment variables
+	// EnvFrom Extra environment variables from remote source (ConfigMaps, Secrets...).
 	// +optional
 	EnvFrom []v1.EnvFromSource `json:"envFrom,omitempty"`
 
-	// CPU/Memory Resources
+	// Resources Kubernetes Native `resources` specification.
 	// +optional
 	Resources v1.ResourceRequirements `json:"resources,omitempty"`
 
-	// Overrides securityContext at top level
+	// PodSecurityContext Overrides `securityContext` at top level.
 	// +optional
 	PodSecurityContext *v1.PodSecurityContext `json:"securityContext,omitempty"`
 
-	// Druid pods container-security-context
+	// ContainerSecurityContext
 	// +optional
 	ContainerSecurityContext *v1.SecurityContext `json:"containerSecurityContext,omitempty"`
 
-	// Custom annotations to be populated in Druid pods
+	// PodAnnotations Custom annotation to be populated in the workload's pods.
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 
-	// By default, it is set to "parallel"
+	// PodManagementPolicy
 	// +optional
+	// +kubebuilder:default:="Parallel"
 	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy,omitempty"`
 
-	// maxSurge for deployment object, only applicable if kind=Deployment, by default set to 25%
+	// MaxSurge For Deployment object only.
+	// Set to 25% by default.
 	// +optional
 	MaxSurge *int32 `json:"maxSurge,omitempty"`
 
-	// maxUnavailable for deployment object, only applicable if kind=Deployment, by default set to 25%
+	// MaxUnavailable For deployment object only.
+	// Set to 25% by default
 	// +optional
 	MaxUnavailable *int32 `json:"maxUnavailable,omitempty"`
 
+	// UpdateStrategy
 	// +optional
 	UpdateStrategy *appsv1.StatefulSetUpdateStrategy `json:"updateStrategy,omitempty"`
 
+	// LivenessProbe
+	// Port is set to `druid.port` if not specified with httpGet handler.
 	// +optional
 	LivenessProbe *v1.Probe `json:"livenessProbe,omitempty"`
 
+	// ReadinessProbe
+	// Port is set to `druid.port` if not specified with httpGet handler.
 	// +optional
 	ReadinessProbe *v1.Probe `json:"readinessProbe,omitempty"`
 
-	// StartupProbe for nodeSpec
+	// StartUpProbes
 	// +optional
 	StartUpProbes *v1.Probe `json:"startUpProbes,omitempty"`
 
-	// Ingress Annoatations to be populated in ingress spec
+	// IngressAnnotations `Ingress` annotations to be populated in ingress spec.
 	// +optional
 	IngressAnnotations map[string]string `json:"ingressAnnotations,omitempty"`
 
-	// Ingress Spec
+	// Ingress Kubernetes Native `Ingress` specification.
 	// +optional
 	Ingress *networkingv1.IngressSpec `json:"ingress,omitempty"`
 
+	// VolumeClaimTemplates Kubernetes Native `VolumeClaimTemplate` specification.
 	// +optional
 	PersistentVolumeClaim []v1.PersistentVolumeClaim `json:"persistentVolumeClaim,omitempty"`
 
+	// Lifecycle
 	// +optional
 	Lifecycle *v1.Lifecycle `json:"lifecycle,omitempty"`
 
+	// HPAutoScaler Kubernetes Native `HorizontalPodAutoscaler` specification.
 	// +optional
 	HPAutoScaler *autoscalev2.HorizontalPodAutoscalerSpec `json:"hpAutoscaler,omitempty"`
 
+	// TopologySpreadConstraints Kubernetes Native `topologySpreadConstraints` specification.
 	// +optional
 	TopologySpreadConstraints []v1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 
+	// VolumeClaimTemplates Kubernetes Native `volumeClaimTemplates` specification.
 	// +optional
 	VolumeClaimTemplates []v1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
+
+	// VolumeMounts Kubernetes Native `volumeMounts` specification.
 	// +optional
 	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	// Volumes Kubernetes Native `volumes` specification.
 	// +optional
 	Volumes []v1.Volume `json:"volumes,omitempty"`
 }
 
+// ZookeeperSpec IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.
 type ZookeeperSpec struct {
 	Type string          `json:"type"`
 	Spec json.RawMessage `json:"spec"`
 }
 
+// MetadataStoreSpec IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.
 type MetadataStoreSpec struct {
 	Type string          `json:"type"`
 	Spec json.RawMessage `json:"spec"`
 }
 
+// DeepStorageSpec IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.
 type DeepStorageSpec struct {
 	Type string          `json:"type"`
 	Spec json.RawMessage `json:"spec"`
 }
 
-// These are valid conditions of a druid Node
+// These are valid conditions of a druid Node.
 const (
-	// DruidClusterReady indicates the underlying druid objects is fully deployed
-	// Underlying pods are able to service requests
+	// DruidClusterReady indicates the underlying druid objects is fully deployed.
+	// Underlying pods are able to handle requests.
 	DruidClusterReady DruidNodeConditionType = "DruidClusterReady"
-	// DruidNodeRollingUpgrade means that Druid Node is rolling update.
+
+	// DruidNodeRollingUpdate means that Druid Node is rolling update.
 	DruidNodeRollingUpdate DruidNodeConditionType = "DruidNodeRollingUpdate"
-	// DruidNodeError indicates the DruidNode is in an error state.
+
+	// DruidNodeErrorState indicates the DruidNode is in an error state.
 	DruidNodeErrorState DruidNodeConditionType = "DruidNodeErrorState"
 )
 
@@ -439,7 +492,7 @@ type DruidNodeTypeStatus struct {
 	Reason                   string                 `json:"reason,omitempty"`
 }
 
-// DruidStatus defines the observed state of Druid
+// DruidClusterStatus Defines the observed state of Druid.
 type DruidClusterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -455,9 +508,9 @@ type DruidClusterStatus struct {
 	PersistentVolumeClaims []string            `json:"persistentVolumeClaims,omitempty"`
 }
 
+// Druid is the Schema for the druids API.
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// Druid is the Schema for the druids API
 type Druid struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
