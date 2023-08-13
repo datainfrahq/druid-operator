@@ -87,3 +87,14 @@ func timeDifference(epochTime1, epochTime2 int64) int64 {
 	diff := time.Duration(t2.Sub(t1))
 	return int64(diff.Seconds())
 }
+
+func hasDuplicateString(slice []string) (bool, string) {
+	seen := make(map[string]bool)
+	for _, s := range slice {
+		if seen[s] {
+			return true, s
+		}
+		seen[s] = true
+	}
+	return false, ""
+}

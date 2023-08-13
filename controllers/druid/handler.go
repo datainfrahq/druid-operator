@@ -1562,6 +1562,10 @@ func verifyDruidSpec(drd *v1alpha1.Druid) error {
 		return err
 	}
 
+	if err = validateAdditionalContainersSpec(drd); err != nil {
+		return err
+	}
+
 	errorMsg := ""
 
 	for key, node := range drd.Spec.Nodes {
