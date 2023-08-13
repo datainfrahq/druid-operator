@@ -402,6 +402,10 @@ type DruidNodeSpec struct {
 	VolumeMounts []v1.VolumeMount `json:"volumeMounts,omitempty"`
 	// +optional
 	Volumes []v1.Volume `json:"volumes,omitempty"`
+
+	// Operator deploys the sidecar container based on these properties.
+	// +optional
+	AdditionalContainer []AdditionalContainer `json:"additionalContainer,omitempty"`
 }
 
 type ZookeeperSpec struct {

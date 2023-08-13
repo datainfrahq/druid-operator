@@ -1294,77 +1294,38 @@ func makePodTemplate(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map
 // makePodSpec shall create podSpec common to both deployment and statefulset.
 func makePodSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, nodeSpecUniqueStr, configMapSHA string) v1.PodSpec {
 
-	var containers []v1.Container
-	containers = append(containers,
-		v1.Container{
-			Image:           firstNonEmptyStr(nodeSpec.Image, m.Spec.Image),
-			Name:            fmt.Sprintf("%s", nodeSpecUniqueStr),
-			Command:         []string{firstNonEmptyStr(m.Spec.StartScript, "bin/run-druid.sh"), nodeSpec.NodeType},
-			ImagePullPolicy: v1.PullPolicy(firstNonEmptyStr(string(nodeSpec.ImagePullPolicy), string(m.Spec.ImagePullPolicy))),
-			Ports:           nodeSpec.Ports,
-			Resources:       nodeSpec.Resources,
-			Env:             getEnv(nodeSpec, m, configMapSHA),
-			EnvFrom:         getEnvFrom(nodeSpec, m),
-			VolumeMounts:    getVolumeMounts(nodeSpec, m),
-			LivenessProbe:   setLivenessProbe(nodeSpec, m),
-			ReadinessProbe:  setReadinessProbe(nodeSpec, m),
-			StartupProbe:    setStartUpProbe(nodeSpec, m),
-			Lifecycle:       nodeSpec.Lifecycle,
-			SecurityContext: firstNonNilValue(nodeSpec.ContainerSecurityContext, m.Spec.ContainerSecurityContext).(*v1.SecurityContext),
-		},
-	)
-
-	var initContainer []v1.Container
-
-	if m.Spec.AdditionalContainer != nil {
-		for _, containerList := range m.Spec.AdditionalContainer {
-			if containerList.RunAsInit {
-				initContainer = append(initContainer,
-					v1.Container{
-						Image:           containerList.Image,
-						Name:            containerList.ContainerName,
-						Resources:       containerList.Resources,
-						VolumeMounts:    containerList.VolumeMounts,
-						Command:         containerList.Command,
-						Args:            containerList.Args,
-						ImagePullPolicy: containerList.ImagePullPolicy,
-						SecurityContext: containerList.ContainerSecurityContext,
-						Env:             containerList.Env,
-						EnvFrom:         containerList.EnvFrom,
-					},
-				)
-			} else {
-				containers = append(containers,
-					v1.Container{
-						Image:           containerList.Image,
-						Name:            containerList.ContainerName,
-						Resources:       containerList.Resources,
-						VolumeMounts:    containerList.VolumeMounts,
-						Command:         containerList.Command,
-						Args:            containerList.Args,
-						ImagePullPolicy: containerList.ImagePullPolicy,
-						SecurityContext: containerList.ContainerSecurityContext,
-						Env:             containerList.Env,
-						EnvFrom:         containerList.EnvFrom,
-					},
-				)
-			}
-		}
+	mainContainer := v1.Container{
+		Image:           firstNonEmptyStr(nodeSpec.Image, m.Spec.Image),
+		Name:            fmt.Sprintf("%s", nodeSpecUniqueStr),
+		Command:         []string{firstNonEmptyStr(m.Spec.StartScript, "bin/run-druid.sh"), nodeSpec.NodeType},
+		ImagePullPolicy: v1.PullPolicy(firstNonEmptyStr(string(nodeSpec.ImagePullPolicy), string(m.Spec.ImagePullPolicy))),
+		Ports:           nodeSpec.Ports,
+		Resources:       nodeSpec.Resources,
+		Env:             getEnv(nodeSpec, m, configMapSHA),
+		EnvFrom:         getEnvFrom(nodeSpec, m),
+		VolumeMounts:    getVolumeMounts(nodeSpec, m),
+		LivenessProbe:   setLivenessProbe(nodeSpec, m),
+		ReadinessProbe:  setReadinessProbe(nodeSpec, m),
+		StartupProbe:    setStartUpProbe(nodeSpec, m),
+		Lifecycle:       nodeSpec.Lifecycle,
+		SecurityContext: firstNonNilValue(nodeSpec.ContainerSecurityContext, m.Spec.ContainerSecurityContext).(*v1.SecurityContext),
 	}
 
 	spec := v1.PodSpec{
-		InitContainers:                initContainer,
 		NodeSelector:                  firstNonNilValue(nodeSpec.NodeSelector, m.Spec.NodeSelector).(map[string]string),
 		TopologySpreadConstraints:     getTopologySpreadConstraints(nodeSpec),
 		Tolerations:                   getTolerations(nodeSpec, m),
 		Affinity:                      getAffinity(nodeSpec, m),
 		ImagePullSecrets:              firstNonNilValue(nodeSpec.ImagePullSecrets, m.Spec.ImagePullSecrets).([]v1.LocalObjectReference),
-		Containers:                    containers,
+		Containers:                    []v1.Container{mainContainer},
 		TerminationGracePeriodSeconds: nodeSpec.TerminationGracePeriodSeconds,
 		Volumes:                       getVolume(nodeSpec, m, nodeSpecUniqueStr),
 		SecurityContext:               firstNonNilValue(nodeSpec.PodSecurityContext, m.Spec.PodSecurityContext).(*v1.PodSecurityContext),
 		ServiceAccountName:            m.Spec.ServiceAccount,
 	}
+
+	addAdditionalContainers(m, nodeSpec, &spec)
+
 	return spec
 }
 
