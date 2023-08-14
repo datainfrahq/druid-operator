@@ -76,13 +76,13 @@
 
 ## Add Additional Containers in Druid Nodes
 
-- The Druid operator supports additional containers to run along with the druid services. This helps support co-located, co-managed helper processes for the primary druid application
+- The Druid operator supports additional containers to run along with the druid services. 
+This helps support co-located, co-managed helper processes for the primary druid application
 - This can be used for init containers or sidecars or proxies etc.
 - To enable this features users just need to add a new container to the container list.
-- This is scoped at cluster scope only, which means that additional container will be common to all the nodes.
-- This can be used for init containers or sidecars or proxies etc. 
-- To enable this features users just need to add a new container to the container list 
-- This is scoped at cluster scope only, which means that additional container will be common to all the nodes
+- There are two scopes you can add additional container:
+  - Cluster scope: Under `spec.additionalContainer` which means that additional containers will be common to all the nodes.
+  - Node scope: Under `spec.nodes[NODE_TYPE].additionalContainer` which means that additional containers will be common to all the pods whithin a specific node group.
 
 ## Setup default probe by default
 
