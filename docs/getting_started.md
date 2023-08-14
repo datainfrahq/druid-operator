@@ -1,81 +1,41 @@
-## Install the operator
+# Installation
 
-```bash
-# This will deploy kind to test the stack locally
-make kind
-# This will deploy the operator into the druid-operator-system namespace
-make deploy
-# Check the deployed druid-operator-system
-kubectl describe deployment -n druid-operator-system druid-operator-controller-manager
+The Helm chart is available at the [DataInfra chart repository](https://charts.datainfra.io).
+
+The operator can be deployed in one of the following modes:
+- namespace scope (default)
+- cluster scope
+
+### Add the Helm repository
+```shell
+helm repo add datainfra https://charts.datainfra.io
+helm repo update
 ```
 
-Operator can be deployed with namespaced scope or clutser scope. By default, the operator is namespaced scope.
-For the operator to be cluster scope, do the following changes:
-
-- Edit the `config/default/manager_config_patch.yaml` so the `patchesStrategicMerge:` will look like this:
-
-```yaml
-patchesStrategicMerge:
-- manager_auth_proxy_patch.yaml
-- manager_config_patch.yaml
-```
-
-- Edit the `config/default/manager_config_patch.yaml` to look like this:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: controller-manager
-  namespace: system
-spec:
-  template:
-    spec:
-      containers:
-      - name: manager
-        env:
-        - name: WATCH_NAMESPACE
-          value: ""
-```
-
-## Install the operator using Helm chart
-
-- Install cluster scope operator into the `druid-operator-system` namespace:
-
+### Cluster Scope Installation 
+`NOTE:` the default installation restrics the reconciliation on the default and kube-system namespaces 
 ```bash
 # Install Druid operator using Helm
-helm -n druid-operator-system upgrade -i --create-namespace cluster-druid-operator ./chart
+helm -n druid-operator-system upgrade -i --create-namespace cluster-druid-operator datainfra/druid-operator
 
 # ... or generate manifest.yaml to install using other means:
-helm -n druid-operator-system template --create-namespace cluster-druid-operator ./chart > manifest.yaml
+helm -n druid-operator-system template --create-namespace cluster-druid-operator datainfra/druid-operator > manifest.yaml
 ```
 
-- Install namespaced operator into the `druid-operator-system` namespace:
-
+### Custom Namespaces Installation
 ```bash
 # Install Druid operator using Helm
 kubectl create ns mynamespace
-helm -n druid-operator-system upgrade -i --create-namespace --set env.WATCH_NAMESPACE="mynamespace" namespaced-druid-operator ./chart
+helm -n druid-operator-system upgrade -i --create-namespace --set env.WATCH_NAMESPACE="mynamespace" namespaced-druid-operator datainfra/druid-operator
 
-# you can use myvalues.yaml instead of --set
-helm -n druid-operator-system upgrade -i --create-namespace -f myvalues.yaml namespaced-druid-operator ./chart
+# Override the default namespace DENY_LIST
+helm -n druid-operator-system upgrade -i --create-namespace --set env.DENY_LIST="kube-system" namespaced-druid-operator datainfra/druid-operator
 
 # ... or generate manifest.yaml to install using other means:
-helm -n druid-operator-system template --set env.WATCH_NAMESPACE=""  namespaced-druid-operator ./chart --create-namespace > manifest.yaml
+helm -n druid-operator-system template --set env.WATCH_NAMESPACE=""  namespaced-druid-operator datainfra/druid-operator --create-namespace > manifest.yaml
 ```
 
-- Update settings, upgrade or rollback:
-
-```bash
-# To upgrade chart or apply changes in myvalues.yaml
-helm -n druid-operator-system upgrade -f myvalues.yaml namespaced-druid-operator ./chart
-
-# Rollback to previous revision
-helm -n druid-operator-system rollback cluster-druid-operator
-```
-
-- Uninstall operator
-
+### Uninstall
 ```bash
 # To avoid destroying existing clusters, helm will not uninstall its CRD. For 
 # complete cleanup annotation needs to be removed first:
@@ -86,18 +46,22 @@ helm -n druid-operator-system  uninstall cluster-druid-operator
 ```
 
 ## Deploy a sample Druid cluster
-
-- An example spec to deploy a tiny druid cluster is included. For full details on spec please see `apis/druid/v1alpha1/druid_types.go`
+Bellow is an example spec to deploy a tiny Druid cluster.  
+For full details on spec please see [Druid CRD API reference](api_specifications/druid.md) 
+or the [Druid API code](../apis/druid/v1alpha1/druid_types.go).
 
 ```bash
-# deploy single node zookeeper
+# Deploy single node zookeeper
 kubectl apply -f examples/tiny-cluster-zk.yaml
 
-# deploy druid cluster spec
+# Deploy druid cluster spec
+# NOTE: add a namespace when applying the cluster if you installed the operator with the default DENY_LIST
 kubectl apply -f examples/tiny-cluster.yaml
 ```
 
-Note that above tiny-cluster only works on a single node kubernetes cluster(e.g. typical k8s cluster setup for dev using kind or minikube) as it uses local disk as "deep storage".
+`NOTE:` that above tiny-cluster only works on a single node kubernetes cluster(e.g. typical k8s cluster setup for dev 
+using kind or minikube) as it uses local disk as "deep storage".
+
 
 ## Debugging Problems
 
