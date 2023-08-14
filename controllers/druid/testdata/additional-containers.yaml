@@ -2,6 +2,7 @@ apiVersion: druid.apache.org/v1alpha1
 kind: Druid
 metadata:
   name: additional-containers
+  namespace: default
 spec:
   image: apache/druid:25.0.0
   startScript: /druid.sh
@@ -43,6 +44,7 @@ spec:
   nodes:
     brokers:
       nodeType: "broker"
+      kind: "Deployment"
       druid.port: 8088
       nodeConfigMountPath: "/opt/druid/conf/druid/cluster/query/broker"
       replicas: 1
