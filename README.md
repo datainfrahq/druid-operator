@@ -55,9 +55,11 @@ Feel free to join Kubernetes slack and join [druid-operator](https://kubernetes.
 | kubernetes > 1.25 | :x: | :x: | :white_check_mark: |
 
 ### Commerical Support
+If you are looking for commercial support on running Apache Druid, feel free to contact.
+Please send a PR if you want your company to be added to commercial support.
 | Name | Company | Contact |
 | :------------- | :-------------: | :-----: |
-| Adheip Singh ( Maintainer ) | DataInfra | adheip.singh@datainfra.io |
+| Adheip Singh - Maintainer | DataInfra | adheip.singh@datainfra.io |
 | Saydul Bashar - Solution Architect | DataStreamIQ | saydul.bashar@datastreamiq.com |
 
 ### Contributors
