@@ -6,9 +6,6 @@
   Kubernetes Operator For Apache Druid
 </h2>
 
-**This is the official [druid-operator](https://github.com/druid-io/druid-operator) project, now maintained by [Maintainers.md](./MAINTAINERS.md).
-[druid-operator](https://github.com/druid-io/druid-operator) is depreacted. Ref to [issue](https://github.com/druid-io/druid-operator/issues/329) and [PR](https://github.com/druid-io/druid-operator/pull/336). Feel free to open issues and PRs! Collaborators are welcome !**
-
 <div align="center">
 
 ![Build Status](https://github.com/datainfrahq/druid-operator/actions/workflows/docker-image.yml/badge.svg) ![Docker pull](https://img.shields.io/docker/pulls/datainfrahq/druid-operator.svg) [![Latest Version](https://img.shields.io/github/tag/datainfrahq/druid-operator)](https://github.com/datainfrahq/druid-operator/releases) [![Slack](https://img.shields.io/badge/slack-brightgreen.svg?logo=slack&label=Community&style=flat&color=%2373DC8C&)](https://kubernetes.slack.com/archives/C04F4M6HT2L)
@@ -56,6 +53,12 @@ Feel free to join Kubernetes slack and join [druid-operator](https://kubernetes.
 | kubernetes == 1.21 | :white_check_mark:| :x: | :x: |
 | kubernetes >= 1.22 and < 1.25 | :white_check_mark: | :white_check_mark: | :x: |
 | kubernetes > 1.25 | :x: | :x: | :white_check_mark: |
+
+### Commerical Support
+| Name | Company | Contact |
+| :------------- | :-------------: | :-----: |
+| Adheip Singh ( Maintainer ) | DataInfra | adheip.singh@datainfra.io |
+| Saydul Bashar - Solution Architect | DataStreamIQ | saydul.bashar@datastreamiq.com |
 
 ### Contributors
 
