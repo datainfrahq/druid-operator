@@ -450,6 +450,10 @@ type DruidNodeSpec struct {
 	// Volumes Kubernetes Native `volumes` specification.
 	// +optional
 	Volumes []v1.Volume `json:"volumes,omitempty"`
+
+	// Operator deploys the sidecar container based on these properties.
+	// +optional
+	AdditionalContainer []AdditionalContainer `json:"additionalContainer,omitempty"`
 }
 
 // ZookeeperSpec IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.

@@ -94,7 +94,6 @@ While enabling this feature, the operator will check if volume expansion is supp
 in the druid CR, only then will it perform expansion. 
 This feature is disabled by default. To enable it set `scalePvcSts: true` in the Druid CR.
 By default, this feature is disabled.
-
 ```
 IMPORTANT: Shrinkage of pvc's isnt supported - desiredSize cannot be less than currentSize as well as counts. 
 ```
@@ -104,9 +103,9 @@ The operator supports adding additional containers to run along with the druid p
 co-managed helper processes for the primary druid application. This can be used for init containers, sidecars, 
 proxies etc.  
 To enable this features users just need to add new containers to the `AdditionalContainers` in the Druid spec API.
-```
-NOTE: This is scoped at cluster scope only, which means that additional container will be common to all the nodes. 
-```
+There are two scopes you can add additional container:
+  - Cluster scope: Under `spec.additionalContainer` which means that additional containers will be common to all the nodes.
+  - Node scope: Under `spec.nodes[NODE_TYPE].additionalContainer` which means that additional containers will be common to all the pods whithin a specific node group.
 
 ## Default Yet Configurable Probes
 The operator create the Deployments and StatefulSets with a default set of probes for each druid components.

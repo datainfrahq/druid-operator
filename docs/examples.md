@@ -157,37 +157,20 @@
 apiVersion: druid.apache.org/v1alpha1
 kind: Druid
 metadata:
-  name: druid
+  name: additional-containers
 spec:
   additionalContainer:
-    - image: universalforwarder-sidekick:next
-      containerName: forwarder
-      command:
-        - /bin/sidekick
-      imagePullPolicy: Always
-      securityContext:
-        runAsUser: 506
-      volumeMounts:
-        - name: logstore
-          mountPath: /logstore
-      env:
-        - name: SAMPLE_ENV
-          value: SAMPLE_VALUE
-      resources:
-        requests:
-          memory: "1Gi"
-          cpu: "500m"
-        limits:
-          memory: "1Gi"
-          cpu: "500m"
-      args:
-        - -loggingEnabled=true
-        - -dataCenter=dataCenter
-        - -environment=environment
-        - -application=application
-        - -instance=instance
-        - -logFiles=logFiles
-...
+    - command:
+        - /bin/sh echo hello
+      containerName: cluster-level
+      image: hello-world
+  nodes:
+    brokers:
+      additionalContainer:
+        - command:
+            - /bin/sh echo hello
+          containerName: node-level
+          image: hello-world
 ```
 
 ## Add additional configuration file into _common directory
