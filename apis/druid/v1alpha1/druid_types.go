@@ -241,6 +241,12 @@ type DruidSpec struct {
 	// +kubebuilder:default:=true
 	RollingDeploy bool `json:"rollingDeploy"`
 
+	// DefaultProbes If set to true this will add default probes (liveness / readiness / startup) for all druid components
+	// but it won't override existing probes
+	// +optional
+	// +kubebuilder:default:=true
+	DefaultProbes bool `json:"defaultProbes"`
+
 	// Zookeeper IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.
 	// +optional
 	Zookeeper *ZookeeperSpec `json:"zookeeper,omitempty"`

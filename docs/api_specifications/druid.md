@@ -12,6 +12,7 @@ Resource Types:
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#druid.apache.org/v1alpha1.DruidNodeSpec">DruidNodeSpec</a>, 
 <a href="#druid.apache.org/v1alpha1.DruidSpec">DruidSpec</a>)
 </p>
 <p>AdditionalContainer defines additional sidecar containers to be deployed with the <code>Druid</code> pods.
@@ -47,7 +48,7 @@ string
 </em>
 </td>
 <td>
-<p>Image</p>
+<p>Image Image of the additional container.</p>
 </td>
 </tr>
 <tr>
@@ -69,7 +70,7 @@ string
 </em>
 </td>
 <td>
-<p>Command</p>
+<p>Command command for the additional container.</p>
 </td>
 </tr>
 <tr>
@@ -83,7 +84,7 @@ Kubernetes core/v1.PullPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>ImagePullPolicy If not present, will be taken from top level spec</p>
+<p>ImagePullPolicy If not present, will be taken from top level spec.</p>
 </td>
 </tr>
 <tr>
@@ -123,7 +124,7 @@ Kubernetes core/v1.ResourceRequirements
 </td>
 <td>
 <em>(Optional)</em>
-<p>Resources Kubernetes Native resource requirements specification.</p>
+<p>Resources Kubernetes Native <code>resources</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -137,7 +138,7 @@ Kubernetes core/v1.ResourceRequirements
 </td>
 <td>
 <em>(Optional)</em>
-<p>VolumeMounts Kubernetes Native volume mounts specification.</p>
+<p>VolumeMounts Kubernetes Native <code>VolumeMount</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -219,7 +220,7 @@ encoding/json.RawMessage
 </div>
 <h3 id="druid.apache.org/v1alpha1.Druid">Druid
 </h3>
-<p>Druid is the Schema for the druids API</p>
+<p>Druid is the Schema for the druids API.</p>
 <div class="md-typeset__scrollwrap">
 <div class="md-typeset__table">
 <table>
@@ -541,7 +542,7 @@ Kubernetes core/v1.SecurityContext
 </td>
 <td>
 <em>(Optional)</em>
-<p>Volumes Kubernetes Native <code>Volume</code> specification.</p>
+<p>Volumes Kubernetes Native <code>Volumes</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -677,7 +678,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Tolerations Kubernetes native <code>toleration</code> specification.</p>
+<p>Tolerations Kubernetes native <code>tolerations</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -699,7 +700,7 @@ Kubernetes core/v1.Affinity
 <code>nodes</code><br>
 <em>
 <a href="#druid.apache.org/v1alpha1.DruidNodeSpec">
-map[string]druid-operator/apis/druid/v1alpha1.DruidNodeSpec
+map[string]./apis/druid/v1alpha1.DruidNodeSpec
 </a>
 </em>
 </td>
@@ -736,6 +737,19 @@ bool
 <a href="https://druid.apache.org/docs/latest/operations/rolling-updates.html">https://druid.apache.org/docs/latest/operations/rolling-updates.html</a>
 If set to true then operator checks the rollout status of previous version workloads before updating the next.
 This will be done only for update actions.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>defaultProbes</code><br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DefaultProbes If set to true this will add default probes (liveness / readiness / startup) for all druid components
+but it won&rsquo;t override existing probes</p>
 </td>
 </tr>
 <tr>
@@ -789,7 +803,9 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>DimensionsMapPath Custom Dimension Map Path for statsd emitter.</p>
+<p>DimensionsMapPath Custom Dimension Map Path for statsd emitter.
+stastd documentation is described in the following documentation:
+<a href="https://druid.apache.org/docs/latest/development/extensions-contrib/statsd.html">https://druid.apache.org/docs/latest/development/extensions-contrib/statsd.html</a></p>
 </td>
 </tr>
 <tr>
@@ -1277,7 +1293,7 @@ Kubernetes core/v1.ResourceRequirements
 </td>
 <td>
 <em>(Optional)</em>
-<p>Resources Kubernetes Native resource requirements specification.</p>
+<p>Resources Kubernetes Native <code>resources</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -1331,7 +1347,7 @@ Kubernetes apps/v1.PodManagementPolicyType
 </td>
 <td>
 <em>(Optional)</em>
-<p>PodManagementPolicy By default, it is set to &ldquo;parallel&rdquo;</p>
+<p>PodManagementPolicy</p>
 </td>
 </tr>
 <tr>
@@ -1540,6 +1556,20 @@ Kubernetes autoscaling/v2.HorizontalPodAutoscalerSpec
 <td>
 <em>(Optional)</em>
 <p>Volumes Kubernetes Native <code>volumes</code> specification.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>additionalContainer</code><br>
+<em>
+<a href="#druid.apache.org/v1alpha1.AdditionalContainer">
+[]AdditionalContainer
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Operator deploys the sidecar container based on these properties.</p>
 </td>
 </tr>
 </tbody>
@@ -1911,7 +1941,7 @@ Kubernetes core/v1.SecurityContext
 </td>
 <td>
 <em>(Optional)</em>
-<p>Volumes Kubernetes Native <code>Volume</code> specification.</p>
+<p>Volumes Kubernetes Native <code>Volumes</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -2047,7 +2077,7 @@ map[string]string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Tolerations Kubernetes native <code>toleration</code> specification.</p>
+<p>Tolerations Kubernetes native <code>tolerations</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -2069,7 +2099,7 @@ Kubernetes core/v1.Affinity
 <code>nodes</code><br>
 <em>
 <a href="#druid.apache.org/v1alpha1.DruidNodeSpec">
-map[string]druid-operator/apis/druid/v1alpha1.DruidNodeSpec
+map[string]./apis/druid/v1alpha1.DruidNodeSpec
 </a>
 </em>
 </td>
@@ -2106,6 +2136,19 @@ bool
 <a href="https://druid.apache.org/docs/latest/operations/rolling-updates.html">https://druid.apache.org/docs/latest/operations/rolling-updates.html</a>
 If set to true then operator checks the rollout status of previous version workloads before updating the next.
 This will be done only for update actions.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>defaultProbes</code><br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DefaultProbes If set to true this will add default probes (liveness / readiness / startup) for all druid components
+but it won&rsquo;t override existing probes</p>
 </td>
 </tr>
 <tr>
@@ -2159,7 +2202,9 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>DimensionsMapPath Custom Dimension Map Path for statsd emitter.</p>
+<p>DimensionsMapPath Custom Dimension Map Path for statsd emitter.
+stastd documentation is described in the following documentation:
+<a href="https://druid.apache.org/docs/latest/development/extensions-contrib/statsd.html">https://druid.apache.org/docs/latest/development/extensions-contrib/statsd.html</a></p>
 </td>
 </tr>
 <tr>

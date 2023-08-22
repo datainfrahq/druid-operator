@@ -18,7 +18,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Druid is the Schema for the druids API
+        description: Druid is the Schema for the druids API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -49,7 +49,7 @@ spec:
                         type: string
                       type: array
                     command:
-                      description: Command
+                      description: Command command for the additional container.
                       items:
                         type: string
                       type: array
@@ -215,15 +215,14 @@ spec:
                         type: object
                       type: array
                     image:
-                      description: Image
+                      description: Image Image of the additional container.
                       type: string
                     imagePullPolicy:
                       description: ImagePullPolicy If not present, will be taken from
-                        top level spec
+                        top level spec.
                       type: string
                     resources:
-                      description: Resources Kubernetes Native resource requirements
-                        specification.
+                      description: Resources Kubernetes Native `resources` specification.
                       properties:
                         claims:
                           description: "Claims lists the names of resources, defined
@@ -450,7 +449,7 @@ spec:
                           type: object
                       type: object
                     volumeMounts:
-                      description: VolumeMounts Kubernetes Native volume mounts specification.
+                      description: VolumeMounts Kubernetes Native `VolumeMount` specification.
                       items:
                         description: VolumeMount describes a mounting of a Volume
                           within a container.
@@ -1510,6 +1509,12 @@ spec:
                 - spec
                 - type
                 type: object
+              defaultProbes:
+                default: true
+                description: DefaultProbes If set to true this will add default probes
+                  (liveness / readiness / startup) for all druid components but it
+                  won't override existing probes
+                type: boolean
               deleteOrphanPvc:
                 default: true
                 description: DeleteOrphanPvc Orphaned (unmounted PVCs) shall be cleaned
@@ -1748,6 +1753,7 @@ spec:
                 description: Image Required here or at the NodeSpec level.
                 type: string
               imagePullPolicy:
+                default: IfNotPresent
                 description: ImagePullPolicy
                 type: string
               imagePullSecrets:
@@ -1930,8 +1936,9 @@ spec:
                 - type
                 type: object
               metricDimensions.json:
-                description: DimensionsMapPath Custom Dimension Map Path for statsd
-                  emitter.
+                description: 'DimensionsMapPath Custom Dimension Map Path for statsd
+                  emitter. stastd documentation is described in the following documentation:
+                  https://druid.apache.org/docs/latest/development/extensions-contrib/statsd.html'
                 type: string
               nodeSelector:
                 additionalProperties:
@@ -1951,26 +1958,26 @@ spec:
                       description: Operator deploys the sidecar container based on
                         these properties.
                       items:
-                        description: AdditionalContainer defines the additional sidecar
-                          container
+                        description: 'AdditionalContainer defines additional sidecar
+                          containers to be deployed with the `Druid` pods. (will be
+                          part of Kubernetes native in the future: https://github.com/kubernetes/enhancements/blob/master/keps/sig-node/753-sidecar-containers/README.md#summary).'
                         properties:
                           args:
-                            description: Argument to call the command
+                            description: Args Arguments to call the command.
                             items:
                               type: string
                             type: array
                           command:
-                            description: This is the command for the additional container
-                              to run.
+                            description: Command command for the additional container.
                             items:
                               type: string
                             type: array
                           containerName:
-                            description: This is the name of the additional container.
+                            description: ContainerName name of the additional container.
                             type: string
                           env:
-                            description: Environment variables for the Additional
-                              Container
+                            description: Env Environment variables for the additional
+                              container.
                             items:
                               description: EnvVar represents an environment variable
                                 present in a Container.
@@ -2090,7 +2097,8 @@ spec:
                               type: object
                             type: array
                           envFrom:
-                            description: Extra environment variables
+                            description: EnvFrom Extra environment variables from
+                              remote source (ConfigMaps, Secrets...).
                             items:
                               description: EnvFromSource represents the source of
                                 a set of ConfigMaps
@@ -2132,15 +2140,14 @@ spec:
                               type: object
                             type: array
                           image:
-                            description: This is the image for the additional container
-                              to run.
+                            description: Image Image of the additional container.
                             type: string
                           imagePullPolicy:
-                            description: If not present, will be taken from top level
-                              spec
+                            description: ImagePullPolicy If not present, will be taken
+                              from top level spec.
                             type: string
                           resources:
-                            description: CPU/Memory Resources
+                            description: Resources Kubernetes Native `resources` specification.
                             properties:
                               claims:
                                 description: "Claims lists the names of resources,
@@ -2191,10 +2198,12 @@ spec:
                                 type: object
                             type: object
                           runAsInit:
+                            description: RunAsInit indicate whether this should be
+                              an init container.
                             type: boolean
                           securityContext:
-                            description: ContainerSecurityContext. If not present,
-                              will be taken from top level pod
+                            description: ContainerSecurityContext If not present,
+                              will be taken from top level pod.
                             properties:
                               allowPrivilegeEscalation:
                                 description: 'AllowPrivilegeEscalation controls whether
@@ -2373,7 +2382,8 @@ spec:
                                 type: object
                             type: object
                           volumeMounts:
-                            description: Volumes etc for the Druid pods
+                            description: VolumeMounts Kubernetes Native `VolumeMount`
+                              specification.
                             items:
                               description: VolumeMount describes a mounting of a Volume
                                 within a container.
@@ -5499,7 +5509,8 @@ spec:
                         workload's pods.
                       type: object
                     podManagementPolicy:
-                      description: PodManagementPolicy By default, it is set to "parallel"
+                      default: Parallel
+                      description: PodManagementPolicy
                       type: string
                     ports:
                       description: Ports Extra ports to be added to pod spec.
@@ -5693,8 +5704,7 @@ spec:
                       minimum: 0
                       type: integer
                     resources:
-                      description: Resources Kubernetes Native resource requirements
-                        specification.
+                      description: Resources Kubernetes Native `resources` specification.
                       properties:
                         claims:
                           description: "Claims lists the names of resources, defined
@@ -9019,6 +9029,7 @@ spec:
                 description: PodLabels Custom labels to be populated in `Druid` pods.
                 type: object
               podManagementPolicy:
+                default: Parallel
                 description: PodManagementPolicy
                 type: string
               readinessProbe:
@@ -10028,7 +10039,7 @@ spec:
                     type: integer
                 type: object
               tolerations:
-                description: Tolerations Kubernetes native `toleration` specification.
+                description: Tolerations Kubernetes native `tolerations` specification.
                 items:
                   description: The pod this Toleration is attached to tolerates any
                     taint that matches the triple <key,value,effect> using the matching
@@ -10486,7 +10497,7 @@ spec:
                   type: object
                 type: array
               volumes:
-                description: Volumes Kubernetes Native `Volume` specification.
+                description: Volumes Kubernetes Native `Volumes` specification.
                 items:
                   description: Volume represents a named volume in a pod that may
                     be accessed by any container in the pod.
