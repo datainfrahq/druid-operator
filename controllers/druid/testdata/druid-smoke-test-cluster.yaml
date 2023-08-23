@@ -8,6 +8,7 @@ spec:
   # Optionally specify image for all nodes. Can be specify on nodes also
   # imagePullSecrets:
   # - name: tutu
+  defaultProbes: true
   startScript: /druid.sh
   podLabels:
     environment: stage

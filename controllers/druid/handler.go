@@ -1143,7 +1143,7 @@ func setLivenessProbe(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) *v1.P
 	livenessProbe := updateDefaultPortInProbe(
 		firstNonNilValue(nodeSpec.LivenessProbe, m.Spec.LivenessProbe).(*v1.Probe),
 		nodeSpec.DruidPort)
-	if livenessProbe == nil {
+	if livenessProbe == nil && m.Spec.DefaultProbes {
 		livenessProbe = setDefaultProbe(nodeSpec.DruidPort, nodeSpec.NodeType, probeType)
 	}
 	return livenessProbe
@@ -1154,7 +1154,7 @@ func setReadinessProbe(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) *v1.
 	readinessProbe := updateDefaultPortInProbe(
 		firstNonNilValue(nodeSpec.ReadinessProbe, m.Spec.ReadinessProbe).(*v1.Probe),
 		nodeSpec.DruidPort)
-	if readinessProbe == nil {
+	if readinessProbe == nil && m.Spec.DefaultProbes {
 		readinessProbe = setDefaultProbe(nodeSpec.DruidPort, nodeSpec.NodeType, probeType)
 	}
 	return readinessProbe
@@ -1165,7 +1165,7 @@ func setStartUpProbe(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) *v1.Pr
 	startUpProbe := updateDefaultPortInProbe(
 		firstNonNilValue(nodeSpec.StartUpProbes, m.Spec.StartUpProbe).(*v1.Probe),
 		nodeSpec.DruidPort)
-	if startUpProbe == nil {
+	if startUpProbe == nil && m.Spec.DefaultProbes {
 		startUpProbe = setDefaultProbe(nodeSpec.DruidPort, nodeSpec.NodeType, probeType)
 	}
 	return startUpProbe
@@ -1347,7 +1347,7 @@ func setDefaultProbe(defaultPort int32, nodeType string, probeType string) *v1.P
 	}
 
 	if nodeType == historical && probeType != "liveness" {
-		probe.HTTPGet.Path = "/druid/historical/v1/loadstatus"
+		probe.HTTPGet.Path = "/druid/historical/v1/readiness"
 		probe.FailureThreshold = 20
 	}
 	if nodeType == broker && probeType != "liveness" {

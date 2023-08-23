@@ -5,6 +5,7 @@ metadata:
   namespace: test-namespace
 spec:
   image: himanshu01/druid:druid-0.12.0-1
+  defaultProbes: true
   podAnnotations:
     key1: value1
     key2: value2

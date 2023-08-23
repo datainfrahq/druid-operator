@@ -36,6 +36,24 @@ var _ = Describe("Test handler", func() {
 
 			Expect(actual).Should(Equal(expected))
 		})
+		It("should make statefulset for broker without default probe", func() {
+			By("By making statefulset for broker")
+			filePath := "testdata/druid-test-cr-noprobe.yaml"
+			clusterSpec, err := readDruidClusterSpecFromFile(filePath)
+			Expect(err).Should(BeNil())
+
+			nodeSpecUniqueStr := makeNodeSpecificUniqueString(clusterSpec, "brokers")
+			nodeSpec := clusterSpec.Spec.Nodes["brokers"]
+
+			actual, _ := makeStatefulSet(&nodeSpec, clusterSpec, makeLabelsForNodeSpec(&nodeSpec, clusterSpec, clusterSpec.Name, nodeSpecUniqueStr), nodeSpecUniqueStr, "blah", nodeSpecUniqueStr)
+			addHashToObject(actual)
+
+			expected := new(appsv1.StatefulSet)
+			err = readAndUnmarshallResource("testdata/broker-statefulset-noprobe.yaml", &expected)
+			Expect(err).Should(BeNil())
+
+			Expect(actual).Should(Equal(expected))
+		})
 
 		It("should make statefulset for broker with sidecar", func() {
 			By("By making statefulset for broker with sidecar")

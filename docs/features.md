@@ -3,13 +3,13 @@
 - [Deny List in Operator](#deny-list-in-operator)
 - [Reconcile Time in Operator](#reconcile-time-in-operator)
 - [Finalizer in Druid CR](#finalizer-in-druid-cr)
-- [Deletetion of Orphan PVC's](#deletetion-of-orphan-pvcs)
+- [Deletion of Orphan PVCs](#deletion-of-orphan-pvcs)
 - [Rolling Deploy](#rolling-deploy)
 - [Force Delete of Sts Pods](#force-delete-of-sts-pods)
-- [Scaling of Druid Nodes](#scaling-of-druid-nodes)
-- [Volume Expansion of Druid Nodes Running As StatefulSets](#volume-expansion-of-druid-nodes-running-as-statefulsets)
-- [Add Additional Containers in Druid Nodes](#add-additional-containers-in-druid-nodes)
-- [Setup default probe by default](#setup-default-probe-by-default)
+- [Horizontal Scaling of Druid Pods](#horizontal-scaling-of-druid-pods)
+- [Volume Expansion of Druid Pods Running As StatefulSets](#volume-expansion-of-druid-pods-running-as-statefulsets)
+- [Add Additional Containers to Druid Pods](#add-additional-containers-to-druid-pods)
+- [Default Yet Configurable Probes](#default-yet-configurable-probes)
 
 
 ## Deny List in Operator
@@ -110,7 +110,13 @@ There are two scopes you can add additional container:
 ## Default Yet Configurable Probes
 The operator create the Deployments and StatefulSets with a default set of probes for each druid components.
 These probes can be overriden by adding one of the probes in the `DruidSpec` (global) or under the
-`NodeSpec` (component-scope). 
+`NodeSpec` (component-scope).
+
+This feature is enabled by default.
+
+:warning: Disable this feature by settings : `defaultProbes: false` if you have the `kubernetes-overlord-extensions` enabled also named [middle manager less druid in k8s](https://druid.apache.org/docs/latest/development/extensions-contrib/k8s-jobs/)
+more details are described here: https://github.com/datainfrahq/druid-operator/issues/97#issuecomment-1687048907
+
 All the probes definitions are documented bellow:
 
 <details>
@@ -201,7 +207,7 @@ All the probes definitions are documented bellow:
   readinessProbe:
     failureThreshold: 20
     httpGet:
-      path: /druid/historical/v1/loadstatus
+      path: /druid/historical/v1/readiness
       port: $druid.port
     initialDelaySeconds: 5
     periodSeconds: 10
@@ -210,7 +216,7 @@ All the probes definitions are documented bellow:
   startupProbe:
     failureThreshold: 20
     httpGet:
-      path: /druid/historical/v1/loadstatus
+      path: /druid/historical/v1/readiness
       port: $druid.port
     initialDelaySeconds: 180
     periodSeconds: 30
