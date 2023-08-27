@@ -5548,6 +5548,10 @@ spec:
                         - containerPort
                         type: object
                       type: array
+                    priorityClassName:
+                      description: PriorityClassName Kubernetes native `priorityClassName`
+                        specification.
+                      type: string
                     readinessProbe:
                       description: ReadinessProbe Port is set to `druid.port` if not
                         specified with httpGet handler.
@@ -9031,6 +9035,10 @@ spec:
               podManagementPolicy:
                 default: Parallel
                 description: PodManagementPolicy
+                type: string
+              priorityClassName:
+                description: PriorityClassName Kubernetes native `priorityClassName`
+                  specification.
                 type: string
               readinessProbe:
                 description: ReadinessProbe Port is set to `druid.port` if not specified

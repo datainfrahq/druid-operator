@@ -97,13 +97,13 @@ spec:
     # Extensions
     #
     druid.extensions.loadList=["druid-datasketches", "druid-s3-extensions", "postgresql-metadata-storage"]
-    
+
     #
     # Logging
     #
     # Log all runtime properties on startup. Disable to avoid logging properties on startup:
     druid.startup.logging.logProperties=true
-    
+
     #
     # Indexing service logs
     #
@@ -112,20 +112,20 @@ spec:
     druid.indexer.logs.type=s3
     druid.indexer.logs.s3Bucket=mybucket
     druid.indexer.logs.s3Prefix=druid/indexing-logs
-    
+
     #
     # Service discovery
     #
     druid.selectors.indexing.serviceName=druid/overlord
     druid.selectors.coordinator.serviceName=druid/coordinator
-    
+
     #
     # Monitoring
     #
     druid.monitoring.monitors=["com.metamx.metrics.JvmMonitor"]
     druid.emitter=logging
     druid.emitter.logging.logLevel=info
-    
+
     # Storage type of double columns
     # ommiting this will lead to index double as float at the storage layer
     druid.indexing.doubleStorage=double
@@ -137,20 +137,17 @@ spec:
     brokers:
       nodeType: "broker"
       services:
-        -
-          spec:
+        - spec:
             type: ClusterIP
             clusterIP: None
-        -
-          metadata:
+        - metadata:
             name: broker-%s-service
             annotations:
               service.beta.kubernetes.io/aws-load-balancer-internal: 0.0.0.0/0
           spec:
             type: LoadBalancer
             ports:
-              -
-                name: service-port
+              - name: service-port
                 port: 8090
                 targetPort: 8080
       druid.port: 8080
@@ -161,16 +158,15 @@ spec:
         httpGet:
           path: /status
       ports:
-        -
-          name: random
+        - name: random
           containerPort: 8083
       runtime.properties: |-
         druid.service=druid/broker
-        
+
         # HTTP server threads
         druid.broker.http.numConnections=5
         druid.server.http.numThreads=25
-        
+
         # Processing threads and buffers
         druid.processing.buffer.sizeBytes=1
         druid.processing.numMergeBuffers=1
@@ -188,7 +184,7 @@ spec:
               requests:
                 storage: 2Gi
             storageClassName: gp2
-      
+
       volumeMounts:
         - mountPath: /druid/data
           name: data-volume
@@ -200,18 +196,17 @@ spec:
         limits:
           memory: "2Gi"
           cpu: "4"
-    
+
     coordinators:
       nodeType: "coordinator"
       druid.port: 8080
       replicas: 1
       ports:
-        -
-          name: random
+        - name: random
           containerPort: 8083
       runtime.properties: |-
         druid.service=druid/coordinator
-        
+
         # HTTP server threads
         druid.coordinator.startDelay=PT30S
         druid.coordinator.period=PT30S
@@ -228,7 +223,7 @@ spec:
               requests:
                 storage: 2Gi
             storageClassName: gp2
-      
+
       volumeMounts:
         - mountPath: /druid/data
           name: data-volume
@@ -239,14 +234,13 @@ spec:
         limits:
           memory: "2Gi"
           cpu: "4"
-    
+
     historicals:
       nodeType: "historical"
       druid.port: 8080
       replicas: 2
       ports:
-        -
-          name: random
+        - name: random
           containerPort: 8084
       runtime.properties: |-
         druid.service=druid/historical
@@ -270,7 +264,7 @@ spec:
               requests:
                 storage: 2Gi
             storageClassName: gp2
-      
+
       volumeMounts:
         - mountPath: /druid/data
           name: data-volume
@@ -281,18 +275,17 @@ spec:
         limits:
           memory: "2Gi"
           cpu: "4"
-    
+
     overlords:
       nodeType: "overlord"
       druid.port: 8080
       replicas: 1
       ports:
-        -
-          name: random
+        - name: random
           containerPort: 8083
       runtime.properties: |-
         druid.service=druid/overlord
-        
+
         # HTTP server threads
         druid.indexer.queue.startDelay=PT30S
         druid.indexer.runner.type=remote
@@ -310,7 +303,7 @@ spec:
               requests:
                 storage: 2Gi
             storageClassName: gp2
-      
+
       volumeMounts:
         - mountPath: /druid/data
           name: data-volume
@@ -321,43 +314,33 @@ spec:
         limits:
           memory: "2Gi"
           cpu: "4"
-    
+
     middlemanagers:
       nodeType: "middleManager"
       druid.port: 8080
       replicas: 1
       ports:
-        -
-          name: peon-0-pt
+        - name: peon-0-pt
           containerPort: 8100
-        -
-          name: peon-1-pt
+        - name: peon-1-pt
           containerPort: 8101
-        -
-          name: peon-2-pt
+        - name: peon-2-pt
           containerPort: 8102
-        -
-          name: peon-3-pt
+        - name: peon-3-pt
           containerPort: 8103
-        -
-          name: peon-4-pt
+        - name: peon-4-pt
           containerPort: 8104
-        -
-          name: peon-5-pt
+        - name: peon-5-pt
           containerPort: 8105
-        -
-          name: peon-6-pt
+        - name: peon-6-pt
           containerPort: 8106
-        -
-          name: peon-7-pt
+        - name: peon-7-pt
           containerPort: 8107
-        -
-          name: peon-8-pt
+        - name: peon-8-pt
           containerPort: 8108
-        -
-          name: peon-9-pt
+        - name: peon-9-pt
           containerPort: 8109
-      
+
       runtime.properties: |-
         druid.service=druid/middleManager
         druid.worker.capacity=1
@@ -382,7 +365,7 @@ spec:
               requests:
                 storage: 2Gi
             storageClassName: gp2
-      
+
       volumeMounts:
         - mountPath: /druid/data
           name: data-volume

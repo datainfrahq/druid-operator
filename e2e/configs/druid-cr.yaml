@@ -128,6 +128,7 @@ spec:
       # Optionally specify for broker nodes
       # imagePullSecrets:
       # - name: tutu
+      priorityClassName: system-cluster-critical 
       druid.port: 8088
       services:
         - spec:

@@ -1322,6 +1322,7 @@ func makePodSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, nodeSpecUn
 		Volumes:                       getVolume(nodeSpec, m, nodeSpecUniqueStr),
 		SecurityContext:               firstNonNilValue(nodeSpec.PodSecurityContext, m.Spec.PodSecurityContext).(*v1.PodSecurityContext),
 		ServiceAccountName:            m.Spec.ServiceAccount,
+		PriorityClassName:             firstNonEmptyStr(nodeSpec.PriorityClassName, m.Spec.PriorityClassName),
 	}
 
 	addAdditionalContainers(m, nodeSpec, &spec)

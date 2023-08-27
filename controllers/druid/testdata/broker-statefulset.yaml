@@ -9,7 +9,7 @@ metadata:
     nodeSpecUniqueStr: druid-druid-test-brokers
     component: broker
   annotations:
-    druidOpResourceHash: nm2DDc54TuljVernCmU6WJ6Lmi4=
+    druidOpResourceHash: lTyDduvMnbQ7O2Glf57R9c5bFtA=
 spec:
   podManagementPolicy: Parallel
   replicas: 2
@@ -33,6 +33,7 @@ spec:
     spec:
       tolerations: []
       affinity: {}
+      priorityClassName: high-priority
       containers:
         - command:
             - bin/run-druid.sh

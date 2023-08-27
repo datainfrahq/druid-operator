@@ -189,6 +189,10 @@ type DruidSpec struct {
 	// +optional
 	PodLabels map[string]string `json:"podLabels,omitempty"`
 
+	// PriorityClassName Kubernetes native `priorityClassName` specification.
+	// +optional
+	PriorityClassName string `json:"priorityClassName,omitempty"`
+
 	// UpdateStrategy
 	// +optional
 	UpdateStrategy *appsv1.StatefulSetUpdateStrategy `json:"updateStrategy,omitempty"`
@@ -307,6 +311,10 @@ type DruidNodeSpec struct {
 	// PodDisruptionBudgetSpec Kubernetes native `podDisruptionBudget` specification.
 	// +optional
 	PodDisruptionBudgetSpec *policyv1.PodDisruptionBudgetSpec `json:"podDisruptionBudgetSpec,omitempty"`
+
+	// PriorityClassName Kubernetes native `priorityClassName` specification.
+	// +optional
+	PriorityClassName string `json:"priorityClassName,omitempty"`
 
 	// RuntimeProperties Additional runtime configuration for the specific workload.
 	// +required

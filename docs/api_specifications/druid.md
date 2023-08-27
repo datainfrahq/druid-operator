@@ -585,6 +585,18 @@ map[string]string
 </tr>
 <tr>
 <td>
+<code>priorityClassName</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PriorityClassName Kubernetes native <code>priorityClassName</code> specification.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>updateStrategy</code><br>
 <em>
 <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#statefulsetupdatestrategy-v1-apps">
@@ -1074,6 +1086,18 @@ Kubernetes policy/v1.PodDisruptionBudgetSpec
 <td>
 <em>(Optional)</em>
 <p>PodDisruptionBudgetSpec Kubernetes native <code>podDisruptionBudget</code> specification.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>priorityClassName</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PriorityClassName Kubernetes native <code>priorityClassName</code> specification.</p>
 </td>
 </tr>
 <tr>
@@ -1980,6 +2004,18 @@ map[string]string
 <td>
 <em>(Optional)</em>
 <p>PodLabels Custom labels to be populated in <code>Druid</code> pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>priorityClassName</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PriorityClassName Kubernetes native <code>priorityClassName</code> specification.</p>
 </td>
 </tr>
 <tr>
