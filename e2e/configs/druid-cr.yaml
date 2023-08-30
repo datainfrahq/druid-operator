@@ -17,10 +17,11 @@ spec:
     httpGet:
       path: /status/health
       port: 8088
+  defaultProbes: true
   additionalContainer:
   - containerName: mysqlconnector 
     runAsInit: true
-    image: apache/druid:25.0.0
+    image: apache/druid:27.0.0
     command:
     - "sh"
     - "-c"
