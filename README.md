@@ -51,7 +51,7 @@ Feel free to join Kubernetes slack and join [druid-operator](https://kubernetes.
 | :------------- | :-------------: | :-----: | :---: |
 | kubernetes <= 1.20 | :x:| :x: | :x: |
 | kubernetes == 1.21 | :white_check_mark:| :x: | :x: |
-| kubernetes >= 1.22 and < 1.25 | :white_check_mark: | :white_check_mark: | :x: |
+| kubernetes >= 1.22 and <= 1.25 | :white_check_mark: | :white_check_mark: | :x: |
 | kubernetes > 1.25 | :x: | :x: | :white_check_mark: |
 
 ### Commerical Support
