@@ -33,8 +33,14 @@ import (
 const (
 	druidOpResourceHash          = "druidOpResourceHash"
 	defaultCommonConfigMountPath = "/druid/conf/druid/_common"
+	defaultServicePortName       = "service-port"
 	toBeDeletedLabel             = "toBeDeleted"
 	deletionTSLabel              = "deletionTS"
+	labelKeyComponent            = "component"
+	labelKeyNodeSpecUniqueStr    = "nodeSpecUniqueStr"
+	labelKeyDruidCr              = "druid_cr"
+	labelKeyApp                  = "app"
+	nodeTypeRouter               = "router"
 )
 
 var logger = logf.Log.WithName("druid_operator_handler")
@@ -842,7 +848,7 @@ func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.D
 	}
 
 	pvcLabels := map[string]string{
-		"component": nodeSpec.NodeType,
+		labelKeyComponent: nodeSpec.NodeType,
 	}
 
 	pvcList, err := readers.List(ctx, sdk, drd, pvcLabels, emitEvent, func() objectList { return &v1.PersistentVolumeClaimList{} }, func(listObj runtime.Object) []object {
@@ -1022,7 +1028,7 @@ func makeService(svc *v1.Service, nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.
 	if svc.Spec.Ports == nil {
 		svc.Spec.Ports = []v1.ServicePort{
 			{
-				Name:       "service-port",
+				Name:       defaultServicePortName,
 				Port:       nodeSpec.DruidPort,
 				TargetPort: intstr.FromInt(int(nodeSpec.DruidPort)),
 			},
@@ -1483,10 +1489,10 @@ func makeLabelsForNodeSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, 
 		labels[k] = v
 	}
 
-	labels["app"] = "druid"
-	labels["druid_cr"] = clusterName
-	labels["nodeSpecUniqueStr"] = nodeSpecUniqueStr
-	labels["component"] = nodeSpec.NodeType
+	labels[labelKeyApp] = "druid"
+	labels[labelKeyDruidCr] = clusterName
+	labels[labelKeyNodeSpecUniqueStr] = nodeSpecUniqueStr
+	labels[labelKeyComponent] = nodeSpec.NodeType
 	return labels
 }
 

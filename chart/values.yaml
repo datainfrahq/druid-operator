@@ -12,7 +12,7 @@ replicaCount: 1
 
 image:
   repository: datainfrahq/druid-operator
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 

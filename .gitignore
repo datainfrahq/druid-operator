@@ -78,3 +78,7 @@ tags
 .idea*
 .idea/*
 # End of https://www.gitignore.io/api/go,vim,emacs,visualstudiocode
+
+# dev files
+cluster.yaml
+supervisor-spec.yaml

@@ -10,19 +10,20 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
+	druidv1alpha1 "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/go-resty/resty/v2"
+	"go.uber.org/multierr"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/uuid"
-
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	druidv1alpha1 "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 )
 
 type DruidApiSupervisor struct {
@@ -43,8 +44,7 @@ type DruidApiSupervisorSpecMin struct {
 }
 
 type SupervisorSpecStateEntry struct {
-	Id                   string `json:"id"`
-	DruidServiceEndpoint string `json:"druidHost"`
+	Id string `json:"id"`
 }
 
 const (
@@ -52,11 +52,12 @@ const (
 	ActionUpdate                  = "update"
 	ActionDelete                  = "delete"
 	SupervisorSpecConfigMap       = "supervisor-specs-controller"
-	SupervisorListUrlPattern      = "http://%s:8088/druid/indexer/v1/supervisor"
-	SupervisorUrlPattern          = "http://%s:8088/druid/indexer/v1/supervisor/%s"
-	SupervisorTerminateUrlPattern = "http://%s:8088/druid/indexer/v1/supervisor/%s/terminate"
-	SupervisorResumeUrlPattern    = "http://%s:8088/druid/indexer/v1/supervisor/%s/resume"
-	SupervisorSuspendUrlPattern   = "http://%s:8088/druid/indexer/v1/supervisor/%s/suspend"
+	SupervisorListUrlPattern      = "%s/druid/indexer/v1/supervisor"
+	SupervisorUrlPattern          = "%s/druid/indexer/v1/supervisor/%s"
+	SupervisorTerminateUrlPattern = "%s/druid/indexer/v1/supervisor/%s/terminate"
+	SupervisorResumeUrlPattern    = "%s/druid/indexer/v1/supervisor/%s/resume"
+	SupervisorSuspendUrlPattern   = "%s/druid/indexer/v1/supervisor/%s/suspend"
+	UrlPrefixPattern              = "http://%s:%d"
 )
 
 // SupervisorSpecReconciler reconciles a SupervisorSpec object
@@ -76,18 +77,10 @@ func (r *SupervisorSpecReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the SupervisorSpec object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.6.4/pkg/reconcile
 func (r *SupervisorSpecReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	start := time.Now()
 	log := r.Log.WithName(string(uuid.NewUUID()))
-	_ = log.WithValues("supervisorspec", req.NamespacedName)
+	log = log.WithValues("supervisorspec", req.NamespacedName)
 
 	log.Info(fmt.Sprintf("reconciling SupervisorSpec (%s)", req.NamespacedName.String()))
 
@@ -95,35 +88,57 @@ func (r *SupervisorSpecReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	supervisorCr := &druidv1alpha1.SupervisorSpec{}
 	err := r.Client.Get(ctx, req.NamespacedName, supervisorCr)
 	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			log.Error(err, "failed to get SupervisorSpec from k8s api")
+		if apierrors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			// Return and don't requeue
+			return ctrl.Result{}, nil
 		}
+		// Error reading the object - requeue the request.
+		return ctrl.Result{}, err
+	}
+	if supervisorCr.GetDeletionTimestamp() != nil {
 		action = ActionDelete
 	}
 
 	supervisorSpec := supervisorCr.Spec
 
+	urlPrefix, err := r.getDruidRouterUrlPrefix(ctx, log, req, supervisorSpec.ClusterRef)
+	if err != nil {
+		log.Info("failed to determine druid router url, will gracefully retry")
+		return ctrl.Result{
+			Requeue:      true,
+			RequeueAfter: LookupReconcileTime(),
+		}, nil
+	}
+	if urlPrefix == nil {
+		return ctrl.Result{
+			Requeue:      true,
+			RequeueAfter: LookupReconcileTime(),
+		}, nil
+	}
+
 	requeue := false
 	switch action {
 	case ActionCreate: // and update
-		requeue, err = r.createOrUpdateSupervisorSpec(ctx, log, req, supervisorSpec)
+		requeue, err = r.createOrUpdateSupervisorSpec(ctx, log, req, *urlPrefix, supervisorSpec)
 		if err != nil {
-			r.updateSyncedStatus(ctx, log, req, false)
+			syncErr := r.updateSyncedStatus(ctx, log, req, false)
 
-			return ctrl.Result{}, err
+			return ctrl.Result{}, multierr.Append(err, syncErr)
 		}
 		if requeue {
-			r.updateSyncedStatus(ctx, log, req, false)
+			syncErr := r.updateSyncedStatus(ctx, log, req, false)
 
 			return ctrl.Result{
 				Requeue:      true,
 				RequeueAfter: LookupReconcileTime(),
-			}, nil
+			}, syncErr
 		}
 
-		r.updateSyncedStatus(ctx, log, req, true)
+		err = r.updateSyncedStatus(ctx, log, req, true)
 	case ActionDelete:
-		requeue, err = r.deleteSupervisorSpec(ctx, log, req)
+		requeue, err = r.deleteSupervisorSpec(ctx, log, req, *urlPrefix)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -137,12 +152,13 @@ func (r *SupervisorSpecReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		log.Error(fmt.Errorf("unexpected action: %s", action), "Error occurred")
 	}
 
-	log.Info(fmt.Sprintf("reconciled SupervisorSpec (%s)", req.NamespacedName.String()))
+	end := time.Now()
+	log.Info(fmt.Sprintf("reconciled SupervisorSpec (%s) in %s", req.NamespacedName.String(), end.Sub(start).String()))
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{}, err
 }
 
-func (r *SupervisorSpecReconciler) objectKeyFromStringSlice(input []string, fallbackNamespace string) client.ObjectKey {
+func objectKeyFromStringSlice(input []string, fallbackNamespace string) client.ObjectKey {
 	namespace := ""
 	name := ""
 	if len(input) < 2 {
@@ -164,7 +180,7 @@ func (r *SupervisorSpecReconciler) objectKeyFromStringSlice(input []string, fall
 
 func (r *SupervisorSpecReconciler) getSupervisorSpecStateEntry(ctx context.Context, log logr.Logger, req ctrl.Request) (*SupervisorSpecStateEntry, error) {
 	state := v1.ConfigMap{}
-	stateKey := r.objectKeyFromStringSlice([]string{req.Namespace, SupervisorSpecConfigMap}, "")
+	stateKey := objectKeyFromStringSlice([]string{req.Namespace, SupervisorSpecConfigMap}, "")
 	err := r.Client.Get(ctx, stateKey, &state)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -200,7 +216,7 @@ func (r *SupervisorSpecReconciler) fetchDruidServicesWithNsList(ctx context.Cont
 		return nil, false, nil
 	}
 
-	druidObjectKey := r.objectKeyFromStringSlice(clusterRef, specNamespace)
+	druidObjectKey := objectKeyFromStringSlice(clusterRef, specNamespace)
 	err := r.Client.Get(ctx, druidObjectKey, druid)
 	if err != nil {
 		log.Error(err, "failed to get druid from k8s api")
@@ -221,14 +237,14 @@ func (r *SupervisorSpecReconciler) fetchDruidServicesWithNsList(ctx context.Cont
 	return druidServices, false, nil
 }
 
-func (r *SupervisorSpecReconciler) putSupervisorSpecStateEntry(ctx context.Context, log logr.Logger, req ctrl.Request, druidService, id string) error {
+func (r *SupervisorSpecReconciler) putSupervisorSpecStateEntry(ctx context.Context, log logr.Logger, req ctrl.Request, id string) error {
 	state := v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      SupervisorSpecConfigMap,
 			Namespace: req.Namespace,
 		},
 	}
-	stateKey := r.objectKeyFromStringSlice([]string{req.Namespace, SupervisorSpecConfigMap}, "")
+	stateKey := objectKeyFromStringSlice([]string{req.Namespace, SupervisorSpecConfigMap}, "")
 	action := ActionUpdate
 
 	err := r.Client.Get(ctx, stateKey, &state)
@@ -242,8 +258,7 @@ func (r *SupervisorSpecReconciler) putSupervisorSpecStateEntry(ctx context.Conte
 	}
 
 	ssse := SupervisorSpecStateEntry{
-		Id:                   id,
-		DruidServiceEndpoint: druidService,
+		Id: id,
 	}
 
 	entry, err := json.Marshal(ssse)
@@ -272,57 +287,71 @@ func (r *SupervisorSpecReconciler) putSupervisorSpecStateEntry(ctx context.Conte
 	return nil
 }
 
-func (r *SupervisorSpecReconciler) getDruidHostname(ctx context.Context, log logr.Logger, req ctrl.Request, clusterRef string) (*string, error) {
-	state, err := r.getSupervisorSpecStateEntry(ctx, log, req)
+func (r *SupervisorSpecReconciler) getDruidRouterUrlPrefix(ctx context.Context, log logr.Logger, req ctrl.Request, clusterRef string) (*string, error) {
+	opts := make([]client.ListOption, 0)
+	opts = append(opts, client.InNamespace(req.Namespace))
+	opts = append(opts, client.MatchingLabels{
+		labelKeyDruidCr:   clusterRef,
+		labelKeyComponent: nodeTypeRouter,
+	})
+	serviceList := v1.ServiceList{}
+	err := r.List(ctx, &serviceList, opts...)
 	if err != nil {
+		log.Error(err, "failed to fetch druid router pod")
 		return nil, err
 	}
 
-	druidServices := make([]string, 0)
-	hostnames := make([]string, 0)
-	if state != nil {
-		hostnames = []string{state.DruidServiceEndpoint}
+	if len(serviceList.Items) != 1 {
+		log.Error(nil, fmt.Sprintf("found %d druid router services, but expected 1", len(serviceList.Items)))
+		return nil, fmt.Errorf("druid router pod not found")
 	}
 
-	var requeue bool
-	druidServices, requeue, err = r.fetchDruidServicesWithNsList(ctx, log, clusterRef, req.Namespace)
-	if err != nil {
-		return nil, err
-	}
-
-	if requeue || len(druidServices) == 0 {
-		return nil, nil
-	}
-
-	hostnames = append(hostnames, druidServices...)
-
+	service := serviceList.Items[0]
 	// check spec for whether it needs an update
-	rst := resty.New()
-	druidResponse := &resty.Response{}
-	url := ""
-	for _, hostname := range hostnames {
-		url = fmt.Sprintf(SupervisorListUrlPattern, hostname)
-		druidResponse, err = rst.NewRequest().
-			SetContext(ctx).
-			SetHeader("Accept", "application/json").
-			Get(url)
-		if err != nil {
-			log.Error(err, fmt.Sprintf("the request could not be successfully executed (%s)", url))
-			continue
-		}
+	hostname := fmt.Sprintf("%s.%s", service.GetName(), service.GetNamespace())
 
-		if druidResponse.StatusCode() > 399 {
-			continue
-		}
-
-		return &hostname, nil
+	port, err := getPortFromService(service)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, nil
+	prefix := fmt.Sprintf(UrlPrefixPattern, hostname, port)
+	url := fmt.Sprintf(SupervisorListUrlPattern, prefix)
+
+	rst := resty.New()
+	druidResponse, err := rst.NewRequest().
+		SetContext(ctx).
+		SetHeader("Accept", "application/json").
+		Get(url)
+	if err != nil {
+		log.Error(err, fmt.Sprintf("request to druid router failed (%s)", url))
+		return nil, err
+	}
+
+	if druidResponse.StatusCode() > 299 {
+		log.Error(err, fmt.Sprintf("request to druid router failed (%s), unexpected status code", url))
+		return nil, err
+	}
+
+	return &prefix, nil
 }
 
-func (r *SupervisorSpecReconciler) getFullDruidSupervisorList(ctx context.Context, log logr.Logger, rst *resty.Client, hostname string) ([]DruidApiSupervisor, error) {
-	url := fmt.Sprintf(SupervisorListUrlPattern, hostname)
+func getPortFromService(s v1.Service) (int32, error) {
+	if len(s.Spec.Ports) == 1 {
+		return s.Spec.Ports[0].Port, nil
+	}
+
+	for _, servicePort := range s.Spec.Ports {
+		if servicePort.Name == defaultServicePortName {
+			return servicePort.Port, nil
+		}
+	}
+
+	return 0, fmt.Errorf("could not determine port for service")
+}
+
+func (r *SupervisorSpecReconciler) getFullDruidSupervisorList(ctx context.Context, log logr.Logger, rst *resty.Client, urlPrefix string) ([]DruidApiSupervisor, error) {
+	url := fmt.Sprintf(SupervisorListUrlPattern, urlPrefix)
 	response, err := rst.NewRequest().
 		SetContext(ctx).
 		SetHeader("Accept", "application/json").
@@ -350,26 +379,26 @@ func (r *SupervisorSpecReconciler) getFullDruidSupervisorList(ctx context.Contex
 }
 
 func (r *SupervisorSpecReconciler) compareSpecAndUpdateSyncStatus(ctx context.Context, log logr.Logger, req ctrl.Request, supervisorList []DruidApiSupervisor, k8sApiSupervisorSpec druidv1alpha1.SupervisorSpecSpec) error {
-	k8sSpec := map[string]any{}
-	err := json.Unmarshal([]byte(k8sApiSupervisorSpec.SupervisorSpec), &k8sSpec)
+	k8sCr := DruidSupervisor{}
+	err := json.Unmarshal([]byte(k8sApiSupervisorSpec.SupervisorSpec), &k8sCr)
 	if err != nil {
 		log.Error(fmt.Errorf("%w: %s", err, k8sApiSupervisorSpec.SupervisorSpec), "failed to unmarshal spec data from k8s api")
+		return err
 	}
 
-	datasourceName := k8sSpec["spec"].(map[string]any)["dataSchema"].(map[string]any)["dataSource"].(string)
 	for _, druidApiSupervisorSpec := range supervisorList {
 		minimalSpec := &DruidApiSupervisorSpecMin{}
-		err := json.Unmarshal(druidApiSupervisorSpec.Spec, minimalSpec)
+		err = json.Unmarshal(druidApiSupervisorSpec.Spec, minimalSpec)
 		if err != nil {
 			log.Error(fmt.Errorf("%w: %s", err, string(druidApiSupervisorSpec.Spec)), "failed to unmarshal spec data from druid api into minimal spec object")
 			continue
 		}
 
-		if minimalSpec.DataSchema.DataSource != datasourceName {
+		if minimalSpec.DataSchema.DataSource != k8sCr.Spec.DataSchema.DataSource {
 			continue
 		}
 
-		druidSpec := map[string]any{}
+		druidSpec := DruidSupervisor{}
 		err = json.Unmarshal(druidApiSupervisorSpec.Spec, &druidSpec)
 		if err != nil {
 			log.Error(fmt.Errorf("%w: %s", err, k8sApiSupervisorSpec.SupervisorSpec), "failed to unmarshal spec data from druid api")
@@ -377,12 +406,14 @@ func (r *SupervisorSpecReconciler) compareSpecAndUpdateSyncStatus(ctx context.Co
 		}
 
 		// for some reason druid has the dataSchema, ioConfig and tuningConfig also on the top level
-		delete(druidSpec, "dataSchema")
-		delete(druidSpec, "tuningConfig")
-		delete(druidSpec, "ioConfig")
 
-		if !reflect.DeepEqual(k8sSpec, druidSpec) {
-			r.updateSyncedStatus(ctx, log, req, false)
+		// TODO: Check the api responses against the supervisor spec and how to resolve this with proper structs
+		//delete(druidSpec, "dataSchema")
+		//delete(druidSpec, "tuningConfig")
+		//delete(druidSpec, "ioConfig")
+
+		if !reflect.DeepEqual(k8sCr, druidSpec) {
+			err = r.updateSyncedStatus(ctx, log, req, false)
 		}
 
 		return nil
@@ -391,8 +422,8 @@ func (r *SupervisorSpecReconciler) compareSpecAndUpdateSyncStatus(ctx context.Co
 	return nil
 }
 
-func (r *SupervisorSpecReconciler) doCreateOrUpdateSupervisor(ctx context.Context, log logr.Logger, rst *resty.Client, hostname string, spec string) (*string, error) {
-	url := fmt.Sprintf(SupervisorListUrlPattern, hostname)
+func (r *SupervisorSpecReconciler) doCreateOrUpdateSupervisor(ctx context.Context, log logr.Logger, rst *resty.Client, urlPrefix string, spec string) (*string, error) {
+	url := fmt.Sprintf(SupervisorListUrlPattern, urlPrefix)
 	druidResponse, err := rst.NewRequest().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
@@ -414,49 +445,41 @@ func (r *SupervisorSpecReconciler) doCreateOrUpdateSupervisor(ctx context.Contex
 	return &id, nil
 }
 
-func (r *SupervisorSpecReconciler) createOrUpdateSupervisorSpec(ctx context.Context, log logr.Logger, req ctrl.Request, k8sApiSupervisorSpec druidv1alpha1.SupervisorSpecSpec) (bool, error) {
+func (r *SupervisorSpecReconciler) createOrUpdateSupervisorSpec(ctx context.Context, log logr.Logger, req ctrl.Request, urlPrefix string, k8sApiSupervisorSpec druidv1alpha1.SupervisorSpecSpec) (bool, error) {
 	// check spec for whether it needs an update
 	rst := resty.New()
 
-	druidHostname, err := r.getDruidHostname(ctx, log, req, k8sApiSupervisorSpec.ClusterRef)
-	if err != nil {
-		return true, err
-	}
-	if druidHostname == nil {
-		return true, nil
-	}
-
 	druidApiSupervisorList := make([]DruidApiSupervisor, 0)
-	druidApiSupervisorList, err = r.getFullDruidSupervisorList(ctx, log, rst, *druidHostname)
+	druidApiSupervisorList, err := r.getFullDruidSupervisorList(ctx, log, rst, urlPrefix)
 	if err != nil {
 		return true, err
 	}
 
 	err = r.compareSpecAndUpdateSyncStatus(ctx, log, req, druidApiSupervisorList, k8sApiSupervisorSpec)
 	if err != nil {
-		return true, err
+		return false, err
 	}
 
 	var supervisorId *string
-	supervisorId, err = r.doCreateOrUpdateSupervisor(ctx, log, rst, *druidHostname, k8sApiSupervisorSpec.SupervisorSpec)
+	supervisorId, err = r.doCreateOrUpdateSupervisor(ctx, log, rst, urlPrefix, k8sApiSupervisorSpec.SupervisorSpec)
 	if err != nil {
 		return true, err
 	}
 
-	err = r.putSupervisorSpecStateEntry(ctx, log, req, *druidHostname, *supervisorId)
+	err = r.putSupervisorSpecStateEntry(ctx, log, req, *supervisorId)
 	if err != nil {
 		log.Error(err, "failed to put supervisor spec state configmap")
 		return true, nil
 	}
 
-	druidSupervisorSuspended, err := r.getSupervisorSuspendedStatus(ctx, log, rst, *druidHostname, *supervisorId)
+	druidSupervisorSuspended, err := r.getSupervisorSuspendedStatus(ctx, log, rst, urlPrefix, *supervisorId)
 	if err != nil {
 		log.Error(err, "failed to get supervisor status")
 		return true, nil
 	}
 
 	if druidSupervisorSuspended && !k8sApiSupervisorSpec.Suspend {
-		err = r.resumeSupervisor(ctx, log, rst, *druidHostname, *supervisorId)
+		err = r.resumeSupervisor(ctx, log, rst, urlPrefix, *supervisorId)
 		if err != nil {
 			log.Error(err, "failed to resume supervisor")
 			return true, nil
@@ -464,7 +487,7 @@ func (r *SupervisorSpecReconciler) createOrUpdateSupervisorSpec(ctx context.Cont
 	}
 
 	if !druidSupervisorSuspended && k8sApiSupervisorSpec.Suspend {
-		err = r.suspendSupervisor(ctx, log, rst, *druidHostname, *supervisorId)
+		err = r.suspendSupervisor(ctx, log, rst, urlPrefix, *supervisorId)
 		if err != nil {
 			log.Error(err, "failed to suspend supervisor")
 			return true, nil
@@ -476,7 +499,7 @@ func (r *SupervisorSpecReconciler) createOrUpdateSupervisorSpec(ctx context.Cont
 
 func (r *SupervisorSpecReconciler) deleteSupervisorSpecStateRef(ctx context.Context, _ logr.Logger, req ctrl.Request) error {
 	state := v1.ConfigMap{}
-	stateKey := r.objectKeyFromStringSlice([]string{req.Namespace, SupervisorSpecConfigMap}, "")
+	stateKey := objectKeyFromStringSlice([]string{req.Namespace, SupervisorSpecConfigMap}, "")
 	err := r.Client.Get(ctx, stateKey, &state)
 	if err != nil {
 		return err
@@ -487,7 +510,7 @@ func (r *SupervisorSpecReconciler) deleteSupervisorSpecStateRef(ctx context.Cont
 	return r.Client.Update(ctx, &state)
 }
 
-func (r *SupervisorSpecReconciler) deleteSupervisorSpec(ctx context.Context, log logr.Logger, req ctrl.Request) (bool, error) {
+func (r *SupervisorSpecReconciler) deleteSupervisorSpec(ctx context.Context, log logr.Logger, req ctrl.Request, urlPrefix string) (bool, error) {
 	// check spec for whether it needs an update
 	rst := resty.New()
 	druidResponse := &resty.Response{}
@@ -503,7 +526,7 @@ func (r *SupervisorSpecReconciler) deleteSupervisorSpec(ctx context.Context, log
 		return false, nil
 	}
 
-	url = fmt.Sprintf(SupervisorTerminateUrlPattern, state.DruidServiceEndpoint, state.Id)
+	url = fmt.Sprintf(SupervisorTerminateUrlPattern, urlPrefix, state.Id)
 	druidResponse, err = rst.NewRequest().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
@@ -527,8 +550,8 @@ func (r *SupervisorSpecReconciler) deleteSupervisorSpec(ctx context.Context, log
 	return false, nil
 }
 
-func (r *SupervisorSpecReconciler) getSupervisorSuspendedStatus(ctx context.Context, log logr.Logger, rst *resty.Client, druidService string, id string) (bool, error) {
-	url := fmt.Sprintf(SupervisorUrlPattern, druidService, id)
+func (r *SupervisorSpecReconciler) getSupervisorSuspendedStatus(ctx context.Context, log logr.Logger, rst *resty.Client, urlPrefix string, id string) (bool, error) {
+	url := fmt.Sprintf(SupervisorUrlPattern, urlPrefix, id)
 	druidResponse, err := rst.NewRequest().
 		SetContext(ctx).
 		SetHeader("Accept", "application/json").
@@ -542,8 +565,10 @@ func (r *SupervisorSpecReconciler) getSupervisorSuspendedStatus(ctx context.Cont
 		return false, fmt.Errorf("unexpected status code: %d", druidResponse.StatusCode())
 	}
 
+	body := druidResponse.Body()
+
 	res := map[string]any{}
-	err = json.Unmarshal(druidResponse.Body(), &res)
+	err = json.Unmarshal(body, &res)
 	if err != nil {
 		log.Error(err, "could not unmarshal druid supervisor spec")
 		return false, err
@@ -552,8 +577,8 @@ func (r *SupervisorSpecReconciler) getSupervisorSuspendedStatus(ctx context.Cont
 	return res["suspended"].(bool), nil
 }
 
-func (r *SupervisorSpecReconciler) resumeSupervisor(ctx context.Context, _ logr.Logger, rst *resty.Client, druidService string, id string) error {
-	url := fmt.Sprintf(SupervisorResumeUrlPattern, druidService, id)
+func (r *SupervisorSpecReconciler) resumeSupervisor(ctx context.Context, _ logr.Logger, rst *resty.Client, urlPrefix string, id string) error {
+	url := fmt.Sprintf(SupervisorResumeUrlPattern, urlPrefix, id)
 	druidResponse, err := rst.NewRequest().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
@@ -570,8 +595,8 @@ func (r *SupervisorSpecReconciler) resumeSupervisor(ctx context.Context, _ logr.
 	return nil
 }
 
-func (r *SupervisorSpecReconciler) suspendSupervisor(ctx context.Context, _ logr.Logger, rst *resty.Client, druidService string, id string) error {
-	url := fmt.Sprintf(SupervisorSuspendUrlPattern, druidService, id)
+func (r *SupervisorSpecReconciler) suspendSupervisor(ctx context.Context, _ logr.Logger, rst *resty.Client, urlPrefix string, id string) error {
+	url := fmt.Sprintf(SupervisorSuspendUrlPattern, urlPrefix, id)
 	druidResponse, err := rst.NewRequest().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
@@ -588,21 +613,32 @@ func (r *SupervisorSpecReconciler) suspendSupervisor(ctx context.Context, _ logr
 	return nil
 }
 
-func (r *SupervisorSpecReconciler) updateSyncedStatus(ctx context.Context, log logr.Logger, req ctrl.Request, synced bool) {
+func (r *SupervisorSpecReconciler) updateSyncedStatus(ctx context.Context, log logr.Logger, req ctrl.Request, synced bool) error {
 	spec := &druidv1alpha1.SupervisorSpec{}
 	err := r.Client.Get(ctx, req.NamespacedName, spec)
 	if err != nil {
 		log.Error(err, "failed to get SupervisorSpec from k8s api")
-		return
+		return err
 	}
 
 	if spec.Status.Synced == fmt.Sprint(synced) {
-		return
+		return nil
 	}
 
 	spec.Status.Synced = fmt.Sprint(synced)
-	err = r.Status().Update(ctx, spec)
+
+	patchBytes, err := json.Marshal(map[string]druidv1alpha1.SupervisorSpecStatus{"status": spec.Status})
+	if err != nil {
+		return fmt.Errorf("failed to serialize status patch to bytes: %v", err)
+	}
+
+	log.Info(fmt.Sprintf("sending patch: %s", string(patchBytes)))
+
+	err = r.Status().Patch(ctx, spec, client.RawPatch(types.MergePatchType, patchBytes))
 	if err != nil {
 		log.Error(err, "Failed to update status")
+		return fmt.Errorf("failed to patch status: %w", err)
 	}
+
+	return nil
 }

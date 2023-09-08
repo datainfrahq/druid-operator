@@ -110,6 +110,7 @@ rules:
     - druid.apache.org
   resources:
     - druids
+    - supervisorspecs
   verbs:
     - create
     - delete
@@ -122,6 +123,7 @@ rules:
     - druid.apache.org
   resources:
     - druids/status
+    - supervisorspecs/status
   verbs:
     - get
     - patch
@@ -268,6 +270,7 @@ rules:
     - druid.apache.org
   resources:
     - druids
+    - supervisorspecs
   verbs:
     - create
     - delete
@@ -280,6 +283,7 @@ rules:
     - druid.apache.org
   resources:
     - druids/status
+    - supervisorspecs/status
   verbs:
     - get
     - patch

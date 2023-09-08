@@ -33,6 +33,9 @@ Feel free to join Kubernetes slack and join [druid-operator](https://kubernetes.
 - The operator supports CR of type ```Druid```.
 - ```Druid``` CR belongs to api Group ```druid.apache.org``` and version ```v1alpha1```
 
+- The operator supports CR of type ```SupervisorSpec```.
+- ```SupervisorSpec``` CR belongs to api Group ```druid.apache.org``` and version ```v1alpha1```
+
 ### Druid Operator Architecture
 
 ![Druid Operator](docs/images/druid-operator.png?raw=true "Druid Operator")
