@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.2
+    controller-gen.kubebuilder.io/version: v0.11.2
   creationTimestamp: null
   name: supervisorspecs.druid.apache.org
 spec:
@@ -15,11 +15,7 @@ spec:
     singular: supervisorspec
   scope: Namespaced
   versions:
-  - additionalPrinterColumns:
-    - jsonPath: .status.synced
-      name: InSync
-      type: string
-    name: v1alpha1
+  - name: v1alpha1
     schema:
       openAPIV3Schema:
         description: SupervisorSpec is the Schema for the supervisorspecs API
@@ -45,17 +41,6 @@ spec:
                 type: string
               supervisorSpec:
                 type: string
-              suspend:
-                type: boolean
-            type: object
-          status:
-            description: SupervisorSpecStatus defines the observed state of SupervisorSpec
-            properties:
-              synced:
-                description: Whether or not the CR is in sync with druids api representation
-                type: string
-            required:
-            - synced
             type: object
         type: object
     served: true

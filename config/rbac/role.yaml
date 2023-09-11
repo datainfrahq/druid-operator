@@ -120,6 +120,26 @@ rules:
   - patch
   - update
 - apiGroups:
+  - druid.apache.org
+  resources:
+  - supervisorspecs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - druid.apache.org
+  resources:
+  - supervisorspecs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - networking.k8s.io
   resources:
   - ingresses

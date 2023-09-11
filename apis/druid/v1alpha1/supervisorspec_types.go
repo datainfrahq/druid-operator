@@ -18,27 +18,17 @@ type SupervisorSpecSpec struct {
 
 	// Foo is an example field of SupervisorSpec. Edit supervisorspec_types.go to remove/update
 	ClusterRef     string `json:"clusterRef,omitempty"`
-	Suspend        bool   `json:"suspend,omitempty"`
 	SupervisorSpec string `json:"supervisorSpec,omitempty"`
 }
 
-// SupervisorSpecStatus defines the observed state of SupervisorSpec
-type SupervisorSpecStatus struct {
-	// Whether or not the CR is in sync with druids api representation
-	Synced string `json:"synced"`
-}
-
 //+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:printcolumn:name="InSync",type=string,JSONPath=`.status.synced`
 
 // SupervisorSpec is the Schema for the supervisorspecs API
 type SupervisorSpec struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   SupervisorSpecSpec   `json:"spec,omitempty"`
-	Status SupervisorSpecStatus `json:"status,omitempty"`
+	Spec SupervisorSpecSpec `json:"spec,omitempty"`
 }
 
 //+kubebuilder:object:root=true
