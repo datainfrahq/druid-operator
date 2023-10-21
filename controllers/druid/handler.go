@@ -658,21 +658,23 @@ func checkCrashStatus(ctx context.Context, sdk client.Client, drd *v1alpha1.Drui
 	}
 
 	for _, p := range podList {
-		if p.(*v1.Pod).Status.ContainerStatuses[0].RestartCount > 1 {
-			for _, condition := range p.(*v1.Pod).Status.Conditions {
-				// condition.type Ready means the pod is able to service requests
-				if condition.Type == v1.ContainersReady {
-					// the below condition evalutes if a pod is in
-					// 1. pending state 2. failed state 3. unknown state
-					// OR condtion.status is false which evalutes if neither of these conditions are met
-					// 1. ContainersReady 2. PodInitialized 3. PodReady 4. PodScheduled
-					if p.(*v1.Pod).Status.Phase != v1.PodRunning || condition.Status == v1.ConditionFalse {
-						err := writers.Delete(ctx, sdk, drd, p, emitEvents, &client.DeleteOptions{})
-						if err != nil {
-							return err
-						} else {
-							msg := fmt.Sprintf("Deleted pod [%s] in namespace [%s], since it was in crashloopback state.", p.GetName(), p.GetNamespace())
-							logger.Info(msg, "Object", stringifyForLogging(p, drd), "name", drd.Name, "namespace", drd.Namespace)
+		if len(p.(*v1.Pod).Status.ContainerStatuses) > 0 {
+			if p.(*v1.Pod).Status.ContainerStatuses[0].RestartCount > 1 {
+				for _, condition := range p.(*v1.Pod).Status.Conditions {
+					// condition.type Ready means the pod is able to service requests
+					if condition.Type == v1.ContainersReady {
+						// the below condition evalutes if a pod is in
+						// 1. pending state 2. failed state 3. unknown state
+						// OR condtion.status is false which evalutes if neither of these conditions are met
+						// 1. ContainersReady 2. PodInitialized 3. PodReady 4. PodScheduled
+						if p.(*v1.Pod).Status.Phase != v1.PodRunning || condition.Status == v1.ConditionFalse {
+							err := writers.Delete(ctx, sdk, drd, p, emitEvents, &client.DeleteOptions{})
+							if err != nil {
+								return err
+							} else {
+								msg := fmt.Sprintf("Deleted pod [%s] in namespace [%s], since it was in crashloopback state.", p.GetName(), p.GetNamespace())
+								logger.Info(msg, "Object", stringifyForLogging(p, drd), "name", drd.Name, "namespace", drd.Namespace)
+							}
 						}
 					}
 				}
