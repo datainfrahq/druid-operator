@@ -669,18 +669,19 @@ func checkCrashStatus(ctx context.Context, sdk client.Client, drd *v1alpha1.Drui
 			}
 			msg := fmt.Sprintf("Deleted pod [%s] in namespace [%s], since it was in [%s] state.", p.GetName(), p.GetNamespace(), p.(*v1.Pod).Status.Phase)
 			logger.Info(msg, "Object", stringifyForLogging(p, drd), "name", drd.Name, "namespace", drd.Namespace)
-		}
-		for _, condition := range p.(*v1.Pod).Status.Conditions {
-			if condition.Type == v1.ContainersReady {
-				if condition.Status == v1.ConditionFalse {
-					for _, containerStatus := range p.(*v1.Pod).Status.ContainerStatuses {
-						if containerStatus.RestartCount > 1 {
-							err := writers.Delete(ctx, sdk, drd, p, emitEvents, &client.DeleteOptions{})
-							if err != nil {
-								return err
+		} else {
+			for _, condition := range p.(*v1.Pod).Status.Conditions {
+				if condition.Type == v1.ContainersReady {
+					if condition.Status == v1.ConditionFalse {
+						for _, containerStatus := range p.(*v1.Pod).Status.ContainerStatuses {
+							if containerStatus.RestartCount > 1 {
+								err := writers.Delete(ctx, sdk, drd, p, emitEvents, &client.DeleteOptions{})
+								if err != nil {
+									return err
+								}
+								msg := fmt.Sprintf("Deleted pod [%s] in namespace [%s], since the container [%s] was crashlooping.", p.GetName(), p.GetNamespace(), containerStatus.Name)
+								logger.Info(msg, "Object", stringifyForLogging(p, drd), "name", drd.Name, "namespace", drd.Namespace)
 							}
-							msg := fmt.Sprintf("Deleted pod [%s] in namespace [%s], since the container [%s] was crashlooping.", p.GetName(), p.GetNamespace(), containerStatus.Name)
-							logger.Info(msg, "Object", stringifyForLogging(p, drd), "name", drd.Name, "namespace", drd.Namespace)
 						}
 					}
 				}
