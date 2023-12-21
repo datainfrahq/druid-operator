@@ -14,6 +14,27 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func validateVolumeClaimTemplateSpec(drd *v1alpha1.Druid) error {
+	for _, nodeSpec := range drd.Spec.Nodes {
+		if nodeSpec.Kind == "StatefulSet" {
+			if err := validateNodeVolumeClaimTemplateSpec(&nodeSpec); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func validateNodeVolumeClaimTemplateSpec(nodeSpec *v1alpha1.DruidNodeSpec) error {
+	for _, vct := range nodeSpec.VolumeClaimTemplates {
+		if vct.Spec.StorageClassName == nil || *vct.Spec.StorageClassName == "" {
+			return fmt.Errorf("node group %s has volume claim template without storage class which is not allowed: %s",
+				nodeSpec.NodeType, vct.Name)
+		}
+	}
+	return nil
+}
+
 func expandStatefulSetVolumes(ctx context.Context, sdk client.Client, m *v1alpha1.Druid,
 	nodeSpec *v1alpha1.DruidNodeSpec, emitEvent EventEmitter, nodeSpecUniqueStr string) error {
 

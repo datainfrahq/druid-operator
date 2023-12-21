@@ -21,27 +21,32 @@ var _ = Describe("Test volume expansion feature", func() {
 		interval = time.Millisecond * 250
 	)
 
-	Context("When checking if volume expansion is enabled", func() {
-		It("should error if storageClassName does not exists", func() {
-			druid := &druidv1alpha1.Druid{}
+	var (
+		druid = &druidv1alpha1.Druid{}
+	)
 
+	Context("When creating a druid cluster with volume expansion", func() {
+		It("Should create the druid object", func() {
+			By("Creating a new druid")
 			druidCR, err := readDruidClusterSpecFromFile(filePath)
 			Expect(err).Should(BeNil())
-
-			By("By setting storage class name to nil")
-			druidCR.Spec.Nodes["historicals"].VolumeClaimTemplates[0].Spec.StorageClassName = nil
-
-			Expect(druidCR.Spec.Nodes["historicals"].VolumeClaimTemplates[0].Spec.StorageClassName).Should(BeNil())
-
-			By("By creating a new druidCR")
 			Expect(k8sClient.Create(ctx, druidCR)).To(Succeed())
 
-			By("By getting a newly created druidCR")
+			By("Getting a newly created druid")
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, types.NamespacedName{Name: druidCR.Name, Namespace: druidCR.Namespace}, druid)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
+		})
+		It("Should error on the CR verify stage if storage class is nil", func() {
+			By("Setting storage class name to nil")
+			druid.Spec.Nodes["historicals"].VolumeClaimTemplates[0].Spec.StorageClassName = nil
+			Expect(druid.Spec.Nodes["historicals"].VolumeClaimTemplates[0].Spec.StorageClassName).Should(BeNil())
 
+			By("Validating the created druid")
+			Expect(validateVolumeClaimTemplateSpec(druid)).Error()
+		})
+		It("Should error if validate didn't worked and storageClassName does not exists", func() {
 			By("By getting the historicals nodeSpec")
 			allNodeSpecs, err := getAllNodeSpecsInDruidPrescribedOrder(druid)
 			Expect(err).Should(BeNil())

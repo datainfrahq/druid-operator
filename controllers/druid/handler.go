@@ -1447,8 +1447,11 @@ func verifyDruidSpec(drd *v1alpha1.Druid) error {
 		return err
 	}
 
-	errorMsg := ""
+	if err = validateVolumeClaimTemplateSpec(drd); err != nil {
+		return err
+	}
 
+	errorMsg := ""
 	for key, node := range drd.Spec.Nodes {
 		if drd.Spec.Image == "" && node.Image == "" {
 			errorMsg = fmt.Sprintf("%sImage missing from Druid Cluster Spec\n", errorMsg)
