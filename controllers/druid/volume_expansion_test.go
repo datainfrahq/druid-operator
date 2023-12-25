@@ -48,13 +48,12 @@ var _ = Describe("Test volume expansion feature", func() {
 		})
 		It("Should error if validate didn't worked and storageClassName does not exists", func() {
 			By("By getting the historicals nodeSpec")
-			allNodeSpecs, err := getAllNodeSpecsInDruidPrescribedOrder(druid)
-			Expect(err).Should(BeNil())
+			allNodeSpecs := getNodeSpecsByOrder(druid)
 
 			nodeSpec := &druidv1alpha1.DruidNodeSpec{}
 			for _, elem := range allNodeSpecs {
-				if elem.key == "historicals" {
-					nodeSpec = &elem.spec
+				if elem.Key == "historicals" {
+					nodeSpec = &elem.Spec
 				}
 			}
 			Expect(nodeSpec).ShouldNot(BeNil())

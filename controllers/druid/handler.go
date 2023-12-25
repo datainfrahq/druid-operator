@@ -46,12 +46,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		return nil
 	}
 
-	allNodeSpecs, err := getAllNodeSpecsInDruidPrescribedOrder(m)
-	if err != nil {
-		e := fmt.Errorf("invalid DruidSpec[%s:%s] due to [%s]", m.Kind, m.Name, err.Error())
-		emitEvents.EmitEventGeneric(m, "DruidOperatorInvalidSpec", "", e)
-		return nil
-	}
+	allNodeSpecs := getNodeSpecsByOrder(m)
 
 	statefulSetNames := make(map[string]bool)
 	deploymentNames := make(map[string]bool)
@@ -62,7 +57,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 	ingressNames := make(map[string]bool)
 	pvcNames := make(map[string]bool)
 
-	ls := makeLabelsForDruid(m.Name)
+	ls := makeLabelsForDruid(m)
 
 	commonConfig, err := makeCommonConfigMap(ctx, sdk, m, ls)
 	if err != nil {
@@ -89,8 +84,8 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 	}
 
 	for _, elem := range allNodeSpecs {
-		key := elem.key
-		nodeSpec := elem.spec
+		key := elem.Key
+		nodeSpec := elem.Spec
 
 		//Name in k8s must pass regex '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'
 		//So this unique string must follow same.
@@ -345,7 +340,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		}, emitEvents)
 	sort.Strings(updatedStatus.ConfigMaps)
 
-	podList, _ := readers.List(ctx, sdk, m, makeLabelsForDruid(m.Name), emitEvents, func() objectList { return &v1.PodList{} }, func(listObj runtime.Object) []object {
+	podList, _ := readers.List(ctx, sdk, m, makeLabelsForDruid(m), emitEvents, func() objectList { return &v1.PodList{} }, func(listObj runtime.Object) []object {
 		items := listObj.(*v1.PodList).Items
 		result := make([]object, len(items))
 		for i := 0; i < len(items); i++ {
@@ -409,7 +404,7 @@ func checkIfCRExists(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, 
 
 func deleteOrphanPVC(ctx context.Context, sdk client.Client, drd *v1alpha1.Druid, emitEvents EventEmitter) error {
 
-	podList, err := readers.List(ctx, sdk, drd, makeLabelsForDruid(drd.Name), emitEvents, func() objectList { return &v1.PodList{} }, func(listObj runtime.Object) []object {
+	podList, err := readers.List(ctx, sdk, drd, makeLabelsForDruid(drd), emitEvents, func() objectList { return &v1.PodList{} }, func(listObj runtime.Object) []object {
 		items := listObj.(*v1.PodList).Items
 		result := make([]object, len(items))
 		for i := 0; i < len(items); i++ {
@@ -1265,9 +1260,9 @@ func makePersistentVolumeClaim(pvc *v1.PersistentVolumeClaim, nodeSpec *v1alpha1
 }
 
 // makeLabelsForDruid returns the labels for selecting the resources
-// belonging to the given druid CR name.
-func makeLabelsForDruid(name string) map[string]string {
-	return map[string]string{"app": "druid", "druid_cr": name}
+// belonging to the given Druid object.
+func makeLabelsForDruid(druid *v1alpha1.Druid) map[string]string {
+	return map[string]string{"app": "druid", "druid_cr": druid.GetName()}
 }
 
 // makeLabelsForDruid returns the labels for selecting the resources
@@ -1389,41 +1384,6 @@ func verifyDruidSpec(drd *v1alpha1.Druid) error {
 	} else {
 		return fmt.Errorf(errorMsg)
 	}
-}
-
-type keyAndNodeSpec struct {
-	key  string
-	spec v1alpha1.DruidNodeSpec
-}
-
-// Recommended prescribed order is described at http://druid.io/docs/latest/operations/rolling-updates.html
-func getAllNodeSpecsInDruidPrescribedOrder(m *v1alpha1.Druid) ([]keyAndNodeSpec, error) {
-	nodeSpecsByNodeType := map[string][]keyAndNodeSpec{
-		historical:    make([]keyAndNodeSpec, 0, 1),
-		overlord:      make([]keyAndNodeSpec, 0, 1),
-		middleManager: make([]keyAndNodeSpec, 0, 1),
-		indexer:       make([]keyAndNodeSpec, 0, 1),
-		broker:        make([]keyAndNodeSpec, 0, 1),
-		coordinator:   make([]keyAndNodeSpec, 0, 1),
-		router:        make([]keyAndNodeSpec, 0, 1),
-	}
-
-	for key, nodeSpec := range m.Spec.Nodes {
-		nodeSpecs := nodeSpecsByNodeType[nodeSpec.NodeType]
-		nodeSpecsByNodeType[nodeSpec.NodeType] = append(nodeSpecs, keyAndNodeSpec{key, nodeSpec})
-	}
-
-	allNodeSpecs := make([]keyAndNodeSpec, 0, len(m.Spec.Nodes))
-
-	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[historical]...)
-	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[overlord]...)
-	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[middleManager]...)
-	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[indexer]...)
-	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[broker]...)
-	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[coordinator]...)
-	allNodeSpecs = append(allNodeSpecs, nodeSpecsByNodeType[router]...)
-
-	return allNodeSpecs, nil
 }
 
 func namespacedName(name, namespace string) *types.NamespacedName {
