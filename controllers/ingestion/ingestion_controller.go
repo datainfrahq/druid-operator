@@ -43,7 +43,7 @@ func (r *DruidIngestionReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	logr := log.FromContext(ctx)
 
 	druidIngestionCR := &v1alpha1.DruidIngestion{}
-	err := r.Get(context.TODO(), req.NamespacedName, druidIngestionCR)
+	err := r.Get(ctx, req.NamespacedName, druidIngestionCR)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return ctrl.Result{}, nil

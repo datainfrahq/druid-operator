@@ -8,24 +8,18 @@ import (
 
 // DruidHTTP interface
 type DruidHTTP interface {
-	Do() (*Response, error)
+	Do(method, url string, body []byte) (*Response, error)
 }
 
 // HTTP client
-type Client struct {
-	Method     string
-	URL        string
-	HTTPClient http.Client
-	Body       []byte
-	Auth       Auth
-}
+type DruidClient struct {
+	HTTPClient *http.Client
+	Auth       *Auth
+}	
 
-func NewHTTPClient(method, url string, client http.Client, body []byte, auth Auth) DruidHTTP {
-	newClient := &Client{
-		Method:     method,
-		URL:        url,
+func NewHTTPClient(client *http.Client, auth *Auth) DruidHTTP {
+	newClient := &DruidClient{
 		HTTPClient: client,
-		Body:       body,
 		Auth:       auth,
 	}
 
@@ -51,9 +45,9 @@ type Response struct {
 }
 
 // Do method to be used schema and tenant controller.
-func (c *Client) Do() (*Response, error) {
+func (c *DruidClient) Do(Method, url string, body []byte) (*Response, error) {
 
-	req, err := http.NewRequest(c.Method, c.URL, bytes.NewBuffer(c.Body))
+	req, err := http.NewRequest(Method, url, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
