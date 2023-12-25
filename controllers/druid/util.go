@@ -1,12 +1,12 @@
 package druid
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"reflect"
 	"strconv"
 	"strings"
-	"encoding/json"
-	"fmt"
 )
 
 func firstNonEmptyStr(s1 string, s2 string) string {

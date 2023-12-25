@@ -15,7 +15,7 @@ type DruidHTTP interface {
 type DruidClient struct {
 	HTTPClient *http.Client
 	Auth       *Auth
-}	
+}
 
 func NewHTTPClient(client *http.Client, auth *Auth) DruidHTTP {
 	newClient := &DruidClient{

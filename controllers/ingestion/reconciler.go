@@ -6,15 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"reflect"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"github.com/datainfrahq/druid-operator/controllers/druid"
 	"github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
+	"github.com/datainfrahq/druid-operator/controllers/druid"
 	internalhttp "github.com/datainfrahq/druid-operator/controllers/ingestion/http"
 	"github.com/datainfrahq/operator-runtime/builder"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -377,7 +376,7 @@ func (r *DruidIngestionReconciler) getAuthCreds(ctx context.Context, di *v1alpha
 			UserName: string(secret.Data[OperatorUserName]),
 			Password: string(secret.Data[OperatorPassword]),
 		}
-		
+
 		return creds, nil
 
 	}
