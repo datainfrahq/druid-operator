@@ -208,7 +208,7 @@ spec:
         periodSeconds: 10
         successThreshold: 1
         timeoutSeconds: 5
-      startUpProbes:
+      startUpProbe:
         failureThreshold: 20
         httpGet:
           path: /druid/historical/v1/loadstatus
@@ -274,7 +274,7 @@ spec:
         periodSeconds: 10
         successThreshold: 1
         timeoutSeconds: 5
-      startUpProbes:
+      startUpProbe:
         failureThreshold: 20
         httpGet:
           path: /druid/historical/v1/loadstatus

@@ -425,9 +425,9 @@ type DruidNodeSpec struct {
 	// +optional
 	ReadinessProbe *v1.Probe `json:"readinessProbe,omitempty"`
 
-	// StartUpProbes
+	// StartUpProbe
 	// +optional
-	StartUpProbes *v1.Probe `json:"startUpProbes,omitempty"`
+	StartUpProbe *v1.Probe `json:"startUpProbe,omitempty"`
 
 	// IngressAnnotations `Ingress` annotations to be populated in ingress spec.
 	// +optional
