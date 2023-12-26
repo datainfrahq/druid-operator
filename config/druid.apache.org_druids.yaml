@@ -5926,7 +5926,7 @@ spec:
                             type: object
                         type: object
                       type: array
-                    startUpProbes:
+                    startUpProbe:
                       description: StartupProbe for nodeSpec
                       properties:
                         exec:

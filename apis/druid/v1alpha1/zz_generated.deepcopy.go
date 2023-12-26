@@ -336,8 +336,8 @@ func (in *DruidNodeSpec) DeepCopyInto(out *DruidNodeSpec) {
 		*out = new(v1.Probe)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.StartUpProbes != nil {
-		in, out := &in.StartUpProbes, &out.StartUpProbes
+	if in.StartUpProbe != nil {
+		in, out := &in.StartUpProbe, &out.StartUpProbe
 		*out = new(v1.Probe)
 		(*in).DeepCopyInto(*out)
 	}

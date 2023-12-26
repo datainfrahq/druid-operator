@@ -6512,8 +6512,8 @@ spec:
                             type: object
                         type: object
                       type: array
-                    startUpProbes:
-                      description: StartUpProbes
+                    startUpProbe:
+                      description: StartUpProbe
                       properties:
                         exec:
                           description: Exec specifies the action to take.

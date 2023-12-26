@@ -1446,7 +1446,7 @@ Port is set to <code>druid.port</code> if not specified with httpGet handler.</p
 </tr>
 <tr>
 <td>
-<code>startUpProbes</code><br>
+<code>startUpProbe</code><br>
 <em>
 <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#probe-v1-core">
 Kubernetes core/v1.Probe
@@ -1455,7 +1455,7 @@ Kubernetes core/v1.Probe
 </td>
 <td>
 <em>(Optional)</em>
-<p>StartUpProbes</p>
+<p>StartUpProbe</p>
 </td>
 </tr>
 <tr>

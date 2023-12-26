@@ -1043,7 +1043,7 @@ func setReadinessProbe(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) *v1.
 func setStartUpProbe(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) *v1.Probe {
 	probeType := "startup"
 	startUpProbe := updateDefaultPortInProbe(
-		firstNonNilValue(nodeSpec.StartUpProbes, m.Spec.StartUpProbe).(*v1.Probe),
+		firstNonNilValue(nodeSpec.StartUpProbe, m.Spec.StartUpProbe).(*v1.Probe),
 		nodeSpec.DruidPort)
 	if startUpProbe == nil && m.Spec.DefaultProbes {
 		startUpProbe = setDefaultProbe(nodeSpec.DruidPort, nodeSpec.NodeType, probeType)
