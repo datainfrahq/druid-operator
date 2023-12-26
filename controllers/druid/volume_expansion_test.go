@@ -12,7 +12,7 @@ import (
 // +kubebuilder:docs-gen:collapse=Imports
 
 /*
-zookeeper_dep_mgmt_test
+volume_expansion_test
 */
 var _ = Describe("Test volume expansion feature", func() {
 	const (
@@ -52,8 +52,8 @@ var _ = Describe("Test volume expansion feature", func() {
 
 			nodeSpec := &druidv1alpha1.DruidNodeSpec{}
 			for _, elem := range allNodeSpecs {
-				if elem.Key == "historicals" {
-					nodeSpec = &elem.Spec
+				if elem.key == "historicals" {
+					nodeSpec = &elem.spec
 				}
 			}
 			Expect(nodeSpec).ShouldNot(BeNil())

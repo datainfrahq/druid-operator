@@ -488,11 +488,6 @@ type DeepStorageSpec struct {
 	Spec json.RawMessage `json:"spec"`
 }
 
-type ScaledServiceSpec struct {
-	Key  string
-	Spec DruidNodeSpec
-}
-
 // These are valid conditions of a druid Node.
 const (
 	// DruidClusterReady indicates the underlying druid objects is fully deployed.

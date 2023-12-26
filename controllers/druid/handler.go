@@ -84,8 +84,8 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 	}
 
 	for _, elem := range allNodeSpecs {
-		key := elem.Key
-		nodeSpec := elem.Spec
+		key := elem.key
+		nodeSpec := elem.spec
 
 		//Name in k8s must pass regex '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'
 		//So this unique string must follow same.
