@@ -6,15 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"reflect"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
+	"github.com/datainfrahq/druid-operator/controllers/druid"
 	internalhttp "github.com/datainfrahq/druid-operator/controllers/ingestion/http"
 	"github.com/datainfrahq/operator-runtime/builder"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -43,7 +42,6 @@ const (
 )
 
 func (r *DruidIngestionReconciler) do(ctx context.Context, di *v1alpha1.DruidIngestion) error {
-
 	basicAuth, err := r.getAuthCreds(ctx, di)
 	if err != nil {
 		return err
@@ -81,14 +79,12 @@ func (r *DruidIngestionReconciler) do(ctx context.Context, di *v1alpha1.DruidIng
 				return err
 			}
 
-			http := internalhttp.NewHTTPClient(
-				http.MethodPost,
-				getPath(di.Spec.Ingestion.Type, svcName, http.MethodPost, di.Status.TaskId, true),
-				http.Client{},
-				[]byte{},
-				internalhttp.Auth{BasicAuth: basicAuth},
+			posthttp := internalhttp.NewHTTPClient(
+				&http.Client{},
+				&internalhttp.Auth{BasicAuth: basicAuth},
 			)
-			respShutDownTask, err := http.Do()
+
+			respShutDownTask, err := posthttp.Do(http.MethodPost, getPath(di.Spec.Ingestion.Type, svcName, http.MethodPost, di.Status.TaskId, true), []byte{})
 			if err != nil {
 				return err
 			}
@@ -131,16 +127,14 @@ func (r *DruidIngestionReconciler) CreateOrUpdate(
 		// if does not exist create task
 
 		postHttp := internalhttp.NewHTTPClient(
-			http.MethodPost,
-			getPath(di.Spec.Ingestion.Type, svcName, http.MethodPost, "", false),
-			http.Client{},
-			[]byte(di.Spec.Ingestion.Spec),
-			auth,
+			&http.Client{},
+			&auth,
 		)
 
-		respCreateTask, err := postHttp.Do()
+		respCreateTask, err := postHttp.Do(http.MethodPost, getPath(di.Spec.Ingestion.Type, svcName, http.MethodPost, "", false), []byte(di.Spec.Ingestion.Spec))
+
 		if err != nil {
-			return controllerutil.OperationResultNone, nil
+			return controllerutil.OperationResultNone, err
 		}
 
 		// if success patch status
@@ -198,21 +192,18 @@ func (r *DruidIngestionReconciler) CreateOrUpdate(
 		}
 	} else {
 		// compare the state
-		ok, err := isEqualJson(di.Status.CurrentIngestionSpec, di.Spec.Ingestion.Spec)
+		ok, err := druid.IsEqualJson(di.Status.CurrentIngestionSpec, di.Spec.Ingestion.Spec)
 		if err != nil {
 			return controllerutil.OperationResultNone, err
 		}
 
 		if !ok {
 			postHttp := internalhttp.NewHTTPClient(
-				http.MethodPost,
-				getPath(di.Spec.Ingestion.Type, svcName, http.MethodPost, "", false),
-				http.Client{},
-				[]byte(di.Spec.Ingestion.Spec),
-				auth,
+				&http.Client{},
+				&auth,
 			)
 
-			respUpdateSpec, err := postHttp.Do()
+			respUpdateSpec, err := postHttp.Do(http.MethodPost, getPath(di.Spec.Ingestion.Type, svcName, http.MethodPost, "", false), []byte(di.Spec.Ingestion.Spec))
 			if err != nil {
 				return controllerutil.OperationResultNone, err
 			}
@@ -361,6 +352,7 @@ func (r *DruidIngestionReconciler) getRouterSvcUrl(namespace, druidClusterName s
 
 func (r *DruidIngestionReconciler) getAuthCreds(ctx context.Context, di *v1alpha1.DruidIngestion) (internalhttp.BasicAuth, error) {
 	druid := v1alpha1.Druid{}
+	// check if the mentioned druid cluster exists
 	if err := r.Client.Get(ctx, types.NamespacedName{
 		Namespace: di.Namespace,
 		Name:      di.Spec.DruidClusterName,
@@ -369,7 +361,7 @@ func (r *DruidIngestionReconciler) getAuthCreds(ctx context.Context, di *v1alpha
 	); err != nil {
 		return internalhttp.BasicAuth{}, err
 	}
-
+	// check if the mentioned secret exists
 	if di.Spec.Auth != (v1alpha1.Auth{}) {
 		secret := v1.Secret{}
 		if err := r.Client.Get(ctx, types.NamespacedName{
@@ -380,7 +372,6 @@ func (r *DruidIngestionReconciler) getAuthCreds(ctx context.Context, di *v1alpha
 		); err != nil {
 			return internalhttp.BasicAuth{}, err
 		}
-
 		creds := internalhttp.BasicAuth{
 			UserName: string(secret.Data[OperatorUserName]),
 			Password: string(secret.Data[OperatorPassword]),
@@ -426,21 +417,4 @@ func patchStatus(ctx context.Context, c client.Client, obj client.Object, transf
 		return nil, VerbUnchanged, err
 	}
 	return obj, VerbPatched, nil
-}
-
-func isEqualJson(s1, s2 string) (bool, error) {
-	var o1 interface{}
-	var o2 interface{}
-
-	var err error
-	err = json.Unmarshal([]byte(s1), &o1)
-	if err != nil {
-		return false, fmt.Errorf("Error mashalling string 1 :: %s", err.Error())
-	}
-	err = json.Unmarshal([]byte(s2), &o2)
-	if err != nil {
-		return false, fmt.Errorf("Error mashalling string 2 :: %s", err.Error())
-	}
-
-	return reflect.DeepEqual(o1, o2), nil
 }
