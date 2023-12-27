@@ -1,7 +1,6 @@
 package druid
 
 const (
-	finalizerName     = "deletepvc.finalizers.druid.apache.org"
 	ignoredAnnotation = "druid.apache.org/ignored"
 
 	broker        = "broker"
