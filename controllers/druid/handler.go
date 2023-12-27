@@ -84,7 +84,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		return executeFinalizers(ctx, sdk, m, emitEvents)
 	}
 
-	if err := addFinalizers(ctx, sdk, m, emitEvents); err != nil {
+	if err := updateFinalizers(ctx, sdk, m, emitEvents); err != nil {
 		return err
 	}
 

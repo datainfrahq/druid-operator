@@ -19,11 +19,12 @@ var (
 	defaultFinalizers []string
 )
 
-func addFinalizers(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmitter) error {
+func updateFinalizers(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmitter) error {
 	desiredFinalizers := m.GetFinalizers()
 	additionFinalizers := defaultFinalizers
 
-	if m.Spec.DisablePVCDeletionFinalizer == false {
+	desiredFinalizers = RemoveString(desiredFinalizers, deletePVCFinalizerName)
+	if !m.Spec.DisablePVCDeletionFinalizer {
 		additionFinalizers = append(additionFinalizers, deletePVCFinalizerName)
 	}
 
@@ -34,7 +35,8 @@ func addFinalizers(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, em
 	}
 
 	m.SetFinalizers(desiredFinalizers)
-	if _, err := writers.Update(ctx, sdk, m, m, emitEvents); err != nil {
+	_, err := writers.Update(ctx, sdk, m, m, emitEvents)
+	if err != nil {
 		return err
 	}
 
