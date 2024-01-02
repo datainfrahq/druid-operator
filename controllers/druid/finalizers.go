@@ -60,13 +60,13 @@ Flow:
     else pvc finalizer shall block deletion since a pod/sts is referencing it.
  3. Once delete is executed we block program and return.
 */
-func executePVCFinalizer(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmitter) error {
-	if ContainsString(m.ObjectMeta.Finalizers, deletePVCFinalizerName) {
+func executePVCFinalizer(ctx context.Context, sdk client.Client, druid *v1alpha1.Druid, eventEmitter EventEmitter) error {
+	if ContainsString(druid.ObjectMeta.Finalizers, deletePVCFinalizerName) {
 		pvcLabels := map[string]string{
-			"druid_cr": m.Name,
+			"druid_cr": druid.Name,
 		}
 
-		pvcList, err := readers.List(ctx, sdk, m, pvcLabels, emitEvents, func() objectList { return &v1.PersistentVolumeClaimList{} }, func(listObj runtime.Object) []object {
+		pvcList, err := readers.List(ctx, sdk, druid, pvcLabels, eventEmitter, func() objectList { return &v1.PersistentVolumeClaimList{} }, func(listObj runtime.Object) []object {
 			items := listObj.(*v1.PersistentVolumeClaimList).Items
 			result := make([]object, len(items))
 			for i := 0; i < len(items); i++ {
@@ -78,7 +78,7 @@ func executePVCFinalizer(ctx context.Context, sdk client.Client, m *v1alpha1.Dru
 			return err
 		}
 
-		stsList, err := readers.List(ctx, sdk, m, makeLabelsForDruid(m.Name), emitEvents, func() objectList { return &appsv1.StatefulSetList{} }, func(listObj runtime.Object) []object {
+		stsList, err := readers.List(ctx, sdk, druid, makeLabelsForDruid(druid.Name), eventEmitter, func() objectList { return &appsv1.StatefulSetList{} }, func(listObj runtime.Object) []object {
 			items := listObj.(*appsv1.StatefulSetList).Items
 			result := make([]object, len(items))
 			for i := 0; i < len(items); i++ {
@@ -90,21 +90,23 @@ func executePVCFinalizer(ctx context.Context, sdk client.Client, m *v1alpha1.Dru
 			return err
 		}
 
-		msg := fmt.Sprintf("Trigerring finalizer for CR [%s] in namespace [%s]", m.Name, m.Namespace)
-		//		sendEvent(sdk, m, v1.EventTypeNormal, DruidFinalizer, msg)
-		logger.Info(msg)
-		if err := deleteSTSAndPVC(ctx, sdk, m, stsList, pvcList, emitEvents); err != nil {
+		eventEmitter.EmitEventGeneric(druid, string(druidFinalizerTriggered),
+			fmt.Sprintf("Trigerring finalizer [%s] for CR [%s] in namespace [%s]", deletePVCFinalizerName, druid.Name, druid.Namespace), nil)
+
+		if err = deleteSTSAndPVC(ctx, sdk, druid, stsList, pvcList, eventEmitter); err != nil {
+			eventEmitter.EmitEventGeneric(druid, string(druidFinalizerFailed),
+				fmt.Sprintf("Finalizer [%s] failed for CR [%s] in namespace [%s]", deletePVCFinalizerName, druid.Name, druid.Namespace), err)
+
 			return err
-		} else {
-			msg := fmt.Sprintf("Finalizer success for CR [%s] in namespace [%s]", m.Name, m.Namespace)
-			//			sendEvent(sdk, m, v1.EventTypeNormal, DruidFinalizerSuccess, msg)
-			logger.Info(msg)
 		}
 
-		// remove our finalizer from the list and update it.
-		m.ObjectMeta.Finalizers = RemoveString(m.ObjectMeta.Finalizers, deletePVCFinalizerName)
+		eventEmitter.EmitEventGeneric(druid, string(druidFinalizerSuccess),
+			fmt.Sprintf("Finalizer [%s] success for CR [%s] in namespace [%s]", deletePVCFinalizerName, druid.Name, druid.Namespace), nil)
 
-		_, err = writers.Update(ctx, sdk, m, m, emitEvents)
+		// remove our finalizer from the list and update it.
+		druid.ObjectMeta.Finalizers = RemoveString(druid.ObjectMeta.Finalizers, deletePVCFinalizerName)
+
+		_, err = writers.Update(ctx, sdk, druid, druid, eventEmitter)
 		if err != nil {
 			return err
 		}
