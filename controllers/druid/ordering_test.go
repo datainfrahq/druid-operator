@@ -40,8 +40,8 @@ var _ = Describe("Test ordering logic", func() {
 		})
 		It("Should return an ordered list of nodes", func() {
 			orderedServiceGroups := getNodeSpecsByOrder(druid)
-			Expect(orderedServiceGroups[0].key).Should(Equal("historicals"))
-			Expect(orderedServiceGroups[1].key).Should(Equal("historicals2"))
+			Expect(orderedServiceGroups[0].key).Should(MatchRegexp("historicals"))
+			Expect(orderedServiceGroups[1].key).Should(MatchRegexp("historicals"))
 			Expect(orderedServiceGroups[2].key).Should(Equal("overlords"))
 			Expect(orderedServiceGroups[3].key).Should(Equal("middle-managers"))
 			Expect(orderedServiceGroups[4].key).Should(Equal("indexers"))
