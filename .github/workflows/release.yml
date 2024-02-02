@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+env:
+  CONTROLLER: ${{ github.event.repository.name }}
+  IMAGE_REPOSITORY: "docker.io/datainfrahq"
+
+jobs:
+  build-and-push-image:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Prepare
+        id: prep
+        run: |
+          VERSION="${{ github.event.inputs.tag }}-${GITHUB_SHA::8}"
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF/refs\/tags\//}
+          fi
+          echo ::set-output name=BUILD_DATE::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo ::set-output name=VERSION::${VERSION}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: <docker-repo>/<image-name>
+          tags: |
+            type=semver,pattern={{version}}
+
+      - name: Build and Push Image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  package-and-release-chart:
+    name: Package and Release Helm Chart
+    needs: build-and-push-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v1
+
+      - name: Package Helm Chart
+        run: |
+          helm package charts/<chart-name> --version ${{ github.ref_name }} --app-version ${{ github.ref_name }}
+        working-directory: .
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Helm Chart to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./${{ github.ref_name }}-<chart-name>.tgz
+          asset_name: <chart-name>.tgz
+          asset_content_type: application/octet-stream
