@@ -55,7 +55,7 @@ spec:
     <?xml version="1.0" encoding="UTF-8" ?>
     <Configuration status="TRACE">
         <Appenders>
-            <Http name="Http" url="https://demo.parseable.io/api/v1/ingest" method="POST">
+            <Http name="Http" url="https://demo.parseable.com/api/v1/ingest" method="POST">
               <Property name="Authorization" value="Basic YWRtaW46YWRtaW4=" />
               <Property name="X-P-Stream" value="druide2e" />
               <Property name="Accept" value="application/json" />
@@ -134,7 +134,7 @@ spec:
             type: ClusterIP
             clusterIP: None
       nodeConfigMountPath: "/opt/druid/conf/druid/cluster/query/broker"
-      replicas: s
+      replicas: 1
       runtime.properties: |
         druid.service=druid/broker
         # HTTP server threads
