@@ -17,11 +17,14 @@ Druid Operator is designed to provision and manage [Apache Druid](https://druid.
 It is built in Golang using [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder).
 Druid Operator is available on [operatorhub.io](https://operatorhub.io/operator/druid-operator)
 Refer to [Documentation](./docs/README.md) for getting started.
-
 Feel free to join Kubernetes slack and join [druid-operator](https://kubernetes.slack.com/archives/C04F4M6HT2L)
+
+### Newsletter - Monthly updates on running druid on kubernetes.
+- [Apache Druid on Kubernetes](https://druidonk8s.substack.com/)
 
 ### Talks and Blogs on Druid Operator
 
+- [Druid Summit 2023](https://druidsummit.org/agenda?agendaPath=session/1256850)
 - [Dok Community](https://www.youtube.com/live/X4A3lWJRGHk?feature=share)
 - [Druid Summit](https://youtu.be/UqPrttXRBDg)
 - [Druid Operator Blog](https://www.cloudnatively.com/apache-druid-on-kubernetes/)
