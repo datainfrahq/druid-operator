@@ -75,6 +75,7 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "e6946145.apache.org",
+		Namespace:              os.Getenv("WATCH_NAMESPACE"),
 		NewCache:               watchNamespaceCache(),
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
