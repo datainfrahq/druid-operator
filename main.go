@@ -118,8 +118,9 @@ func main() {
 
 func watchNamespaceCache() cache.NewCacheFunc {
 	var managerWatchCache cache.NewCacheFunc
-	if watchNamespace != "" {
-		ns := strings.Split(watchNamespace, ",")
+	ns := strings.Split(watchNamespace, ",")
+
+	if len(ns) > 1 {
 		for i := range ns {
 			ns[i] = strings.TrimSpace(ns[i])
 		}
