@@ -1,0 +1,43 @@
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: "druid.apache.org"
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups:   ["druid.apache.org"]
+        apiVersions: ["v1alpha1"]
+        operations:  ["CREATE", "UPDATE"]
+        resources:   ["druids"]
+  validations:
+    - expression: |
+        object.spec.nodes.all(node, node.image != '' || object.spec.image != '')
+      messageExpression: "Object must have image specified either on object level or node level."
+      reason: "Invalid"
+      message: "Image is missing from spec. should be provided on either object level or node level."
+    - expression: |
+        object.spec.nodes.all(node, node.key.matches('[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'))
+      messageExpression: "All node groups must stand with kubernetes standard naming constraints."
+      reason: "Invalid"
+      message: "Node key does not matching kubernetes standard naming constraints."
+    - expression: |
+        object.spec.nodes.all(node, node.kind == 'StatefulSet' && node.volumeClaimTemplates.all(vct, vct.storageClassName == nil))
+      messageExpression: "All node groups' volume claim templates must have storage class specified."
+      reason: "Forbidden"
+      message: "Node group has volume claim template without storage class which is not allowed."
+    - expression: |
+        object.spec.nodes.all(node, node.additionalContainers.all(nac, object.spec.additionalContainers.all(oac, nac.containerName != oac.containerName))) &&
+        object.spec.nodes.all(node, node.additionalContainers.all(nac, node.additionalContainers.all(nac2, nac2.containerName != nac.containerName))) &&
+        object.spec.additionalContainers.all(oac, object.spec.additionalContainers.all(oac2, oac2.containerName != oac.containerName))
+      messageExpression: "All additional containers on all levels must have a unique container name."
+      reason: "Invalid"
+      message: "Node group has at least two additional containers with the same name."
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: "druid.apache.org"
+spec:
+  policyName: "druid.apache.org"
+  validationActions: [Deny, Audit]
