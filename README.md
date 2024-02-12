@@ -12,12 +12,11 @@
 
 </div>
 
-Druid Operator provisions and manages [Apache Druid](https://druid.apache.org/) cluster on kubernetes.
-Druid Operator is designed to provision and manage [Apache Druid](https://druid.apache.org/) in distributed mode only.
-It is built in Golang using [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder).
-Druid Operator is available on [operatorhub.io](https://operatorhub.io/operator/druid-operator)
-Refer to [Documentation](./docs/README.md) for getting started.
-Feel free to join Kubernetes slack and join [druid-operator](https://kubernetes.slack.com/archives/C04F4M6HT2L)
+- Druid Operator provisions and manages [Apache Druid](https://druid.apache.org/) cluster on kubernetes.
+- Druid Operator is designed to provision and manage [Apache Druid](https://druid.apache.org/) in distributed mode only.
+- It is built in Golang using [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder).
+- Refer to [Documentation](./docs/README.md) for getting started.
+- Feel free to join Kubernetes slack and join [druid-operator](https://kubernetes.slack.com/archives/C04F4M6HT2L)
 
 ### Newsletter - Monthly updates on running druid on kubernetes.
 - [Apache Druid on Kubernetes](https://druidonk8s.substack.com/)
@@ -47,6 +46,16 @@ Feel free to join Kubernetes slack and join [druid-operator](https://kubernetes.
 - The operator has moved from HPA apiVersion autoscaling/v2beta1 to autoscaling/v2 API users will need to update there HPA Specs according v2 api in order to work with the latest druid-operator release.
 - druid-operator has moved Ingress apiVersion networking/v1beta1 to networking/v1. Users will need to update there Ingress Spec in the druid CR according networking/v1 syntax. In case users are using schema validated CRD, the CRD will also be needed to be updated.
 - The v1.0.0 release for druid-operator is compatible with k8s version 1.25. HPA API is kept to version v2beta2.
+- Release v1.2.2 had a bug for namespace scoped operator deployments, this is fixed in 1.2.3.
+
+### Kubernetes version compatibility
+
+| druid-operator | 0.0.9 | v1.0.0 | v1.1.0 | v1.2.2 | v1.2.3 |
+| :------------- | :-------------: | :-----: | :---: | :---: | :---: |
+| kubernetes <= 1.20 | :x:| :x: | :x: | :x: | :x: |
+| kubernetes == 1.21 | :white_check_mark:| :x: | :x: | :x: | :x: |
+| kubernetes >= 1.22 and <= 1.25 | :white_check_mark: | :white_check_mark: | :white_check_mark: |  :white_check_mark: | :white_check_mark: |
+| kubernetes > 1.25 and <= 1.29.1 | :x: | :x: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 
 ### Contributors
 

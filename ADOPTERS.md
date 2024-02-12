@@ -10,4 +10,4 @@ This is a list of production adopters of Druid Operator:
 Open Source Solutions based on Druid Operator:
 | Company | Industry |
 | :--- |:----------------------------------|
-|[AWS](https://github.com/aws-solutions/scalable-analytics-using-apache-druid-on-aws)
+|[AWS](https://github.com/aws-solutions/scalable-analytics-using-apache-druid-on-aws)|
