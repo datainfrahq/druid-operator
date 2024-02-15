@@ -122,7 +122,7 @@ func (r *DruidIngestionReconciler) CreateOrUpdate(
 	auth internalhttp.Auth,
 ) (controllerutil.OperationResult, error) {
 
-	// check status if task id exists
+	// check if task id does not exist in status
 	if di.Status.TaskId == "" && di.Status.CurrentIngestionSpec == "" {
 		// if does not exist create task
 
