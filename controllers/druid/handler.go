@@ -561,7 +561,7 @@ func execCheckCrashStatus(ctx context.Context, sdk client.Client, nodeSpec *v1al
 	}
 }
 
-func checkCrashStatus(ctx context.Context, sdk client.Client,  nodeSpec *v1alpha1.DruidNodeSpec, drd *v1alpha1.Druid, nodeSpecUniqueStr string, emitEvents EventEmitter) error {
+func checkCrashStatus(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.DruidNodeSpec, drd *v1alpha1.Druid, nodeSpecUniqueStr string, emitEvents EventEmitter) error {
 
 	podList, err := readers.List(ctx, sdk, drd, makeLabelsForNodeSpec(nodeSpec, drd, drd.Name, nodeSpecUniqueStr), emitEvents, func() objectList { return &v1.PodList{} }, func(listObj runtime.Object) []object {
 		items := listObj.(*v1.PodList).Items
