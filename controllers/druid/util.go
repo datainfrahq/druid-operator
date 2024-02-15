@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func firstNonEmptyStr(s1 string, s2 string) string {
@@ -80,6 +81,7 @@ func Str2Int(s string) int {
 	return i
 }
 
+
 func IsEqualJson(s1, s2 string) (bool, error) {
 	var o1 interface{}
 	var o2 interface{}
@@ -95,4 +97,34 @@ func IsEqualJson(s1, s2 string) (bool, error) {
 	}
 
 	return reflect.DeepEqual(o1, o2), nil
+}
+
+// to find the time difference between two epoch times
+func timeDifference(epochTime1, epochTime2 int64) int64 {
+	t1 := time.Unix(epochTime1, 0)
+	t2 := time.Unix(epochTime2, 0)
+
+	diff := time.Duration(t2.Sub(t1))
+	return int64(diff.Seconds())
+}
+
+func containsString(all []string, string string) bool {
+	for _, s := range all {
+		if s == string {
+			return true
+		}
+	}
+
+	return false
+}
+
+func hasDuplicateString(slice []string) (bool, string) {
+	seen := make(map[string]bool)
+	for _, s := range slice {
+		if seen[s] {
+			return true, s
+		}
+		seen[s] = true
+	}
+	return false, ""
 }

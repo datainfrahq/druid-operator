@@ -9,7 +9,7 @@ metadata:
     nodeSpecUniqueStr: druid-druid-test-brokers
     component: broker
   annotations:
-    druidOpResourceHash: du7ks4I5YTmInUUcbietAP8beVI=
+    druidOpResourceHash: DYdfEwwDlLKgjTSZeuJb5nloe/w=
 spec:
   replicas: 2
   selector:
@@ -19,8 +19,8 @@ spec:
       nodeSpecUniqueStr: druid-druid-test-brokers
       component: broker
   strategy:
-   rollingUpdate: {}
-   type: RollingUpdate
+    rollingUpdate: {}
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -34,50 +34,60 @@ spec:
     spec:
       tolerations: []
       affinity: {}
+      priorityClassName: high-priority
       containers:
-      - command:
-        - bin/run-druid.sh
-        - broker
-        image: himanshu01/druid:druid-0.12.0-1
-        name: druid-druid-test-brokers
-        env:
-          - name : configMapSHA
-            value : blah
-        ports:
-        - containerPort: 8083
-          name: random
-        readinessProbe:
-          httpGet:
-            path: /status
-            port: 8080
-        livenessProbe:
-          httpGet:
-            path: /status
-            port: 8080
-        resources:
-          limits:
-            cpu: "4"
-            memory: 2Gi
-          requests:
-            cpu: "4"
-            memory: 2Gi
-        volumeMounts:
-        - mountPath: /druid/conf/druid/_common
-          readOnly: true
-          name: common-config-volume
-        - mountPath: /druid/conf/druid/broker
-          readOnly: true
-          name: nodetype-config-volume
-        - mountPath: /druid/data
-          readOnly: true
-          name: data-volume
+        - command:
+            - bin/run-druid.sh
+            - broker
+          image: himanshu01/druid:druid-0.12.0-1
+          name: druid-druid-test-brokers
+          env:
+            - name: configMapSHA
+              value: blah
+          ports:
+            - containerPort: 8083
+              name: random
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 8080
+          startupProbe:
+            failureThreshold: 20
+            httpGet:
+              path: /druid/broker/v1/readiness
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          resources:
+            limits:
+              cpu: "4"
+              memory: 2Gi
+            requests:
+              cpu: "4"
+              memory: 2Gi
+          volumeMounts:
+            - mountPath: /druid/conf/druid/_common
+              readOnly: true
+              name: common-config-volume
+            - mountPath: /druid/conf/druid/broker
+              readOnly: true
+              name: nodetype-config-volume
+            - mountPath: /druid/data
+              readOnly: true
+              name: data-volume
       securityContext:
         fsGroup: 107
         runAsUser: 106
       volumes:
-      - configMap:
-          name: druid-test-druid-common-config
-        name: common-config-volume
-      - configMap:
-          name: druid-druid-test-brokers-config
-        name: nodetype-config-volume
+        - configMap:
+            name: druid-test-druid-common-config
+          name: common-config-volume
+        - configMap:
+            name: druid-druid-test-brokers-config
+          name: nodetype-config-volume

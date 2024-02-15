@@ -1,12 +1,18 @@
-## Druid Operator Documenation
+# Overview
 
-* [Install the Operator](./getting_started.md)
-* [Druid CR Spec](./druid_cr.md)
+Druid Operator is a Kubernetes controller that manages the lifecycle of [Apache Druid](https://druid.apache.org/) clusters.
+The operator simplifies the management of Druid clusters with its custom logic that is configurable via custom API
+(Kubernetes CRD).
+
+## Druid Operator Documentation
+
+* [Getting Started](./getting_started.md)
+* API Specifications
+  * [Druid API](./api_specifications/druid.md)
+* [Supported Features](./features.md)
 * [Example Specs](./examples.md)
-* [Feature Supported by Druid Operator](./features.md)
-* [Migration To Kubebuilder V3 in the Upcoming Version](./kubebuilder_v3_migration.md)
 * [Developer Documentation](./dev_doc.md)
-
+* [Migration To Kubebuilder V3 in the Upcoming Version](./kubebuilder_v3_migration.md)
 ---
 
 :warning: You won't find any documentation about druid itself in this repository.

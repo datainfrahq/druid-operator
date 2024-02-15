@@ -9,7 +9,7 @@ metadata:
     nodeSpecUniqueStr: druid-druid-test-brokers
     component: broker
   annotations:
-    druidOpResourceHash: qItQSuF2PU0ZPa2ZFyj3DOa7qNc=
+    druidOpResourceHash: Q+HvxwhK3mmgnAm97GEQpeWbDv0=
 spec:
   podManagementPolicy: Parallel
   replicas: 2
@@ -40,8 +40,8 @@ spec:
           image: apache/druid:0.22.1
           name: druid-druid-test-brokers
           env:
-            - name : configMapSHA
-              value : blah
+            - name: configMapSHA
+              value: blah
           ports:
             - containerPort: 8083
               name: random
@@ -53,6 +53,15 @@ spec:
             httpGet:
               path: /status
               port: 8080
+          startupProbe:
+            failureThreshold: 20
+            httpGet:
+              path: /druid/broker/v1/readiness
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
           resources:
             limits:
               cpu: "4"
@@ -108,12 +117,12 @@ spec:
             name: druid-druid-test-brokers-config
           name: nodetype-config-volume
   volumeClaimTemplates:
-  - metadata:
-      name: data-volume
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 2Gi
-      storageClassName: gp2
+    - metadata:
+        name: data-volume
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 2Gi
+        storageClassName: gp2

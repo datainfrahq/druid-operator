@@ -34,6 +34,7 @@ var (
 	testEnv   *envtest.Environment
 	ctx       context.Context
 	cancel    context.CancelFunc
+	emitEvent EventEmitter
 )
 
 func TestAPIs(t *testing.T) {
@@ -92,6 +93,8 @@ var _ = BeforeSuite(func() {
 		Recorder:      k8sManager.GetEventRecorderFor("druid-operator"),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
+
+	emitEvent = EmitEventFuncs{k8sManager.GetEventRecorderFor("druid-operator")}
 
 	go func() {
 		defer GinkgoRecover()

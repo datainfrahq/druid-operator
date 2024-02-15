@@ -38,6 +38,10 @@ const (
 	druidNodePatchFail     druidEventReason = "DruidOperatorPatchFail"
 	druidNodePatchSucess   druidEventReason = "DruidOperatorPatchSuccess"
 	druidObjectListFail    druidEventReason = "DruidOperatorListFail"
+
+	druidFinalizerTriggered druidEventReason = "DruidOperatorFinalizerTriggered"
+	druidFinalizerFailed    druidEventReason = "DruidFinalizerFailed"
+	druidFinalizerSuccess   druidEventReason = "DruidFinalizerSuccess"
 )
 
 // Reader Interface

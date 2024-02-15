@@ -18,7 +18,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Druid is the Schema for the druids API
+        description: Druid is the Schema for the druids API.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,31 +33,31 @@ spec:
           metadata:
             type: object
           spec:
-            description: DruidSpec defines the desired state of Druid
+            description: DruidSpec defines the desired state of the Druid cluster.
             properties:
               additionalContainer:
-                description: Operator deploys the sidecar container based on these
-                  properties. Sidecar will be deployed for all the Druid pods.
+                description: AdditionalContainer defines additional sidecar containers
+                  to be deployed with the `Druid` pods.
                 items:
-                  description: AdditionalContainer defines the additional sidecar
-                    container
+                  description: 'AdditionalContainer defines additional sidecar containers
+                    to be deployed with the `Druid` pods. (will be part of Kubernetes
+                    native in the future: https://github.com/kubernetes/enhancements/blob/master/keps/sig-node/753-sidecar-containers/README.md#summary).'
                   properties:
                     args:
-                      description: Argument to call the command
+                      description: Args Arguments to call the command.
                       items:
                         type: string
                       type: array
                     command:
-                      description: This is the command for the additional container
-                        to run.
+                      description: Command command for the additional container.
                       items:
                         type: string
                       type: array
                     containerName:
-                      description: This is the name of the additional container.
+                      description: ContainerName name of the additional container.
                       type: string
                     env:
-                      description: Environment variables for the Additional Container
+                      description: Env Environment variables for the additional container.
                       items:
                         description: EnvVar represents an environment variable present
                           in a Container.
@@ -175,7 +175,8 @@ spec:
                         type: object
                       type: array
                     envFrom:
-                      description: Extra environment variables
+                      description: EnvFrom Extra environment variables from remote
+                        source (ConfigMaps, Secrets...).
                       items:
                         description: EnvFromSource represents the source of a set
                           of ConfigMaps
@@ -214,14 +215,14 @@ spec:
                         type: object
                       type: array
                     image:
-                      description: This is the image for the additional container
-                        to run.
+                      description: Image Image of the additional container.
                       type: string
                     imagePullPolicy:
-                      description: If not present, will be taken from top level spec
+                      description: ImagePullPolicy If not present, will be taken from
+                        top level spec.
                       type: string
                     resources:
-                      description: CPU/Memory Resources
+                      description: Resources Kubernetes Native `resources` specification.
                       properties:
                         claims:
                           description: "Claims lists the names of resources, defined
@@ -265,13 +266,17 @@ spec:
                           description: 'Requests describes the minimum amount of compute
                             resources required. If Requests is omitted for a container,
                             it defaults to Limits if that is explicitly specified,
-                            otherwise to an implementation-defined value. More info:
-                            https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            otherwise to an implementation-defined value. Requests
+                            cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                           type: object
                       type: object
+                    runAsInit:
+                      description: RunAsInit indicate whether this should be an init
+                        container.
+                      type: boolean
                     securityContext:
-                      description: ContainerSecurityContext. If not present, will
-                        be taken from top level pod
+                      description: ContainerSecurityContext If not present, will be
+                        taken from top level pod.
                       properties:
                         allowPrivilegeEscalation:
                           description: 'AllowPrivilegeEscalation controls whether
@@ -444,7 +449,7 @@ spec:
                           type: object
                       type: object
                     volumeMounts:
-                      description: Volumes etc for the Druid pods
+                      description: VolumeMounts Kubernetes Native `VolumeMount` specification.
                       items:
                         description: VolumeMount describes a mounting of a Volume
                           within a container.
@@ -490,8 +495,7 @@ spec:
                   type: object
                 type: array
               affinity:
-                description: Affinity to be used to for enabling node, pod affinity
-                  and anti-affinity
+                description: Affinity Kubernetes native `affinity` specification.
                 properties:
                   nodeAffinity:
                     description: Describes node affinity scheduling rules for the
@@ -1319,13 +1323,16 @@ spec:
                     type: object
                 type: object
               common.runtime.properties:
-                description: common.runtime.properties contents
+                description: CommonRuntimeProperties Content fo the `common.runtime.properties`
+                  configuration file.
                 type: string
               commonConfigMountPath:
-                description: In-container directory to mount with common.runtime.properties
+                default: /opt/druid/conf/druid/cluster/_common
+                description: CommonConfigMountPath In-container directory to mount
+                  the Druid common configuration
                 type: string
               containerSecurityContext:
-                description: druid pods container-security-context
+                description: ContainerSecurityContext
                 properties:
                   allowPrivilegeEscalation:
                     description: 'AllowPrivilegeEscalation controls whether a process
@@ -1483,7 +1490,12 @@ spec:
                         type: string
                     type: object
                 type: object
+              core-site.xml:
+                description: CoreSite Contents of `core-site.xml`.
+                type: string
               deepStorage:
+                description: 'DeepStorage IGNORED (Future API): In order to make Druid
+                  dependency setup extensible from within Druid operator.'
                 properties:
                   spec:
                     description: RawMessage is a raw encoded JSON value. It implements
@@ -1497,16 +1509,24 @@ spec:
                 - spec
                 - type
                 type: object
+              defaultProbes:
+                default: true
+                description: DefaultProbes If set to true this will add default probes
+                  (liveness / readiness / startup) for all druid components but it
+                  won't override existing probes
+                type: boolean
               deleteOrphanPvc:
-                description: Default is set to true, orphaned ( unmounted pvc's )
-                  shall be cleaned up by the operator.
+                default: true
+                description: DeleteOrphanPvc Orphaned (unmounted PVCs) shall be cleaned
+                  up by the operator.
                 type: boolean
               disablePVCDeletionFinalizer:
-                description: Default is set to false, pvc shall be deleted on deletion
-                  of CR
+                default: false
+                description: DisablePVCDeletionFinalizer Whether PVCs shall be deleted
+                  on the deletion of the Druid cluster.
                 type: boolean
               env:
-                description: Environment variables for druid containers
+                description: Env Environment variables for druid containers.
                 items:
                   description: EnvVar represents an environment variable present in
                     a Container.
@@ -1615,7 +1635,8 @@ spec:
                   type: object
                 type: array
               envFrom:
-                description: Extra environment variables
+                description: EnvFrom Extra environment variables from remote source
+                  (ConfigMaps, Secrets...).
                 items:
                   description: EnvFromSource represents the source of a set of ConfigMaps
                   properties:
@@ -1649,22 +1670,94 @@ spec:
                       x-kubernetes-map-type: atomic
                   type: object
                 type: array
+              extraCommonConfig:
+                description: ExtraCommonConfig References to ConfigMaps holding more
+                  configuration files to mount to the common configuration path.
+                items:
+                  description: "ObjectReference contains enough information to let
+                    you inspect or modify the referred object. --- New uses of this
+                    type are discouraged because of difficulty describing its usage
+                    when embedded in APIs. 1. Ignored fields.  It includes many fields
+                    which are not generally honored.  For instance, ResourceVersion
+                    and FieldPath are both very rarely valid in actual usage. 2. Invalid
+                    usage help.  It is impossible to add specific help for individual
+                    usage.  In most embedded usages, there are particular restrictions
+                    like, \"must refer only to types A and B\" or \"UID not honored\"
+                    or \"name must be restricted\". Those cannot be well described
+                    when embedded. 3. Inconsistent validation.  Because the usages
+                    are different, the validation rules are different by usage, which
+                    makes it hard for users to predict what will happen. 4. The fields
+                    are both imprecise and overly precise.  Kind is not a precise
+                    mapping to a URL. This can produce ambiguity during interpretation
+                    and require a REST mapping.  In most cases, the dependency is
+                    on the group,resource tuple and the version of the actual struct
+                    is irrelevant. 5. We cannot easily change it.  Because this type
+                    is embedded in many locations, updates to this type will affect
+                    numerous schemas.  Don't make new APIs embed an underspecified
+                    API type they do not control. \n Instead of using this type, create
+                    a locally provided and used type that is well-focused on your
+                    reference. For example, ServiceReferences for admission registration:
+                    https://github.com/kubernetes/api/blob/release-1.17/admissionregistration/v1/types.go#L533
+                    ."
+                  properties:
+                    apiVersion:
+                      description: API version of the referent.
+                      type: string
+                    fieldPath:
+                      description: 'If referring to a piece of an object instead of
+                        an entire object, this string should contain a valid JSON/Go
+                        field access statement, such as desiredState.manifest.containers[2].
+                        For example, if the object reference is to a container within
+                        a pod, this would take on a value like: "spec.containers{name}"
+                        (where "name" refers to the name of the container that triggered
+                        the event) or if no container name is specified "spec.containers[2]"
+                        (container with index 2 in this pod). This syntax is chosen
+                        only to have some well-defined way of referencing a part of
+                        an object. TODO: this design is not final and this field is
+                        subject to change in the future.'
+                      type: string
+                    kind:
+                      description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                      type: string
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                      type: string
+                    namespace:
+                      description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                      type: string
+                    resourceVersion:
+                      description: 'Specific resourceVersion to which this reference
+                        is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency'
+                      type: string
+                    uid:
+                      description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
               forceDeleteStsPodOnError:
+                default: true
+                description: 'ForceDeleteStsPodOnError Delete the StatefulSet''s pods
+                  if the StatefulSet is set to ordered ready. issue: https://github.com/kubernetes/kubernetes/issues/67250
+                  doc: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#forced-rollback'
                 type: boolean
+              hdfs-site.xml:
+                description: HdfsSite Contents of `hdfs-site.xml`.
+                type: string
               ignored:
                 default: false
                 description: 'Ignored is now deprecated API. In order to avoid reconciliation
-                  of objects use the druid.apache.org/ignored: "true" annotation'
+                  of objects use the `druid.apache.org/ignored: "true"` annotation.'
                 type: boolean
               image:
-                description: Required here or at nodeSpec level
+                description: Image Required here or at the NodeSpec level.
                 type: string
               imagePullPolicy:
-                description: PullPolicy describes a policy for if/when to pull a container
-                  image
+                default: IfNotPresent
+                description: ImagePullPolicy
                 type: string
               imagePullSecrets:
-                description: imagePullSecrets for private registries
+                description: ImagePullSecrets
                 items:
                   description: LocalObjectReference contains enough information to
                     let you locate the referenced object inside the same namespace.
@@ -1677,11 +1770,12 @@ spec:
                   x-kubernetes-map-type: atomic
                 type: array
               jvm.options:
-                description: jvm options for druid jvm processes
+                description: JvmOptions Contents of the shared `jvm.options` configuration
+                  file for druid JVM processes.
                 type: string
               livenessProbe:
-                description: Port is set to druid.port if not specified with httpGet
-                  handler
+                description: LivenessProbe Port is set to `druid.port` if not specified
+                  with httpGet handler.
                 properties:
                   exec:
                     description: Exec specifies the action to take.
@@ -1705,9 +1799,7 @@ spec:
                     format: int32
                     type: integer
                   grpc:
-                    description: GRPC specifies an action involving a GRPC port. This
-                      is a beta field and requires enabling GRPCContainerProbe feature
-                      gate.
+                    description: GRPC specifies an action involving a GRPC port.
                     properties:
                       port:
                         description: Port number of the gRPC service. Number must
@@ -1738,7 +1830,9 @@ spec:
                             used in HTTP probes
                           properties:
                             name:
-                              description: The header field name
+                              description: The header field name. This will be canonicalized
+                                upon output, so case-variant names will be understood
+                                as the same header.
                               type: string
                             value:
                               description: The header field value
@@ -1823,9 +1917,11 @@ spec:
                     type: integer
                 type: object
               log4j.config:
-                description: log4j config contents
+                description: Log4jConfig contents `log4j.config` configuration file.
                 type: string
               metadataStore:
+                description: 'MetadataStore IGNORED (Future API): In order to make
+                  Druid dependency setup extensible from within Druid operator.'
                 properties:
                   spec:
                     description: RawMessage is a raw encoded JSON value. It implements
@@ -1840,19 +1936,504 @@ spec:
                 - type
                 type: object
               metricDimensions.json:
-                description: Custom Dimension Map Path for statsd emitter
+                description: 'DimensionsMapPath Custom Dimension Map Path for statsd
+                  emitter. stastd documentation is described in the following documentation:
+                  https://druid.apache.org/docs/latest/development/extensions-contrib/statsd.html'
                 type: string
               nodeSelector:
                 additionalProperties:
                   type: string
-                description: Node selector to be used by Druid statefulsets
+                description: NodeSelector Kubernetes native `nodeSelector` specification.
                 type: object
               nodes:
                 additionalProperties:
+                  description: 'DruidNodeSpec Specification of `Druid` Node type and
+                    its configurations. The key in following map can be arbitrary
+                    string that helps you identify resources for a specific nodeSpec.
+                    It is used in the Kubernetes resources'' names, so it must be
+                    compliant with restrictions placed on Kubernetes resource names:
+                    https://kubernetes.io/docs/concepts/overview/working-with-objects/names/'
                   properties:
+                    additionalContainer:
+                      description: Operator deploys the sidecar container based on
+                        these properties.
+                      items:
+                        description: 'AdditionalContainer defines additional sidecar
+                          containers to be deployed with the `Druid` pods. (will be
+                          part of Kubernetes native in the future: https://github.com/kubernetes/enhancements/blob/master/keps/sig-node/753-sidecar-containers/README.md#summary).'
+                        properties:
+                          args:
+                            description: Args Arguments to call the command.
+                            items:
+                              type: string
+                            type: array
+                          command:
+                            description: Command command for the additional container.
+                            items:
+                              type: string
+                            type: array
+                          containerName:
+                            description: ContainerName name of the additional container.
+                            type: string
+                          env:
+                            description: Env Environment variables for the additional
+                              container.
+                            items:
+                              description: EnvVar represents an environment variable
+                                present in a Container.
+                              properties:
+                                name:
+                                  description: Name of the environment variable. Must
+                                    be a C_IDENTIFIER.
+                                  type: string
+                                value:
+                                  description: 'Variable references $(VAR_NAME) are
+                                    expanded using the previously defined environment
+                                    variables in the container and any service environment
+                                    variables. If a variable cannot be resolved, the
+                                    reference in the input string will be unchanged.
+                                    Double $$ are reduced to a single $, which allows
+                                    for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)"
+                                    will produce the string literal "$(VAR_NAME)".
+                                    Escaped references will never be expanded, regardless
+                                    of whether the variable exists or not. Defaults
+                                    to "".'
+                                  type: string
+                                valueFrom:
+                                  description: Source for the environment variable's
+                                    value. Cannot be used if value is not empty.
+                                  properties:
+                                    configMapKeyRef:
+                                      description: Selects a key of a ConfigMap.
+                                      properties:
+                                        key:
+                                          description: The key to select.
+                                          type: string
+                                        name:
+                                          description: 'Name of the referent. More
+                                            info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            TODO: Add other useful fields. apiVersion,
+                                            kind, uid?'
+                                          type: string
+                                        optional:
+                                          description: Specify whether the ConfigMap
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    fieldRef:
+                                      description: 'Selects a field of the pod: supports
+                                        metadata.name, metadata.namespace, `metadata.labels[''<KEY>'']`,
+                                        `metadata.annotations[''<KEY>'']`, spec.nodeName,
+                                        spec.serviceAccountName, status.hostIP, status.podIP,
+                                        status.podIPs.'
+                                      properties:
+                                        apiVersion:
+                                          description: Version of the schema the FieldPath
+                                            is written in terms of, defaults to "v1".
+                                          type: string
+                                        fieldPath:
+                                          description: Path of the field to select
+                                            in the specified API version.
+                                          type: string
+                                      required:
+                                      - fieldPath
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    resourceFieldRef:
+                                      description: 'Selects a resource of the container:
+                                        only resources limits and requests (limits.cpu,
+                                        limits.memory, limits.ephemeral-storage, requests.cpu,
+                                        requests.memory and requests.ephemeral-storage)
+                                        are currently supported.'
+                                      properties:
+                                        containerName:
+                                          description: 'Container name: required for
+                                            volumes, optional for env vars'
+                                          type: string
+                                        divisor:
+                                          anyOf:
+                                          - type: integer
+                                          - type: string
+                                          description: Specifies the output format
+                                            of the exposed resources, defaults to
+                                            "1"
+                                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                          x-kubernetes-int-or-string: true
+                                        resource:
+                                          description: 'Required: resource to select'
+                                          type: string
+                                      required:
+                                      - resource
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    secretKeyRef:
+                                      description: Selects a key of a secret in the
+                                        pod's namespace
+                                      properties:
+                                        key:
+                                          description: The key of the secret to select
+                                            from.  Must be a valid secret key.
+                                          type: string
+                                        name:
+                                          description: 'Name of the referent. More
+                                            info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            TODO: Add other useful fields. apiVersion,
+                                            kind, uid?'
+                                          type: string
+                                        optional:
+                                          description: Specify whether the Secret
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                  type: object
+                              required:
+                              - name
+                              type: object
+                            type: array
+                          envFrom:
+                            description: EnvFrom Extra environment variables from
+                              remote source (ConfigMaps, Secrets...).
+                            items:
+                              description: EnvFromSource represents the source of
+                                a set of ConfigMaps
+                              properties:
+                                configMapRef:
+                                  description: The ConfigMap to select from
+                                  properties:
+                                    name:
+                                      description: 'Name of the referent. More info:
+                                        https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        TODO: Add other useful fields. apiVersion,
+                                        kind, uid?'
+                                      type: string
+                                    optional:
+                                      description: Specify whether the ConfigMap must
+                                        be defined
+                                      type: boolean
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                prefix:
+                                  description: An optional identifier to prepend to
+                                    each key in the ConfigMap. Must be a C_IDENTIFIER.
+                                  type: string
+                                secretRef:
+                                  description: The Secret to select from
+                                  properties:
+                                    name:
+                                      description: 'Name of the referent. More info:
+                                        https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        TODO: Add other useful fields. apiVersion,
+                                        kind, uid?'
+                                      type: string
+                                    optional:
+                                      description: Specify whether the Secret must
+                                        be defined
+                                      type: boolean
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                              type: object
+                            type: array
+                          image:
+                            description: Image Image of the additional container.
+                            type: string
+                          imagePullPolicy:
+                            description: ImagePullPolicy If not present, will be taken
+                              from top level spec.
+                            type: string
+                          resources:
+                            description: Resources Kubernetes Native `resources` specification.
+                            properties:
+                              claims:
+                                description: "Claims lists the names of resources,
+                                  defined in spec.resourceClaims, that are used by
+                                  this container. \n This is an alpha field and requires
+                                  enabling the DynamicResourceAllocation feature gate.
+                                  \n This field is immutable. It can only be set for
+                                  containers."
+                                items:
+                                  description: ResourceClaim references one entry
+                                    in PodSpec.ResourceClaims.
+                                  properties:
+                                    name:
+                                      description: Name must match the name of one
+                                        entry in pod.spec.resourceClaims of the Pod
+                                        where this field is used. It makes that resource
+                                        available inside a container.
+                                      type: string
+                                  required:
+                                  - name
+                                  type: object
+                                type: array
+                                x-kubernetes-list-map-keys:
+                                - name
+                                x-kubernetes-list-type: map
+                              limits:
+                                additionalProperties:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Limits describes the maximum amount
+                                  of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                type: object
+                              requests:
+                                additionalProperties:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Requests describes the minimum amount
+                                  of compute resources required. If Requests is omitted
+                                  for a container, it defaults to Limits if that is
+                                  explicitly specified, otherwise to an implementation-defined
+                                  value. Requests cannot exceed Limits. More info:
+                                  https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                type: object
+                            type: object
+                          runAsInit:
+                            description: RunAsInit indicate whether this should be
+                              an init container.
+                            type: boolean
+                          securityContext:
+                            description: ContainerSecurityContext If not present,
+                              will be taken from top level pod.
+                            properties:
+                              allowPrivilegeEscalation:
+                                description: 'AllowPrivilegeEscalation controls whether
+                                  a process can gain more privileges than its parent
+                                  process. This bool directly controls if the no_new_privs
+                                  flag will be set on the container process. AllowPrivilegeEscalation
+                                  is true always when the container is: 1) run as
+                                  Privileged 2) has CAP_SYS_ADMIN Note that this field
+                                  cannot be set when spec.os.name is windows.'
+                                type: boolean
+                              capabilities:
+                                description: The capabilities to add/drop when running
+                                  containers. Defaults to the default set of capabilities
+                                  granted by the container runtime. Note that this
+                                  field cannot be set when spec.os.name is windows.
+                                properties:
+                                  add:
+                                    description: Added capabilities
+                                    items:
+                                      description: Capability represent POSIX capabilities
+                                        type
+                                      type: string
+                                    type: array
+                                  drop:
+                                    description: Removed capabilities
+                                    items:
+                                      description: Capability represent POSIX capabilities
+                                        type
+                                      type: string
+                                    type: array
+                                type: object
+                              privileged:
+                                description: Run container in privileged mode. Processes
+                                  in privileged containers are essentially equivalent
+                                  to root on the host. Defaults to false. Note that
+                                  this field cannot be set when spec.os.name is windows.
+                                type: boolean
+                              procMount:
+                                description: procMount denotes the type of proc mount
+                                  to use for the containers. The default is DefaultProcMount
+                                  which uses the container runtime defaults for readonly
+                                  paths and masked paths. This requires the ProcMountType
+                                  feature flag to be enabled. Note that this field
+                                  cannot be set when spec.os.name is windows.
+                                type: string
+                              readOnlyRootFilesystem:
+                                description: Whether this container has a read-only
+                                  root filesystem. Default is false. Note that this
+                                  field cannot be set when spec.os.name is windows.
+                                type: boolean
+                              runAsGroup:
+                                description: The GID to run the entrypoint of the
+                                  container process. Uses runtime default if unset.
+                                  May also be set in PodSecurityContext.  If set in
+                                  both SecurityContext and PodSecurityContext, the
+                                  value specified in SecurityContext takes precedence.
+                                  Note that this field cannot be set when spec.os.name
+                                  is windows.
+                                format: int64
+                                type: integer
+                              runAsNonRoot:
+                                description: Indicates that the container must run
+                                  as a non-root user. If true, the Kubelet will validate
+                                  the image at runtime to ensure that it does not
+                                  run as UID 0 (root) and fail to start the container
+                                  if it does. If unset or false, no such validation
+                                  will be performed. May also be set in PodSecurityContext.  If
+                                  set in both SecurityContext and PodSecurityContext,
+                                  the value specified in SecurityContext takes precedence.
+                                type: boolean
+                              runAsUser:
+                                description: The UID to run the entrypoint of the
+                                  container process. Defaults to user specified in
+                                  image metadata if unspecified. May also be set in
+                                  PodSecurityContext.  If set in both SecurityContext
+                                  and PodSecurityContext, the value specified in SecurityContext
+                                  takes precedence. Note that this field cannot be
+                                  set when spec.os.name is windows.
+                                format: int64
+                                type: integer
+                              seLinuxOptions:
+                                description: The SELinux context to be applied to
+                                  the container. If unspecified, the container runtime
+                                  will allocate a random SELinux context for each
+                                  container.  May also be set in PodSecurityContext.  If
+                                  set in both SecurityContext and PodSecurityContext,
+                                  the value specified in SecurityContext takes precedence.
+                                  Note that this field cannot be set when spec.os.name
+                                  is windows.
+                                properties:
+                                  level:
+                                    description: Level is SELinux level label that
+                                      applies to the container.
+                                    type: string
+                                  role:
+                                    description: Role is a SELinux role label that
+                                      applies to the container.
+                                    type: string
+                                  type:
+                                    description: Type is a SELinux type label that
+                                      applies to the container.
+                                    type: string
+                                  user:
+                                    description: User is a SELinux user label that
+                                      applies to the container.
+                                    type: string
+                                type: object
+                              seccompProfile:
+                                description: The seccomp options to use by this container.
+                                  If seccomp options are provided at both the pod
+                                  & container level, the container options override
+                                  the pod options. Note that this field cannot be
+                                  set when spec.os.name is windows.
+                                properties:
+                                  localhostProfile:
+                                    description: localhostProfile indicates a profile
+                                      defined in a file on the node should be used.
+                                      The profile must be preconfigured on the node
+                                      to work. Must be a descending path, relative
+                                      to the kubelet's configured seccomp profile
+                                      location. Must only be set if type is "Localhost".
+                                    type: string
+                                  type:
+                                    description: "type indicates which kind of seccomp
+                                      profile will be applied. Valid options are:
+                                      \n Localhost - a profile defined in a file on
+                                      the node should be used. RuntimeDefault - the
+                                      container runtime default profile should be
+                                      used. Unconfined - no profile should be applied."
+                                    type: string
+                                required:
+                                - type
+                                type: object
+                              windowsOptions:
+                                description: The Windows specific settings applied
+                                  to all containers. If unspecified, the options from
+                                  the PodSecurityContext will be used. If set in both
+                                  SecurityContext and PodSecurityContext, the value
+                                  specified in SecurityContext takes precedence. Note
+                                  that this field cannot be set when spec.os.name
+                                  is linux.
+                                properties:
+                                  gmsaCredentialSpec:
+                                    description: GMSACredentialSpec is where the GMSA
+                                      admission webhook (https://github.com/kubernetes-sigs/windows-gmsa)
+                                      inlines the contents of the GMSA credential
+                                      spec named by the GMSACredentialSpecName field.
+                                    type: string
+                                  gmsaCredentialSpecName:
+                                    description: GMSACredentialSpecName is the name
+                                      of the GMSA credential spec to use.
+                                    type: string
+                                  hostProcess:
+                                    description: HostProcess determines if a container
+                                      should be run as a 'Host Process' container.
+                                      This field is alpha-level and will only be honored
+                                      by components that enable the WindowsHostProcessContainers
+                                      feature flag. Setting this field without the
+                                      feature flag will result in errors when validating
+                                      the Pod. All of a Pod's containers must have
+                                      the same effective HostProcess value (it is
+                                      not allowed to have a mix of HostProcess containers
+                                      and non-HostProcess containers).  In addition,
+                                      if HostProcess is true then HostNetwork must
+                                      also be set to true.
+                                    type: boolean
+                                  runAsUserName:
+                                    description: The UserName in Windows to run the
+                                      entrypoint of the container process. Defaults
+                                      to the user specified in image metadata if unspecified.
+                                      May also be set in PodSecurityContext. If set
+                                      in both SecurityContext and PodSecurityContext,
+                                      the value specified in SecurityContext takes
+                                      precedence.
+                                    type: string
+                                type: object
+                            type: object
+                          volumeMounts:
+                            description: VolumeMounts Kubernetes Native `VolumeMount`
+                              specification.
+                            items:
+                              description: VolumeMount describes a mounting of a Volume
+                                within a container.
+                              properties:
+                                mountPath:
+                                  description: Path within the container at which
+                                    the volume should be mounted.  Must not contain
+                                    ':'.
+                                  type: string
+                                mountPropagation:
+                                  description: mountPropagation determines how mounts
+                                    are propagated from the host to container and
+                                    the other way around. When not set, MountPropagationNone
+                                    is used. This field is beta in 1.10.
+                                  type: string
+                                name:
+                                  description: This must match the Name of a Volume.
+                                  type: string
+                                readOnly:
+                                  description: Mounted read-only if true, read-write
+                                    otherwise (false or unspecified). Defaults to
+                                    false.
+                                  type: boolean
+                                subPath:
+                                  description: Path within the volume from which the
+                                    container's volume should be mounted. Defaults
+                                    to "" (volume's root).
+                                  type: string
+                                subPathExpr:
+                                  description: Expanded path within the volume from
+                                    which the container's volume should be mounted.
+                                    Behaves similarly to SubPath but environment variable
+                                    references $(VAR_NAME) are expanded using the
+                                    container's environment. Defaults to "" (volume's
+                                    root). SubPathExpr and SubPath are mutually exclusive.
+                                  type: string
+                              required:
+                              - mountPath
+                              - name
+                              type: object
+                            type: array
+                        required:
+                        - command
+                        - containerName
+                        - image
+                        type: object
+                      type: array
                     affinity:
-                      description: Affinity to be used to for enabling node, pod affinity
-                        and anti-affinity
+                      description: Affinity Kubernetes native `affinity` specification.
                       properties:
                         nodeAffinity:
                           description: Describes node affinity scheduling rules for
@@ -2733,7 +3314,7 @@ spec:
                           type: object
                       type: object
                     containerSecurityContext:
-                      description: Druid pods container-security-context
+                      description: ContainerSecurityContext
                       properties:
                         allowPrivilegeEscalation:
                           description: 'AllowPrivilegeEscalation controls whether
@@ -2906,11 +3487,11 @@ spec:
                           type: object
                       type: object
                     druid.port:
-                      description: Port used by Druid Process
+                      description: DruidPort Used by the `Druid` process.
                       format: int32
                       type: integer
                     env:
-                      description: Extra environment variables
+                      description: Env Environment variables for druid containers.
                       items:
                         description: EnvVar represents an environment variable present
                           in a Container.
@@ -3028,7 +3609,8 @@ spec:
                         type: object
                       type: array
                     envFrom:
-                      description: Extra environment variables
+                      description: EnvFrom Extra environment variables from remote
+                        source (ConfigMaps, Secrets...).
                       items:
                         description: EnvFromSource represents the source of a set
                           of ConfigMaps
@@ -3067,11 +3649,12 @@ spec:
                         type: object
                       type: array
                     extra.jvm.options:
-                      description: This appends extra jvm options to JvmOptions field
+                      description: ExtraJvmOptions Appends extra jvm options to the
+                        `JvmOptions` field.
                       type: string
                     hpAutoscaler:
-                      description: HorizontalPodAutoscalerSpec describes the desired
-                        functionality of the HorizontalPodAutoscaler.
+                      description: HPAutoScaler Kubernetes Native `HorizontalPodAutoscaler`
+                        specification.
                       properties:
                         behavior:
                           description: behavior configures the scaling behavior of
@@ -3096,7 +3679,7 @@ spec:
                                       which must hold true for a specified past interval.
                                     properties:
                                       periodSeconds:
-                                        description: PeriodSeconds specifies the window
+                                        description: periodSeconds specifies the window
                                           of time for which the policy should hold
                                           true. PeriodSeconds must be greater than
                                           zero and less than or equal to 1800 (30
@@ -3104,11 +3687,11 @@ spec:
                                         format: int32
                                         type: integer
                                       type:
-                                        description: Type is used to specify the scaling
+                                        description: type is used to specify the scaling
                                           policy.
                                         type: string
                                       value:
-                                        description: Value contains the amount of
+                                        description: value contains the amount of
                                           change which is permitted by the policy.
                                           It must be greater than zero
                                         format: int32
@@ -3126,7 +3709,7 @@ spec:
                                     value Max is used.
                                   type: string
                                 stabilizationWindowSeconds:
-                                  description: 'StabilizationWindowSeconds is the
+                                  description: 'stabilizationWindowSeconds is the
                                     number of seconds for which past recommendations
                                     should be considered while scaling up or scaling
                                     down. StabilizationWindowSeconds must be greater
@@ -3155,7 +3738,7 @@ spec:
                                       which must hold true for a specified past interval.
                                     properties:
                                       periodSeconds:
-                                        description: PeriodSeconds specifies the window
+                                        description: periodSeconds specifies the window
                                           of time for which the policy should hold
                                           true. PeriodSeconds must be greater than
                                           zero and less than or equal to 1800 (30
@@ -3163,11 +3746,11 @@ spec:
                                         format: int32
                                         type: integer
                                       type:
-                                        description: Type is used to specify the scaling
+                                        description: type is used to specify the scaling
                                           policy.
                                         type: string
                                       value:
-                                        description: Value contains the amount of
+                                        description: value contains the amount of
                                           change which is permitted by the policy.
                                           It must be greater than zero
                                         format: int32
@@ -3185,7 +3768,7 @@ spec:
                                     value Max is used.
                                   type: string
                                 stabilizationWindowSeconds:
-                                  description: 'StabilizationWindowSeconds is the
+                                  description: 'stabilizationWindowSeconds is the
                                     number of seconds for which past recommendations
                                     should be considered while scaling up or scaling
                                     down. StabilizationWindowSeconds must be greater
@@ -3410,15 +3993,16 @@ spec:
                                       of a object,such as kind,name apiVersion
                                     properties:
                                       apiVersion:
-                                        description: API version of the referent
+                                        description: apiVersion is the API version
+                                          of the referent
                                         type: string
                                       kind:
-                                        description: 'Kind of the referent; More info:
-                                          https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                                        description: 'kind is the kind of the referent;
+                                          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                                         type: string
                                       name:
-                                        description: 'Name of the referent; More info:
-                                          http://kubernetes.io/docs/user-guide/identifiers#names'
+                                        description: 'name is the name of the referent;
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                                         type: string
                                     required:
                                     - kind
@@ -3734,13 +4318,15 @@ spec:
                             count.
                           properties:
                             apiVersion:
-                              description: API version of the referent
+                              description: apiVersion is the API version of the referent
                               type: string
                             kind:
-                              description: 'Kind of the referent; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                              description: 'kind is the kind of the referent; More
+                                info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                               type: string
                             name:
-                              description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+                              description: 'name is the name of the referent; More
+                                info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                               type: string
                           required:
                           - kind
@@ -3751,14 +4337,16 @@ spec:
                       - scaleTargetRef
                       type: object
                     image:
-                      description: Overrides image from top level, Required if no
-                        image specified at top level
+                      description: Image Overrides image from top level, Required
+                        if no image specified at top level.
                       type: string
                     imagePullPolicy:
-                      description: Overrides imagePullPolicy from top level
+                      description: ImagePullPolicy Overrides `imagePullPolicy` from
+                        top level.
                       type: string
                     imagePullSecrets:
-                      description: Overrides imagePullSecrets from top level
+                      description: ImagePullSecrets Overrides `imagePullSecrets` from
+                        top level.
                       items:
                         description: LocalObjectReference contains enough information
                           to let you locate the referenced object inside the same
@@ -3772,17 +4360,17 @@ spec:
                         x-kubernetes-map-type: atomic
                       type: array
                     ingress:
-                      description: Ingress Spec
+                      description: Ingress Kubernetes Native `Ingress` specification.
                       properties:
                         defaultBackend:
-                          description: DefaultBackend is the backend that should handle
+                          description: defaultBackend is the backend that should handle
                             requests that don't match any rule. If Rules are not specified,
                             DefaultBackend must be specified. If DefaultBackend is
                             not set, the handling of requests that do not match any
                             of the rules will be up to the Ingress controller.
                           properties:
                             resource:
-                              description: Resource is an ObjectRef to another Kubernetes
+                              description: resource is an ObjectRef to another Kubernetes
                                 resource in the namespace of the Ingress object. If
                                 resource is specified, a service.Name and service.Port
                                 must not be specified. This is a mutually exclusive
@@ -3808,25 +4396,25 @@ spec:
                               type: object
                               x-kubernetes-map-type: atomic
                             service:
-                              description: Service references a Service as a Backend.
+                              description: service references a service as a backend.
                                 This is a mutually exclusive setting with "Resource".
                               properties:
                                 name:
-                                  description: Name is the referenced service. The
+                                  description: name is the referenced service. The
                                     service must exist in the same namespace as the
                                     Ingress object.
                                   type: string
                                 port:
-                                  description: Port of the referenced service. A port
+                                  description: port of the referenced service. A port
                                     name or port number is required for a IngressServiceBackend.
                                   properties:
                                     name:
-                                      description: Name is the name of the port on
+                                      description: name is the name of the port on
                                         the Service. This is a mutually exclusive
                                         setting with "Number".
                                       type: string
                                     number:
-                                      description: Number is the numerical port number
+                                      description: number is the numerical port number
                                         (e.g. 80) on the Service. This is a mutually
                                         exclusive setting with "Name".
                                       format: int32
@@ -3837,7 +4425,7 @@ spec:
                               type: object
                           type: object
                         ingressClassName:
-                          description: IngressClassName is the name of an IngressClass
+                          description: ingressClassName is the name of an IngressClass
                             cluster resource. Ingress controller implementations use
                             this field to know whether they should be serving this
                             Ingress resource, by a transitive connection (controller
@@ -3852,8 +4440,8 @@ spec:
                             if present.
                           type: string
                         rules:
-                          description: A list of host rules used to configure the
-                            Ingress. If unspecified, or no rule matches, all traffic
+                          description: rules is a list of host rules used to configure
+                            the Ingress. If unspecified, or no rule matches, all traffic
                             is sent to the default backend.
                           items:
                             description: IngressRule represents the rules mapping
@@ -3863,7 +4451,7 @@ spec:
                               with the matching IngressRuleValue.
                             properties:
                               host:
-                                description: "Host is the fully qualified domain name
+                                description: "host is the fully qualified domain name
                                   of a network host, as defined by RFC 3986. Note
                                   the following deviations from the \"host\" part
                                   of the URI as defined in RFC 3986: 1. IPs are not
@@ -3876,7 +4464,7 @@ spec:
                                   are matched against the host before the IngressRuleValue.
                                   If the host is unspecified, the Ingress routes all
                                   traffic based on the specified IngressRuleValue.
-                                  \n Host can be \"precise\" which is a domain name
+                                  \n host can be \"precise\" which is a domain name
                                   without the terminating dot of a network host (e.g.
                                   \"foo.bar.com\") or \"wildcard\", which is a domain
                                   name prefixed with a single wildcard label (e.g.
@@ -3885,9 +4473,9 @@ spec:
                                   only a single label. You cannot have a wildcard
                                   label by itself (e.g. Host == \"*\"). Requests will
                                   be matched against the Host field in the following
-                                  way: 1. If Host is precise, the request matches
+                                  way: 1. If host is precise, the request matches
                                   this rule if the http host header is equal to Host.
-                                  2. If Host is a wildcard, then the request matches
+                                  2. If host is a wildcard, then the request matches
                                   this rule if the http host header is to equal to
                                   the suffix (removing the first label) of the wildcard
                                   rule."
@@ -3902,20 +4490,20 @@ spec:
                                   or ''#''.'
                                 properties:
                                   paths:
-                                    description: A collection of paths that map requests
-                                      to backends.
+                                    description: paths is a collection of paths that
+                                      map requests to backends.
                                     items:
                                       description: HTTPIngressPath associates a path
                                         with a backend. Incoming urls matching the
                                         path are forwarded to the backend.
                                       properties:
                                         backend:
-                                          description: Backend defines the referenced
+                                          description: backend defines the referenced
                                             service endpoint to which the traffic
                                             will be forwarded to.
                                           properties:
                                             resource:
-                                              description: Resource is an ObjectRef
+                                              description: resource is an ObjectRef
                                                 to another Kubernetes resource in
                                                 the namespace of the Ingress object.
                                                 If resource is specified, a service.Name
@@ -3946,29 +4534,29 @@ spec:
                                               type: object
                                               x-kubernetes-map-type: atomic
                                             service:
-                                              description: Service references a Service
-                                                as a Backend. This is a mutually exclusive
+                                              description: service references a service
+                                                as a backend. This is a mutually exclusive
                                                 setting with "Resource".
                                               properties:
                                                 name:
-                                                  description: Name is the referenced
+                                                  description: name is the referenced
                                                     service. The service must exist
                                                     in the same namespace as the Ingress
                                                     object.
                                                   type: string
                                                 port:
-                                                  description: Port of the referenced
+                                                  description: port of the referenced
                                                     service. A port name or port number
                                                     is required for a IngressServiceBackend.
                                                   properties:
                                                     name:
-                                                      description: Name is the name
+                                                      description: name is the name
                                                         of the port on the Service.
                                                         This is a mutually exclusive
                                                         setting with "Number".
                                                       type: string
                                                     number:
-                                                      description: Number is the numerical
+                                                      description: number is the numerical
                                                         port number (e.g. 80) on the
                                                         Service. This is a mutually
                                                         exclusive setting with "Name".
@@ -3980,7 +4568,7 @@ spec:
                                               type: object
                                           type: object
                                         path:
-                                          description: Path is matched against the
+                                          description: path is matched against the
                                             path of an incoming request. Currently
                                             it can contain characters disallowed from
                                             the conventional "path" part of a URL
@@ -3989,8 +4577,8 @@ spec:
                                             PathType with value "Exact" or "Prefix".
                                           type: string
                                         pathType:
-                                          description: 'PathType determines the interpretation
-                                            of the Path matching. PathType can be
+                                          description: 'pathType determines the interpretation
+                                            of the path matching. PathType can be
                                             one of the following values: * Exact:
                                             Matches the URL path exactly. * Prefix:
                                             Matches based on a URL path prefix split
@@ -4025,18 +4613,18 @@ spec:
                           type: array
                           x-kubernetes-list-type: atomic
                         tls:
-                          description: TLS configuration. Currently the Ingress only
-                            supports a single TLS port, 443. If multiple members of
-                            this list specify different hosts, they will be multiplexed
-                            on the same port according to the hostname specified through
-                            the SNI TLS extension, if the ingress controller fulfilling
-                            the ingress supports SNI.
+                          description: tls represents the TLS configuration. Currently
+                            the Ingress only supports a single TLS port, 443. If multiple
+                            members of this list specify different hosts, they will
+                            be multiplexed on the same port according to the hostname
+                            specified through the SNI TLS extension, if the ingress
+                            controller fulfilling the ingress supports SNI.
                           items:
                             description: IngressTLS describes the transport layer
-                              security associated with an Ingress.
+                              security associated with an ingress.
                             properties:
                               hosts:
-                                description: Hosts are a list of hosts included in
+                                description: hosts is a list of hosts included in
                                   the TLS certificate. The values in this list must
                                   match the name/s used in the tlsSecret. Defaults
                                   to the wildcard host setting for the loadbalancer
@@ -4046,13 +4634,13 @@ spec:
                                 type: array
                                 x-kubernetes-list-type: atomic
                               secretName:
-                                description: SecretName is the name of the secret
+                                description: secretName is the name of the secret
                                   used to terminate TLS traffic on port 443. Field
                                   is left optional to allow TLS routing based on SNI
                                   hostname alone. If the SNI host in a listener conflicts
                                   with the "Host" header field used by an IngressRule,
                                   the SNI host is used for termination and value of
-                                  the Host header is used for routing.
+                                  the "Host" header is used for routing.
                                 type: string
                             type: object
                           type: array
@@ -4061,23 +4649,19 @@ spec:
                     ingressAnnotations:
                       additionalProperties:
                         type: string
-                      description: Ingress Annoatations to be populated in ingress
-                        spec
+                      description: IngressAnnotations `Ingress` annotations to be
+                        populated in ingress spec.
                       type: object
                     jvm.options:
-                      description: This overrides JvmOptions at top level
+                      description: JvmOptions overrides `JvmOptions` at top level.
                       type: string
                     kind:
-                      description: 'Defaults to statefulsets. Note: volumeClaimTemplates
+                      default: StatefulSet
+                      description: 'Kind Can be StatefulSet or Deployment. Note: volumeClaimTemplates
                         are ignored when kind=Deployment'
                       type: string
                     lifecycle:
-                      description: Lifecycle describes actions that the management
-                        system should take in response to container lifecycle events.
-                        For the PostStart and PreStop lifecycle handlers, management
-                        of the container blocks until the action is complete, unless
-                        the container process fails, in which case the handler is
-                        aborted.
+                      description: Lifecycle
                       properties:
                         postStart:
                           description: 'PostStart is called immediately after a container
@@ -4119,7 +4703,9 @@ spec:
                                       to be used in HTTP probes
                                     properties:
                                       name:
-                                        description: The header field name
+                                        description: The header field name. This will
+                                          be canonicalized upon output, so case-variant
+                                          names will be understood as the same header.
                                         type: string
                                       value:
                                         description: The header field value
@@ -4215,7 +4801,9 @@ spec:
                                       to be used in HTTP probes
                                     properties:
                                       name:
-                                        description: The header field name
+                                        description: The header field name. This will
+                                          be canonicalized upon output, so case-variant
+                                          names will be understood as the same header.
                                         type: string
                                       value:
                                         description: The header field value
@@ -4267,9 +4855,8 @@ spec:
                           type: object
                       type: object
                     livenessProbe:
-                      description: Probe describes a health check to be performed
-                        against a container to determine whether it is alive or ready
-                        to receive traffic.
+                      description: LivenessProbe Port is set to `druid.port` if not
+                        specified with httpGet handler.
                       properties:
                         exec:
                           description: Exec specifies the action to take.
@@ -4295,8 +4882,6 @@ spec:
                           type: integer
                         grpc:
                           description: GRPC specifies an action involving a GRPC port.
-                            This is a beta field and requires enabling GRPCContainerProbe
-                            feature gate.
                           properties:
                             port:
                               description: Port number of the gRPC service. Number
@@ -4328,7 +4913,9 @@ spec:
                                   to be used in HTTP probes
                                 properties:
                                   name:
-                                    description: The header field name
+                                    description: The header field name. This will
+                                      be canonicalized upon output, so case-variant
+                                      names will be understood as the same header.
                                     type: string
                                   value:
                                     description: The header field value
@@ -4418,29 +5005,29 @@ spec:
                           type: integer
                       type: object
                     log4j.config:
-                      description: This overrides Log4jConfig at top level
+                      description: Log4jConfig Overrides `Log4jConfig` at top level.
                       type: string
                     maxSurge:
-                      description: maxSurge for deployment object, only applicable
-                        if kind=Deployment, by default set to 25%
+                      description: MaxSurge For Deployment object only. Set to 25%
+                        by default.
                       format: int32
                       type: integer
                     maxUnavailable:
-                      description: maxUnavailable for deployment object, only applicable
-                        if kind=Deployment, by default set to 25%
+                      description: MaxUnavailable For deployment object only. Set
+                        to 25% by default
                       format: int32
                       type: integer
                     nodeConfigMountPath:
-                      description: in-container directory to mount with runtime.properties,
-                        jvm.config, log4j2.xml files
+                      description: NodeConfigMountPath in-container directory to mount
+                        with runtime.properties, jvm.config, log4j2.xml files.
                       type: string
                     nodeSelector:
                       additionalProperties:
                         type: string
-                      description: Node selector to be used by Druid statefulsets
+                      description: NodeSelector Kubernetes native `nodeSelector` specification.
                       type: object
                     nodeType:
-                      description: Druid node type
+                      description: NodeDruid `Druid` node type.
                       enum:
                       - historical
                       - overlord
@@ -4451,6 +5038,8 @@ spec:
                       - router
                       type: string
                     persistentVolumeClaim:
+                      description: VolumeClaimTemplates Kubernetes Native `VolumeClaimTemplate`
+                        specification.
                       items:
                         description: PersistentVolumeClaim is a user's request for
                           and claim to a persistent volume
@@ -4646,8 +5235,8 @@ spec:
                                       of compute resources required. If Requests is
                                       omitted for a container, it defaults to Limits
                                       if that is explicitly specified, otherwise to
-                                      an implementation-defined value. More info:
-                                      https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                      an implementation-defined value. Requests cannot
+                                      exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                     type: object
                                 type: object
                               selector:
@@ -4763,7 +5352,7 @@ spec:
                                   volume is being resized then the Condition will
                                   be set to 'ResizeStarted'.
                                 items:
-                                  description: PersistentVolumeClaimCondition contails
+                                  description: PersistentVolumeClaimCondition contains
                                     details about state of pvc
                                   properties:
                                     lastProbeTime:
@@ -4818,10 +5407,12 @@ spec:
                     podAnnotations:
                       additionalProperties:
                         type: string
-                      description: Custom annotations to be populated in Druid pods
+                      description: PodAnnotations Custom annotation to be populated
+                        in the workload's pods.
                       type: object
                     podDisruptionBudgetSpec:
-                      description: PodDisruptionBudgetSpec is a description of a PodDisruptionBudget.
+                      description: PodDisruptionBudgetSpec Kubernetes native `podDisruptionBudget`
+                        specification.
                       properties:
                         maxUnavailable:
                           anyOf:
@@ -4914,20 +5505,23 @@ spec:
                             \n Additional policies may be added in the future. Clients
                             making eviction decisions should disallow eviction of
                             unhealthy pods if they encounter an unrecognized policy
-                            in this field. \n This field is alpha-level. The eviction
+                            in this field. \n This field is beta-level. The eviction
                             API uses this field when the feature gate PDBUnhealthyPodEvictionPolicy
-                            is enabled (disabled by default)."
+                            is enabled (enabled by default)."
                           type: string
                       type: object
                     podLabels:
                       additionalProperties:
                         type: string
+                      description: PodLabels Custom labels to be populated in the
+                        workload's pods.
                       type: object
                     podManagementPolicy:
-                      description: By default, it is set to "parallel"
+                      default: Parallel
+                      description: PodManagementPolicy
                       type: string
                     ports:
-                      description: Extra ports to be added to pod spec
+                      description: Ports Extra ports to be added to pod spec.
                       items:
                         description: ContainerPort represents a network port in a
                           single container.
@@ -4962,10 +5556,13 @@ spec:
                         - containerPort
                         type: object
                       type: array
+                    priorityClassName:
+                      description: PriorityClassName Kubernetes native `priorityClassName`
+                        specification.
+                      type: string
                     readinessProbe:
-                      description: Probe describes a health check to be performed
-                        against a container to determine whether it is alive or ready
-                        to receive traffic.
+                      description: ReadinessProbe Port is set to `druid.port` if not
+                        specified with httpGet handler.
                       properties:
                         exec:
                           description: Exec specifies the action to take.
@@ -4991,8 +5588,6 @@ spec:
                           type: integer
                         grpc:
                           description: GRPC specifies an action involving a GRPC port.
-                            This is a beta field and requires enabling GRPCContainerProbe
-                            feature gate.
                           properties:
                             port:
                               description: Port number of the gRPC service. Number
@@ -5024,7 +5619,9 @@ spec:
                                   to be used in HTTP probes
                                 properties:
                                   name:
-                                    description: The header field name
+                                    description: The header field name. This will
+                                      be canonicalized upon output, so case-variant
+                                      names will be understood as the same header.
                                     type: string
                                   value:
                                     description: The header field value
@@ -5114,11 +5711,12 @@ spec:
                           type: integer
                       type: object
                     replicas:
+                      description: Replicas replica of the workload
                       format: int32
                       minimum: 0
                       type: integer
                     resources:
-                      description: CPU/Memory Resources
+                      description: Resources Kubernetes Native `resources` specification.
                       properties:
                         claims:
                           description: "Claims lists the names of resources, defined
@@ -5162,14 +5760,17 @@ spec:
                           description: 'Requests describes the minimum amount of compute
                             resources required. If Requests is omitted for a container,
                             it defaults to Limits if that is explicitly specified,
-                            otherwise to an implementation-defined value. More info:
-                            https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                            otherwise to an implementation-defined value. Requests
+                            cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                           type: object
                       type: object
                     runtime.properties:
+                      description: RuntimeProperties Additional runtime configuration
+                        for the specific workload.
                       type: string
                     securityContext:
-                      description: Overrides securityContext at top level
+                      description: PodSecurityContext Overrides `securityContext`
+                        at top level.
                       properties:
                         fsGroup:
                           description: "A special supplemental group that applies
@@ -5349,7 +5950,7 @@ spec:
                           type: object
                       type: object
                     services:
-                      description: Overrides services at top level
+                      description: Services Overrides services at top level.
                       items:
                         description: Service is a named abstraction of software service
                           (for example, mysql) consisting of local port (for example
@@ -5919,8 +6520,8 @@ spec:
                             type: object
                         type: object
                       type: array
-                    startUpProbes:
-                      description: StartupProbe for nodeSpec
+                    startUpProbe:
+                      description: StartUpProbe
                       properties:
                         exec:
                           description: Exec specifies the action to take.
@@ -5946,8 +6547,6 @@ spec:
                           type: integer
                         grpc:
                           description: GRPC specifies an action involving a GRPC port.
-                            This is a beta field and requires enabling GRPCContainerProbe
-                            feature gate.
                           properties:
                             port:
                               description: Port number of the gRPC service. Number
@@ -5979,7 +6578,9 @@ spec:
                                   to be used in HTTP probes
                                 properties:
                                   name:
-                                    description: The header field name
+                                    description: The header field name. This will
+                                      be canonicalized upon output, so case-variant
+                                      names will be understood as the same header.
                                     type: string
                                   value:
                                     description: The header field value
@@ -6069,11 +6670,11 @@ spec:
                           type: integer
                       type: object
                     terminationGracePeriodSeconds:
+                      description: TerminationGracePeriodSeconds
                       format: int64
                       type: integer
                     tolerations:
-                      description: Toleration to be used in order to run Druid on
-                        nodes tainted
+                      description: Tolerations Kubernetes native `tolerations` specification.
                       items:
                         description: The pod this Toleration is attached to tolerates
                           any taint that matches the triple <key,value,effect> using
@@ -6115,6 +6716,8 @@ spec:
                         type: object
                       type: array
                     topologySpreadConstraints:
+                      description: TopologySpreadConstraints Kubernetes Native `topologySpreadConstraints`
+                        specification.
                       items:
                         description: TopologySpreadConstraint specifies how to spread
                           matching pods among the given topology.
@@ -6168,14 +6771,19 @@ spec:
                             type: object
                             x-kubernetes-map-type: atomic
                           matchLabelKeys:
-                            description: MatchLabelKeys is a set of pod label keys
+                            description: "MatchLabelKeys is a set of pod label keys
                               to select the pods over which spreading will be calculated.
                               The keys are used to lookup values from the incoming
                               pod labels, those key-value labels are ANDed with labelSelector
                               to select the group of existing pods over which spreading
-                              will be calculated for the incoming pod. Keys that don't
-                              exist in the incoming pod labels will be ignored. A
-                              null or empty list means only match against labelSelector.
+                              will be calculated for the incoming pod. The same key
+                              is forbidden to exist in both MatchLabelKeys and LabelSelector.
+                              MatchLabelKeys cannot be set when LabelSelector isn't
+                              set. Keys that don't exist in the incoming pod labels
+                              will be ignored. A null or empty list means only match
+                              against labelSelector. \n This is a beta field and requires
+                              the MatchLabelKeysInPodTopologySpread feature gate to
+                              be enabled (enabled by default)."
                             items:
                               type: string
                             type: array
@@ -6292,10 +6900,7 @@ spec:
                         type: object
                       type: array
                     updateStrategy:
-                      description: StatefulSetUpdateStrategy indicates the strategy
-                        that the StatefulSet controller will use to perform updates.
-                        It includes any additional parameters necessary to perform
-                        the update for the indicated strategy.
+                      description: UpdateStrategy
                       properties:
                         rollingUpdate:
                           description: RollingUpdate is used to communicate parameters
@@ -6334,6 +6939,8 @@ spec:
                           type: string
                       type: object
                     volumeClaimTemplates:
+                      description: VolumeClaimTemplates Kubernetes Native `volumeClaimTemplates`
+                        specification.
                       items:
                         description: PersistentVolumeClaim is a user's request for
                           and claim to a persistent volume
@@ -6529,8 +7136,8 @@ spec:
                                       of compute resources required. If Requests is
                                       omitted for a container, it defaults to Limits
                                       if that is explicitly specified, otherwise to
-                                      an implementation-defined value. More info:
-                                      https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                      an implementation-defined value. Requests cannot
+                                      exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                     type: object
                                 type: object
                               selector:
@@ -6646,7 +7253,7 @@ spec:
                                   volume is being resized then the Condition will
                                   be set to 'ResizeStarted'.
                                 items:
-                                  description: PersistentVolumeClaimCondition contails
+                                  description: PersistentVolumeClaimCondition contains
                                     details about state of pvc
                                   properties:
                                     lastProbeTime:
@@ -6699,6 +7306,7 @@ spec:
                         type: object
                       type: array
                     volumeMounts:
+                      description: VolumeMounts Kubernetes Native `volumeMounts` specification.
                       items:
                         description: VolumeMount describes a mounting of a Volume
                           within a container.
@@ -6738,6 +7346,7 @@ spec:
                         type: object
                       type: array
                     volumes:
+                      description: Volumes Kubernetes Native `volumes` specification.
                       items:
                         description: Volume represents a named volume in a pod that
                           may be accessed by any container in the pod.
@@ -7149,7 +7758,7 @@ spec:
                                   the minimum value between the SizeLimit specified
                                   here and the sum of memory limits of all containers
                                   in a pod. The default is nil which means that the
-                                  limit is undefined. More info: http://kubernetes.io/docs/user-guide/volumes#emptydir'
+                                  limit is undefined. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                                 pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                 x-kubernetes-int-or-string: true
                             type: object
@@ -7398,7 +8007,8 @@ spec:
                                               If Requests is omitted for a container,
                                               it defaults to Limits if that is explicitly
                                               specified, otherwise to an implementation-defined
-                                              value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                              value. Requests cannot exceed Limits.
+                                              More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                             type: object
                                         type: object
                                       selector:
@@ -8419,26 +9029,34 @@ spec:
                   - druid.port
                   - nodeConfigMountPath
                   - nodeType
-                  - replicas
                   - runtime.properties
                   type: object
+                description: Nodes a list of `Druid` Node types and their configurations.
+                  `DruidSpec` is used to create Kubernetes workload specs. Many of
+                  the fields above can be overridden at the specific `NodeSpec` level.
                 type: object
               podAnnotations:
                 additionalProperties:
                   type: string
-                description: Custom annotations to be populated in Druid pods
+                description: PodAnnotations Custom annotations to be populated in
+                  `Druid` pods.
                 type: object
               podLabels:
                 additionalProperties:
                   type: string
-                description: Custom labels to be populated in Druid pods
+                description: PodLabels Custom labels to be populated in `Druid` pods.
                 type: object
               podManagementPolicy:
-                description: By default, it is set to "parallel"
+                default: Parallel
+                description: PodManagementPolicy
+                type: string
+              priorityClassName:
+                description: PriorityClassName Kubernetes native `priorityClassName`
+                  specification.
                 type: string
               readinessProbe:
-                description: Port is set to druid.port if not specified with httpGet
-                  handler
+                description: ReadinessProbe Port is set to `druid.port` if not specified
+                  with httpGet handler.
                 properties:
                   exec:
                     description: Exec specifies the action to take.
@@ -8462,9 +9080,7 @@ spec:
                     format: int32
                     type: integer
                   grpc:
-                    description: GRPC specifies an action involving a GRPC port. This
-                      is a beta field and requires enabling GRPCContainerProbe feature
-                      gate.
+                    description: GRPC specifies an action involving a GRPC port.
                     properties:
                       port:
                         description: Port number of the gRPC service. Number must
@@ -8495,7 +9111,9 @@ spec:
                             used in HTTP probes
                           properties:
                             name:
-                              description: The header field name
+                              description: The header field name. This will be canonicalized
+                                upon output, so case-variant names will be understood
+                                as the same header.
                               type: string
                             value:
                               description: The header field value
@@ -8580,13 +9198,20 @@ spec:
                     type: integer
                 type: object
               rollingDeploy:
+                default: true
+                description: 'RollingDeploy Whether to deploy the components in a
+                  rolling update as described in the documentation: https://druid.apache.org/docs/latest/operations/rolling-updates.html
+                  If set to true then operator checks the rollout status of previous
+                  version workloads before updating the next. This will be done only
+                  for update actions.'
                 type: boolean
               scalePvcSts:
-                description: ScalePvcSts, defaults to false. When enabled, operator
-                  will allow volume expansion of sts and pvc's.
+                default: false
+                description: ScalePvcSts When enabled, operator will allow volume
+                  expansion of StatefulSet's PVCs.
                 type: boolean
               securityContext:
-                description: druid pods pod-security-context
+                description: PodSecurityContext
                 properties:
                   fsGroup:
                     description: "A special supplemental group that applies to all
@@ -8754,10 +9379,10 @@ spec:
                     type: object
                 type: object
               serviceAccount:
-                description: ServiceAccount for the druid cluster
+                description: ServiceAccount
                 type: string
               services:
-                description: k8s service resources to be created for each Druid statefulsets
+                description: Services Kubernetes services to be created for each workload.
                 items:
                   description: Service is a named abstraction of software service
                     (for example, mysql) consisting of local port (for example 3306)
@@ -9289,10 +9914,12 @@ spec:
                   type: object
                 type: array
               startScript:
-                description: Path to druid start script to be run on container start
+                default: /druid.sh
+                description: StartScript Path to Druid's start script to be run on
+                  start.
                 type: string
               startUpProbe:
-                description: StartupProbe for nodeSpec
+                description: StartUpProbe
                 properties:
                   exec:
                     description: Exec specifies the action to take.
@@ -9316,9 +9943,7 @@ spec:
                     format: int32
                     type: integer
                   grpc:
-                    description: GRPC specifies an action involving a GRPC port. This
-                      is a beta field and requires enabling GRPCContainerProbe feature
-                      gate.
+                    description: GRPC specifies an action involving a GRPC port.
                     properties:
                       port:
                         description: Port number of the gRPC service. Number must
@@ -9349,7 +9974,9 @@ spec:
                             used in HTTP probes
                           properties:
                             name:
-                              description: The header field name
+                              description: The header field name. This will be canonicalized
+                                upon output, so case-variant names will be understood
+                                as the same header.
                               type: string
                             value:
                               description: The header field value
@@ -9434,8 +10061,7 @@ spec:
                     type: integer
                 type: object
               tolerations:
-                description: Toleration to be used in order to run Druid on nodes
-                  tainted
+                description: Tolerations Kubernetes native `tolerations` specification.
                 items:
                   description: The pod this Toleration is attached to tolerates any
                     taint that matches the triple <key,value,effect> using the matching
@@ -9475,10 +10101,7 @@ spec:
                   type: object
                 type: array
               updateStrategy:
-                description: StatefulSetUpdateStrategy indicates the strategy that
-                  the StatefulSet controller will use to perform updates. It includes
-                  any additional parameters necessary to perform the update for the
-                  indicated strategy.
+                description: UpdateStrategy
                 properties:
                   rollingUpdate:
                     description: RollingUpdate is used to communicate parameters when
@@ -9514,7 +10137,8 @@ spec:
                     type: string
                 type: object
               volumeClaimTemplates:
-                description: volumes etc for the Druid pods
+                description: VolumeClaimTemplates Kubernetes Native `VolumeClaimTemplate`
+                  specification.
                 items:
                   description: PersistentVolumeClaim is a user's request for and claim
                     to a persistent volume
@@ -9698,7 +10322,7 @@ spec:
                                 of compute resources required. If Requests is omitted
                                 for a container, it defaults to Limits if that is
                                 explicitly specified, otherwise to an implementation-defined
-                                value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                               type: object
                           type: object
                         selector:
@@ -9807,7 +10431,7 @@ spec:
                             volume claim. If underlying persistent volume is being
                             resized then the Condition will be set to 'ResizeStarted'.
                           items:
-                            description: PersistentVolumeClaimCondition contails details
+                            description: PersistentVolumeClaimCondition contains details
                               about state of pvc
                             properties:
                               lastProbeTime:
@@ -9856,6 +10480,7 @@ spec:
                   type: object
                 type: array
               volumeMounts:
+                description: VolumeMounts Kubernetes Native `VolumeMount` specification.
                 items:
                   description: VolumeMount describes a mounting of a Volume within
                     a container.
@@ -9894,6 +10519,7 @@ spec:
                   type: object
                 type: array
               volumes:
+                description: Volumes Kubernetes Native `Volumes` specification.
                 items:
                   description: Volume represents a named volume in a pod that may
                     be accessed by any container in the pod.
@@ -10279,7 +10905,7 @@ spec:
                             medium EmptyDir would be the minimum value between the
                             SizeLimit specified here and the sum of memory limits
                             of all containers in a pod. The default is nil which means
-                            that the limit is undefined. More info: http://kubernetes.io/docs/user-guide/volumes#emptydir'
+                            that the limit is undefined. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
                       type: object
@@ -10509,8 +11135,8 @@ spec:
                                         amount of compute resources required. If Requests
                                         is omitted for a container, it defaults to
                                         Limits if that is explicitly specified, otherwise
-                                        to an implementation-defined value. More info:
-                                        https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                        to an implementation-defined value. Requests
+                                        cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                       type: object
                                   type: object
                                 selector:
@@ -11469,8 +12095,8 @@ spec:
                   type: object
                 type: array
               zookeeper:
-                description: futuristic stuff to make Druid dependency setup extensible
-                  from within Druid operator ignore for now.
+                description: 'Zookeeper IGNORED (Future API): In order to make Druid
+                  dependency setup extensible from within Druid operator.'
                 properties:
                   spec:
                     description: RawMessage is a raw encoded JSON value. It implements
@@ -11486,12 +12112,10 @@ spec:
                 type: object
             required:
             - common.runtime.properties
-            - commonConfigMountPath
             - nodes
-            - startScript
             type: object
           status:
-            description: DruidStatus defines the observed state of Druid
+            description: DruidClusterStatus Defines the observed state of Druid.
             properties:
               configMaps:
                 items:

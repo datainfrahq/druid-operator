@@ -269,6 +269,8 @@ spec:
                             https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                           type: object
                       type: object
+                    runAsInit:
+                      type: boolean
                     securityContext:
                       description: ContainerSecurityContext. If not present, will
                         be taken from top level pod
@@ -1483,6 +1485,8 @@ spec:
                         type: string
                     type: object
                 type: object
+              core-site.xml:
+                type: string
               deepStorage:
                 properties:
                   spec:
@@ -1651,6 +1655,9 @@ spec:
                 type: array
               forceDeleteStsPodOnError:
                 type: boolean
+              hdfs-site.xml:
+                description: HDFS common config
+                type: string
               ignored:
                 default: false
                 description: 'Ignored is now deprecated API. In order to avoid reconciliation
@@ -5919,7 +5926,7 @@ spec:
                             type: object
                         type: object
                       type: array
-                    startUpProbes:
+                    startUpProbe:
                       description: StartupProbe for nodeSpec
                       properties:
                         exec:
