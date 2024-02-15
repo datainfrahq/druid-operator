@@ -227,7 +227,7 @@ spec:
            resources:
              requests:
                storage: 5Gi
-           storageClassName: gp2
+           storageClassName: standard
       runtime.properties: |
         druid.service=druid/hot
         druid.server.tier=hot
@@ -293,7 +293,7 @@ spec:
            resources:
              requests:
                storage: 5Gi
-           storageClassName: gp2
+           storageClassName: standard
       runtime.properties: |
         druid.service=druid/cold
         druid.server.tier=cold
