@@ -10,7 +10,7 @@ import (
 
 	"github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 	"github.com/datainfrahq/druid-operator/controllers/druid"
-	internalhttp "github.com/datainfrahq/druid-operator/controllers/ingestion/http"
+	internalhttp "github.com/datainfrahq/druid-operator/pkg/http"
 	"github.com/datainfrahq/operator-runtime/builder"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -345,7 +345,8 @@ func (r *DruidIngestionReconciler) getRouterSvcUrl(namespace, druidClusterName s
 	if svcName == "" {
 		return "", errors.New("router svc discovery fail")
 	}
-	newName := "http://" + svcName + "." + namespace + ".svc.cluster.local:" + DruidRouterPort
+	//	newName := "http://" + svcName + "." + namespace + ".svc.cluster.local:" + DruidRouterPort
+	newName := "http://localhost:" + DruidRouterPort
 
 	return newName, nil
 }
