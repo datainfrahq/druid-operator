@@ -12,7 +12,7 @@ import (
 // +kubebuilder:docs-gen:collapse=Imports
 
 /*
-zookeeper_dep_mgmt_test
+volume_expansion_test
 */
 var _ = Describe("Test volume expansion feature", func() {
 	const (
@@ -48,8 +48,7 @@ var _ = Describe("Test volume expansion feature", func() {
 		})
 		It("Should error if validate didn't worked and storageClassName does not exists", func() {
 			By("By getting the historicals nodeSpec")
-			allNodeSpecs, err := getAllNodeSpecsInDruidPrescribedOrder(druid)
-			Expect(err).Should(BeNil())
+			allNodeSpecs := getNodeSpecsByOrder(druid)
 
 			nodeSpec := &druidv1alpha1.DruidNodeSpec{}
 			for _, elem := range allNodeSpecs {

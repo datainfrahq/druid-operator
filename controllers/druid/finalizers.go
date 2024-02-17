@@ -92,7 +92,7 @@ func executePVCFinalizer(ctx context.Context, sdk client.Client, druid *v1alpha1
 			return err
 		}
 
-		stsList, err := readers.List(ctx, sdk, druid, makeLabelsForDruid(druid.Name), eventEmitter, func() objectList { return &appsv1.StatefulSetList{} }, func(listObj runtime.Object) []object {
+		stsList, err := readers.List(ctx, sdk, druid, makeLabelsForDruid(druid), eventEmitter, func() objectList { return &appsv1.StatefulSetList{} }, func(listObj runtime.Object) []object {
 			items := listObj.(*appsv1.StatefulSetList).Items
 			result := make([]object, len(items))
 			for i := 0; i < len(items); i++ {
