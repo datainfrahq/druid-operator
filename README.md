@@ -30,10 +30,10 @@
 - [Druid On K8s Without ZK](https://youtu.be/TRYOvkz5Wuw)
 - [Building Apache Druid on Kubernetes: How Dailymotion Serves Partner Data](https://youtu.be/FYFq-tGJOQk)
 
-### Supported CR
+### Supported CR's
 
-- The operator supports CR of type ```Druid```.
-- ```Druid``` CR belongs to api Group ```druid.apache.org``` and version ```v1alpha1```
+- The operator supports CR's of type ```Druid``` and ```DruidIngestion```.
+- ```Druid``` and ```DruidIngestion``` CR belongs to api Group ```druid.apache.org``` and version ```v1alpha1```
 
 ### Druid Operator Architecture
 
