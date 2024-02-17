@@ -6,7 +6,7 @@
 ## Prerequisites
 To follow this tutorial you will need:
 
-- The KIND CLI installed.
+- The (KIND CLI)[https://kind.sigs.k8s.io/] installed.
 - The KUBECTL CLI installed.
 - Docker up and Running.
 
