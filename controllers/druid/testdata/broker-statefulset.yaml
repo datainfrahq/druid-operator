@@ -9,7 +9,8 @@ metadata:
     nodeSpecUniqueStr: druid-druid-test-brokers
     component: broker
   annotations:
-    druidOpResourceHash: lTyDduvMnbQ7O2Glf57R9c5bFtA=
+    druidOpResourceHash: QypWEOM0LWkV0kTDE5yIQZylRKo=
+    kubernetes.io/description: "Druid brokers"
 spec:
   podManagementPolicy: Parallel
   replicas: 2

@@ -456,6 +456,13 @@ func (in *DruidNodeSpec) DeepCopyInto(out *DruidNodeSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.ReplicationControllerAnnotations != nil {
+		in, out := &in.ReplicationControllerAnnotations, &out.ReplicationControllerAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.Ingress != nil {
 		in, out := &in.Ingress, &out.Ingress
 		*out = new(networkingv1.IngressSpec)

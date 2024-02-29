@@ -129,6 +129,8 @@ spec:
       # imagePullSecrets:
       # - name: tutu
       priorityClassName: system-cluster-critical 
+      replicationControllerAnnotations:
+        kubernetes.io/description: "Druid brokers"
       druid.port: 8088
       services:
         - spec:

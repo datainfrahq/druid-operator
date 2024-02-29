@@ -109,6 +109,8 @@ spec:
   nodes:
     brokers:
       nodeType: "broker"
+      replicationControllerAnnotations:
+        kubernetes.io/description: "Druid brokers"
       services:
         - spec:
             type: ClusterIP

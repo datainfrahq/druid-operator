@@ -5715,6 +5715,12 @@ spec:
                       format: int32
                       minimum: 0
                       type: integer
+                    replicationControllerAnnotations:
+                      additionalProperties:
+                        type: string
+                      description: ReplicationControllerAnnotations annotations to
+                        be populated in StatefulSet or Deployment spec.
+                      type: object
                     resources:
                       description: Resources Kubernetes Native `resources` specification.
                       properties:

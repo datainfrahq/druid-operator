@@ -433,6 +433,10 @@ type DruidNodeSpec struct {
 	// +optional
 	IngressAnnotations map[string]string `json:"ingressAnnotations,omitempty"`
 
+	// ReplicationControllerAnnotations annotations to be populated in StatefulSet or Deployment spec.
+	// +optional
+	ReplicationControllerAnnotations map[string]string `json:"replicationControllerAnnotations,omitempty"`
+
 	// Ingress Kubernetes Native `Ingress` specification.
 	// +optional
 	Ingress *networkingv1.IngressSpec `json:"ingress,omitempty"`
