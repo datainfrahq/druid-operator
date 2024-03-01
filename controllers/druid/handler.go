@@ -999,7 +999,7 @@ func makeStatefulSet(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        fmt.Sprintf("%s", nodeSpecUniqueStr),
-			Annotations: nodeSpec.ReplicationControllerAnnotations,
+			Annotations: makeAnnotationsForReplicationController(nodeSpec, m),
 			Namespace:   m.Namespace,
 			Labels:      ls,
 		},
@@ -1024,7 +1024,7 @@ func makeDeployment(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        fmt.Sprintf("%s", nodeSpecUniqueStr),
-			Annotations: nodeSpec.ReplicationControllerAnnotations,
+			Annotations: makeAnnotationsForReplicationController(nodeSpec, m),
 			Namespace:   m.Namespace,
 			Labels:      ls,
 		},
@@ -1287,6 +1287,22 @@ func makeLabelsForNodeSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, 
 	labels["nodeSpecUniqueStr"] = nodeSpecUniqueStr
 	labels["component"] = nodeSpec.NodeType
 	return labels
+}
+
+// makeAnnotationsForReplicationController returns the annotations for a Deployment or StatefulSet
+// If a given key is set in both the DruidSpec and DruidNodeSpec, the node-scoped value will take precedence.
+func makeAnnotationsForReplicationController(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) map[string]string {
+	var annotations = map[string]string{}
+
+	if nodeSpec.ReplicationControllerAnnotations != nil && m.Spec.ReplicationControllerAnnotations != nil {
+		annotations = m.Spec.ReplicationControllerAnnotations
+	}
+
+	for k, v := range nodeSpec.ReplicationControllerAnnotations {
+		annotations[k] = v
+	}
+
+	return annotations
 }
 
 // addOwnerRefToObject appends the desired OwnerReference to the object

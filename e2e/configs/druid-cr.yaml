@@ -13,6 +13,8 @@ spec:
     release: alpha
   podAnnotations:
     dummy: k8s_extn_needs_atleast_one_annotation
+  replicationControllerAnnotations:
+    kubernetes.io/cluster-scoped-annotation: "cluster"
   readinessProbe:
     httpGet:
       path: /status/health
@@ -130,7 +132,7 @@ spec:
       # - name: tutu
       priorityClassName: system-cluster-critical 
       replicationControllerAnnotations:
-        kubernetes.io/description: "Druid brokers"
+        kubernetes.io/node-scoped-annotation: "broker"
       druid.port: 8088
       services:
         - spec:

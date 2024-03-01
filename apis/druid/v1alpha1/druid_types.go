@@ -180,6 +180,11 @@ type DruidSpec struct {
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 
+	// ReplicationControllerAnnotations annotations to be populated in StatefulSet or Deployment spec.
+	// if the same key is specified at both the DruidNodeSpec level and DruidSpec level, the DruidNodeSpec ReplicationControllerAnnotations will take precedence.
+	// +optional
+	ReplicationControllerAnnotations map[string]string `json:"replicationControllerAnnotations,omitempty"`
+
 	// PodManagementPolicy
 	// +optional
 	// +kubebuilder:default:="Parallel"

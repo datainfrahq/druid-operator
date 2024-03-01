@@ -618,6 +618,13 @@ func (in *DruidSpec) DeepCopyInto(out *DruidSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.ReplicationControllerAnnotations != nil {
+		in, out := &in.ReplicationControllerAnnotations, &out.ReplicationControllerAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.PodLabels != nil {
 		in, out := &in.PodLabels, &out.PodLabels
 		*out = make(map[string]string, len(*in))

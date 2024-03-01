@@ -9203,6 +9203,14 @@ spec:
                     format: int32
                     type: integer
                 type: object
+              replicationControllerAnnotations:
+                additionalProperties:
+                  type: string
+                description: ReplicationControllerAnnotations annotations to be populated
+                  in StatefulSet or Deployment spec. if the same key is specified
+                  at both the DruidNodeSpec level and DruidSpec level, the DruidNodeSpec
+                  ReplicationControllerAnnotations will take precedence.
+                type: object
               rollingDeploy:
                 default: true
                 description: 'RollingDeploy Whether to deploy the components in a

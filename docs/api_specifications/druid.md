@@ -609,6 +609,19 @@ map[string]string
 </tr>
 <tr>
 <td>
+<code>replicationControllerAnnotations</code><br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ReplicationControllerAnnotations annotations to be populated in StatefulSet or Deployment spec.
+if the same key is specified at both the DruidNodeSpec level and DruidSpec level, the DruidNodeSpec ReplicationControllerAnnotations will take precedence.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>podManagementPolicy</code><br>
 <em>
 <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#podmanagementpolicytype-v1-apps">
@@ -2311,6 +2324,19 @@ map[string]string
 <td>
 <em>(Optional)</em>
 <p>PodAnnotations Custom annotations to be populated in <code>Druid</code> pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>replicationControllerAnnotations</code><br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ReplicationControllerAnnotations annotations to be populated in StatefulSet or Deployment spec.
+if the same key is specified at both the DruidNodeSpec level and DruidSpec level, the DruidNodeSpec ReplicationControllerAnnotations will take precedence.</p>
 </td>
 </tr>
 <tr>

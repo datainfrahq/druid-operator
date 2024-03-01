@@ -9,8 +9,10 @@ metadata:
     nodeSpecUniqueStr: druid-druid-test-brokers
     component: broker
   annotations:
-    druidOpResourceHash: 3UqXvm9M4F36B6t2qb8/tz8zfCg=
-    kubernetes.io/description: "Druid brokers"
+    druidOpResourceHash: nQv/LmxctTSRsI5dtBe3jvN5WM8=
+    kubernetes.io/cluster-scoped-annotation: "cluster"
+    kubernetes.io/node-scoped-annotation: "broker"
+    kubernetes.io/override-annotation: "node-scoped-annotation"
 spec:
   replicas: 2
   selector:
