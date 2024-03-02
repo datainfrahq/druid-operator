@@ -345,8 +345,8 @@ func (r *DruidIngestionReconciler) getRouterSvcUrl(namespace, druidClusterName s
 	if svcName == "" {
 		return "", errors.New("router svc discovery fail")
 	}
-	//	newName := "http://" + svcName + "." + namespace + ".svc.cluster.local:" + DruidRouterPort
-	newName := "http://localhost:" + DruidRouterPort
+
+	newName := "http://" + svcName + "." + namespace + ".svc.cluster.local:" + DruidRouterPort
 
 	return newName, nil
 }
