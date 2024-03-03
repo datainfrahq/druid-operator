@@ -2,11 +2,11 @@
 #!/bin/sh
 set -e 
 echo "---------------"
-echo "Checking the status of running job ..."
+echo "Checking the status of running job $JOB_ID ..."
 for (( i=0; i<=9; i++ ))
 do  
     sleep 60
-    STAT=`kubectl get job  wiki-test --template={{.status.succeeded}}`
+    STAT=`kubectl get job  $JOB_ID --template={{.status.succeeded}}`
     if  [ "$STAT" == "<no value>" ]
     then
         echo "Seems to be in progress ..."
