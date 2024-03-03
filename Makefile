@@ -92,7 +92,12 @@ docker-push-local-test: ## Push docker image with the manager to kind registry.
 .PHONY: deploy-testjob
 deploy-testjob: ## Run a wikipedia test pod
 	kubectl create job wiki-test --image=${IMG_KIND}:${TEST_IMG_TAG}  -- sh /wikipedia-test.sh
-	bash e2e/monitor-task.sh
+	JOB_ID="wiki-test" bash e2e/monitor-task.sh
+
+.PHONY: deploy-testingestionjob
+deploy-testingestionjob: ## wait for the druidIngestion to complete and then verify dataset
+	kubectl create job ingestion-test --image=${IMG_KIND}:${TEST_IMG_TAG}  -- sh /druid-ingestion-test.sh ${TASK_ID}
+	JOB_ID="ingestion-test" bash e2e/monitor-task.sh
 
 .PHONY: helm-install-druid-operator
 helm-install-druid-operator: ## Helm install to deploy the druid operator
