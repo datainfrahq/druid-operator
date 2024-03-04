@@ -59,8 +59,8 @@ kubectl apply -f examples/tiny-cluster-zk.yaml
 kubectl apply -f examples/tiny-cluster.yaml
 ```
 
-`NOTE:` that above tiny-cluster only works on a single node kubernetes cluster(e.g. typical k8s cluster setup for dev 
-using kind or minikube) as it uses local disk as "deep storage".
+`NOTE:` the above tiny-cluster only works on a single node kubernetes cluster (e.g. typical k8s cluster setup for dev 
+using kind or minikube) as it uses local disk as "deep storage". Other example specs in the `examples/` directory use distributed "deep storage" and therefore expect to be deployed into a k8s cluster with s3-compatible storage. To bootstrap your k8s cluster with s3-compatible storage, you can run `make helm-minio-install`. See the [Makefile](../Makefile) for more details.
 
 
 ## Debugging Problems
