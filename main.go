@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	druidcontrollers "github.com/datainfrahq/druid-operator/controllers/lookup"
 	"os"
 	"strings"
 
@@ -105,6 +106,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = (&druidcontrollers.DruidLookupReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "DruidLookup")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
