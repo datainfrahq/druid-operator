@@ -27,4 +27,13 @@ resources:
   kind: DruidIngestion
   path: github.com/datainfrahq/druid-operator/apis/druid/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: apache.org
+  group: druid
+  kind: DruidLookup
+  path: github.com/datainfrahq/druid-operator/apis/druid/v1alpha1
+  version: v1alpha1
 version: "3"
