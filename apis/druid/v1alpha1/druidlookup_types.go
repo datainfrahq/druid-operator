@@ -26,6 +26,18 @@ import (
 // DruidLookupSpec defines the desired state of DruidLookup
 type DruidLookupSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// +required
+	DruidClusterName string `json:"druidCluster"`
+
+	// +required
+	Id string `json:"id"`
+
+	// +optional
+	Tier string `json:"tier"`
+
+	// +required
+	Spec string `json:"spec"`
 }
 
 // DruidLookupStatus defines the observed state of DruidLookup
