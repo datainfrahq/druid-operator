@@ -13,7 +13,7 @@ spec:
     release: alpha
   podAnnotations:
     dummy: k8s_extn_needs_atleast_one_annotation
-  replicationControllerAnnotations:
+  workloadAnnotations:
     kubernetes.io/cluster-scoped-annotation: "cluster"
   readinessProbe:
     httpGet:
@@ -131,7 +131,7 @@ spec:
       # imagePullSecrets:
       # - name: tutu
       priorityClassName: system-cluster-critical 
-      replicationControllerAnnotations:
+      workloadAnnotations:
         kubernetes.io/node-scoped-annotation: "broker"
       druid.port: 8088
       services:

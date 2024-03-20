@@ -7,7 +7,7 @@ spec:
   image: himanshu01/druid:druid-0.12.0-1
   defaultProbes: true
   priorityClassName: high-priority
-  replicationControllerAnnotations:
+  workloadAnnotations:
     kubernetes.io/cluster-scoped-annotation: "cluster"
     kubernetes.io/override-annotation: "cluster-scoped-annotation"
   podAnnotations:
@@ -112,7 +112,7 @@ spec:
   nodes:
     brokers:
       nodeType: "broker"
-      replicationControllerAnnotations:
+      workloadAnnotations:
         kubernetes.io/node-scoped-annotation: "broker"
         kubernetes.io/override-annotation: "node-scoped-annotation"
       services:

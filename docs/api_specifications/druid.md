@@ -609,15 +609,15 @@ map[string]string
 </tr>
 <tr>
 <td>
-<code>replicationControllerAnnotations</code><br>
+<code>workloadAnnotations</code><br>
 <em>
 map[string]string
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>ReplicationControllerAnnotations annotations to be populated in StatefulSet or Deployment spec.
-if the same key is specified at both the DruidNodeSpec level and DruidSpec level, the DruidNodeSpec ReplicationControllerAnnotations will take precedence.</p>
+<p>WorkloadAnnotations annotations to be populated in StatefulSet or Deployment spec.
+if the same key is specified at both the DruidNodeSpec level and DruidSpec level, the DruidNodeSpec WorkloadAnnotations will take precedence.</p>
 </td>
 </tr>
 <tr>
@@ -1806,14 +1806,14 @@ map[string]string
 </tr>
 <tr>
 <td>
-<code>replicationControllerAnnotations</code><br>
+<code>workloadAnnotations</code><br>
 <em>
 map[string]string
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>ReplicationControllerAnnotations annotations to be populated in StatefulSet or Deployment spec.</p>
+<p>WorkloadAnnotations annotations to be populated in StatefulSet or Deployment spec.</p>
 </td>
 </tr>
 <tr>
@@ -2328,15 +2328,15 @@ map[string]string
 </tr>
 <tr>
 <td>
-<code>replicationControllerAnnotations</code><br>
+<code>workloadAnnotations</code><br>
 <em>
 map[string]string
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>ReplicationControllerAnnotations annotations to be populated in StatefulSet or Deployment spec.
-if the same key is specified at both the DruidNodeSpec level and DruidSpec level, the DruidNodeSpec ReplicationControllerAnnotations will take precedence.</p>
+<p>WorkloadAnnotations annotations to be populated in StatefulSet or Deployment spec.
+if the same key is specified at both the DruidNodeSpec level and DruidSpec level, the DruidNodeSpec WorkloadAnnotations will take precedence.</p>
 </td>
 </tr>
 <tr>

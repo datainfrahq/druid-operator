@@ -456,8 +456,8 @@ func (in *DruidNodeSpec) DeepCopyInto(out *DruidNodeSpec) {
 			(*out)[key] = val
 		}
 	}
-	if in.ReplicationControllerAnnotations != nil {
-		in, out := &in.ReplicationControllerAnnotations, &out.ReplicationControllerAnnotations
+	if in.WorkloadAnnotations != nil {
+		in, out := &in.WorkloadAnnotations, &out.WorkloadAnnotations
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
@@ -618,8 +618,8 @@ func (in *DruidSpec) DeepCopyInto(out *DruidSpec) {
 			(*out)[key] = val
 		}
 	}
-	if in.ReplicationControllerAnnotations != nil {
-		in, out := &in.ReplicationControllerAnnotations, &out.ReplicationControllerAnnotations
+	if in.WorkloadAnnotations != nil {
+		in, out := &in.WorkloadAnnotations, &out.WorkloadAnnotations
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val

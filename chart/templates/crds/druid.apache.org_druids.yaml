@@ -5715,12 +5715,6 @@ spec:
                       format: int32
                       minimum: 0
                       type: integer
-                    replicationControllerAnnotations:
-                      additionalProperties:
-                        type: string
-                      description: ReplicationControllerAnnotations annotations to
-                        be populated in StatefulSet or Deployment spec.
-                      type: object
                     resources:
                       description: Resources Kubernetes Native `resources` specification.
                       properties:
@@ -9031,6 +9025,12 @@ spec:
                         - name
                         type: object
                       type: array
+                    workloadAnnotations:
+                      additionalProperties:
+                        type: string
+                      description: WorkloadAnnotations annotations to be populated
+                        in StatefulSet or Deployment spec.
+                      type: object
                   required:
                   - druid.port
                   - nodeConfigMountPath
@@ -9202,14 +9202,6 @@ spec:
                       Defaults to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                     format: int32
                     type: integer
-                type: object
-              replicationControllerAnnotations:
-                additionalProperties:
-                  type: string
-                description: ReplicationControllerAnnotations annotations to be populated
-                  in StatefulSet or Deployment spec. if the same key is specified
-                  at both the DruidNodeSpec level and DruidSpec level, the DruidNodeSpec
-                  ReplicationControllerAnnotations will take precedence.
                 type: object
               rollingDeploy:
                 default: true
@@ -12108,6 +12100,14 @@ spec:
                   - name
                   type: object
                 type: array
+              workloadAnnotations:
+                additionalProperties:
+                  type: string
+                description: WorkloadAnnotations annotations to be populated in StatefulSet
+                  or Deployment spec. if the same key is specified at both the DruidNodeSpec
+                  level and DruidSpec level, the DruidNodeSpec WorkloadAnnotations
+                  will take precedence.
+                type: object
               zookeeper:
                 description: 'Zookeeper IGNORED (Future API): In order to make Druid
                   dependency setup extensible from within Druid operator.'

@@ -1294,11 +1294,11 @@ func makeLabelsForNodeSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, 
 func makeAnnotationsForReplicationController(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) map[string]string {
 	var annotations = map[string]string{}
 
-	if nodeSpec.ReplicationControllerAnnotations != nil && m.Spec.ReplicationControllerAnnotations != nil {
-		annotations = m.Spec.ReplicationControllerAnnotations
+	if m.Spec.WorkloadAnnotations != nil {
+		annotations = m.Spec.WorkloadAnnotations
 	}
 
-	for k, v := range nodeSpec.ReplicationControllerAnnotations {
+	for k, v := range nodeSpec.WorkloadAnnotations {
 		annotations[k] = v
 	}
 
