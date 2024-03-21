@@ -13,6 +13,8 @@ spec:
     release: alpha
   podAnnotations:
     dummy: k8s_extn_needs_atleast_one_annotation
+  workloadAnnotations:
+    kubernetes.io/cluster-scoped-annotation: "cluster"
   readinessProbe:
     httpGet:
       path: /status/health
@@ -129,6 +131,8 @@ spec:
       # imagePullSecrets:
       # - name: tutu
       priorityClassName: system-cluster-critical 
+      workloadAnnotations:
+        kubernetes.io/node-scoped-annotation: "broker"
       druid.port: 8088
       services:
         - spec:
