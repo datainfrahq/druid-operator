@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -42,11 +43,38 @@ type DruidLookupSpec struct {
 
 // DruidLookupStatus defines the observed state of DruidLookup
 type DruidLookupStatus struct {
-	// Important: Run "make" to regenerate code after modifying this file
+	// +optional
+	Loaded *bool `json:"loaded,omitempty"`
+
+	// +optional
+	PendingNodes []string `json:"pendingNodes,omitempty"`
+
+	// +optional
+	NumberOfPendingNodes *int `json:"numberOfPendingNodes,omitempty"`
+
+	// +optional
+	LastAppliedSpec string `json:"lastAppliedSpec,omitempty"`
+
+	// +optional
+	LastSuccessfulUpdateAt *metav1.Time `json:"lastSuccessfulUpdateAt,omitempty"`
+
+	// +optional
+	LastUpdateAttemptAt *metav1.Time `json:"lastUpdateAttemptAt,omitempty"`
+
+	// +optional
+	LastUpdateAttemptSuccessful bool `json:"lastUpdateAttemptSuccessful,omitempty"`
+
+	// +optional
+	ErrorMessage string `json:"errorMessage,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="Ok",JSONPath=`.status.lastUpdateAttemptSuccessful`,type=boolean
+//+kubebuilder:printcolumn:name="Loaded",JSONPath=`.status.loaded`,type=boolean,priority=1
+//+kubebuilder:printcolumn:name="Pending Nodes",JSONPath=`.status.numberOfPendingNodes`,type=integer,priority=10
+//+kubebuilder:printcolumn:name="Updated At",JSONPath=`.status.lastSuccessfulUpdateAt`,type=date,priority=5
+//+kubebuilder:printcolumn:name="Age",JSONPath=`.metadata.creationTimestamp`,type=date
 
 // DruidLookup is the Schema for the druidlookups API
 type DruidLookup struct {
@@ -55,6 +83,13 @@ type DruidLookup struct {
 
 	Spec   DruidLookupSpec   `json:"spec,omitempty"`
 	Status DruidLookupStatus `json:"status,omitempty"`
+}
+
+func (dl *DruidLookup) GetNamespacedName() types.NamespacedName {
+	return types.NamespacedName{
+		Namespace: dl.Namespace,
+		Name:      dl.Name,
+	}
 }
 
 //+kubebuilder:object:root=true

@@ -18,15 +18,13 @@ package lookup
 
 import (
 	"context"
-	"fmt"
-	"github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 	druidv1alpha1 "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
-	internalhttp "github.com/datainfrahq/druid-operator/pkg/http"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"net/http"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+	"time"
 )
 
 // DruidLookupReconciler reconciles a DruidLookup object
@@ -44,127 +42,80 @@ type DruidLookupReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
-func (r *DruidLookupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	// TODO add event recording logic
+func (r *DruidLookupReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
+	logr := log.FromContext(ctx)
 
-	desiredLookupsPerCluster, err := findDesiredLookups(ctx, r)
+	reports := make(map[types.NamespacedName]Report)
+	k8sClient := NewK8sClient(r.Client)
+
+	lookupSpecsPerCluster, err := k8sClient.FindLookups(ctx, reports)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	overrideUrls, err := getOverrideUrls()
-	if err != nil {
-		return ctrl.Result{}, err
+	druidClients, nonFatalErrors, fatalErr := k8sClient.FindDruidCluster(ctx)
+	if fatalErr != nil {
+		return ctrl.Result{}, fatalErr
+	}
+	for _, nonFatalError := range nonFatalErrors {
+		logr.Error(nonFatalError, "error occurred while constructing druid client")
 	}
 
-	clusterUrls, err := findDruidClusterUrls(ctx, r, overrideUrls)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	clusters, err := buildClusters(clusterUrls)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	for key, cl := range clusters {
-		desiredLookups := desiredLookupsPerCluster[key]
-
-		if err := cl.Reconcile(desiredLookups); err != nil {
-			return ctrl.Result{}, err
+	for key, druidClient := range druidClients {
+		lookupSpecs := lookupSpecsPerCluster[key]
+		if err := druidClient.Reconcile(lookupSpecs, reports); err != nil {
+			logr.Error(
+				err,
+				"could not reconcile lookups for cluster",
+				"namespace", key.Namespace,
+				"cluster", key.Cluster,
+			)
 		}
 	}
 
-	return ctrl.Result{}, nil
-}
-
-func findDesiredLookups(ctx context.Context, r client.Reader) (map[ClusterKey]map[LookupKey]string, error) {
-	dls := &v1alpha1.DruidLookupList{}
-	if err := r.List(ctx, dls); err != nil {
-		return nil, err
-	}
-
-	lsPerCluster := make(map[ClusterKey]map[LookupKey]string)
-	for _, dl := range dls.Items {
-		clusterKey := ClusterKey{
-			Namespace: dl.Namespace,
-			Cluster:   dl.Spec.DruidClusterName,
-		}
-		lookupKey := LookupKey{
-			Tier: dl.Spec.Tier,
-			Id:   dl.Spec.Id,
-		}
-		spec := dl.Spec.Spec
-
-		if lookupKey.Tier == "" {
-			lookupKey.Tier = "__default"
-		}
-
-		if lsPerCluster[clusterKey] == nil {
-			lsPerCluster[clusterKey] = make(map[LookupKey]string)
-		}
-		ls := lsPerCluster[clusterKey]
-
-		if _, replaced := replace(ls, lookupKey, spec); replaced {
-			return nil, fmt.Errorf("resource %v specifies duplicate lookup %v/%v in cluster %v/%v", dl.Name, lookupKey.Tier, lookupKey.Id, clusterKey.Namespace, clusterKey.Cluster)
+	for name, report := range reports {
+		if err := k8sClient.UpdateStatus(ctx, name, report); err != nil {
+			logr.Error(
+				err,
+				"an error occurred while updating lookup resource status",
+				"namespace", name.Namespace,
+				"name", name.Name,
+			)
 		}
 	}
 
-	return lsPerCluster, nil
-}
-
-func findDruidClusterUrls(ctx context.Context, r client.Reader, overrides map[ClusterKey]string) (map[ClusterKey]string, error) {
-	rsvcs := &v1.ServiceList{}
-	listOpt := client.MatchingLabels(map[string]string{
-		"app":       "druid",
-		"component": "router",
-	})
-	if err := r.List(ctx, rsvcs, listOpt); err != nil {
-		return nil, err
-	}
-
-	clusters := make(map[ClusterKey]string)
-	for _, rsvc := range rsvcs.Items {
-		key := ClusterKey{
-			Namespace: rsvc.Namespace,
-			Cluster:   rsvc.Labels["druid_cr"],
-		}
-
-		port, found := findFirst(rsvc.Spec.Ports, func(p v1.ServicePort) bool {
-			return p.Name == "service-port"
-		})
-		if !found {
-			return nil, fmt.Errorf(`could not find "service-port" of router service %v/%v`, key.Namespace, rsvc.Name)
-		}
-
-		url := fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", rsvc.Name, rsvc.Namespace, port.Port)
-
-		if override, found := overrides[key]; found {
-			url = override
-		}
-		_, replaced := replace(clusters, key, url)
-		if replaced {
-			return nil, fmt.Errorf("duplicate router services found for cluster %v/%v", key.Namespace, key.Cluster)
-		}
-	}
-
-	return clusters, nil
-}
-
-func buildClusters(urls map[ClusterKey]string) (map[ClusterKey]*Cluster, error) {
-	httpClient := internalhttp.NewHTTPClient(&http.Client{}, &internalhttp.Auth{BasicAuth: internalhttp.BasicAuth{}})
-	cls := make(map[ClusterKey]*Cluster)
-
-	for key, url := range urls {
-		cl, err := New(url, httpClient)
+	for clusterKey, druidClient := range druidClients {
+		lookupStatuses, err := druidClient.GetStatus()
 		if err != nil {
-			return nil, err
+			logr.Error(
+				err,
+				"couldn't fetch lookup statues",
+				"namespace", clusterKey.Namespace,
+				"cluster", clusterKey.Cluster,
+			)
+			continue
 		}
 
-		cls[key] = cl
+		for lookupKey, lookupStatus := range lookupStatuses {
+			lookupSpec, found := lookupSpecsPerCluster[clusterKey][lookupKey]
+			if !found {
+				continue
+			}
+
+			name := lookupSpec.name
+
+			if err := k8sClient.UpdateStatus(ctx, name, &lookupStatus); err != nil {
+				logr.Error(
+					err,
+					"an error occurred while updating lookup resource status",
+					"namespace", name.Namespace,
+					"name", name.Name,
+				)
+			}
+		}
 	}
 
-	return cls, nil
+	return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 }
 
 func findFirst[T any](list []T, pred func(T) bool) (T, bool) {
@@ -181,6 +132,12 @@ func replace[K comparable, V any](m map[K]V, k K, v V) (V, bool) {
 	prev, present := m[k]
 	m[k] = v
 	return prev, present
+}
+
+func setIfNotPresent[K comparable, V any](m map[K]V, k K, v V) {
+	if _, present := m[k]; !present {
+		m[k] = v
+	}
 }
 
 // SetupWithManager sets up the controller with the Manager.

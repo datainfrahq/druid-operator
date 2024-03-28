@@ -14,7 +14,26 @@ spec:
     singular: druidlookup
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.lastUpdateAttemptSuccessful
+      name: Ok
+      type: boolean
+    - jsonPath: .status.loaded
+      name: Loaded
+      priority: 1
+      type: boolean
+    - jsonPath: .status.numberOfPendingNodes
+      name: Pending Nodes
+      priority: 10
+      type: integer
+    - jsonPath: .status.lastSuccessfulUpdateAt
+      name: Updated At
+      priority: 5
+      type: date
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: DruidLookup is the Schema for the druidlookups API
@@ -41,8 +60,6 @@ spec:
             properties:
               druidCluster:
                 type: string
-              druidRouterUrl:
-                type: string
               id:
                 type: string
               spec:
@@ -56,6 +73,27 @@ spec:
             type: object
           status:
             description: DruidLookupStatus defines the observed state of DruidLookup
+            properties:
+              errorMessage:
+                type: string
+              lastAppliedSpec:
+                type: string
+              lastSuccessfulUpdateAt:
+                format: date-time
+                type: string
+              lastUpdateAttemptAt:
+                format: date-time
+                type: string
+              lastUpdateAttemptSuccessful:
+                type: boolean
+              loaded:
+                type: boolean
+              numberOfPendingNodes:
+                type: integer
+              pendingNodes:
+                items:
+                  type: string
+                type: array
             type: object
         type: object
     served: true
