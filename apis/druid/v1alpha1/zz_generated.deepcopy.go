@@ -456,6 +456,13 @@ func (in *DruidNodeSpec) DeepCopyInto(out *DruidNodeSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.WorkloadAnnotations != nil {
+		in, out := &in.WorkloadAnnotations, &out.WorkloadAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.Ingress != nil {
 		in, out := &in.Ingress, &out.Ingress
 		*out = new(networkingv1.IngressSpec)
@@ -606,6 +613,13 @@ func (in *DruidSpec) DeepCopyInto(out *DruidSpec) {
 	}
 	if in.PodAnnotations != nil {
 		in, out := &in.PodAnnotations, &out.PodAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.WorkloadAnnotations != nil {
+		in, out := &in.WorkloadAnnotations, &out.WorkloadAnnotations
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val

@@ -7,6 +7,9 @@ spec:
   image: himanshu01/druid:druid-0.12.0-1
   defaultProbes: true
   priorityClassName: high-priority
+  workloadAnnotations:
+    kubernetes.io/cluster-scoped-annotation: "cluster"
+    kubernetes.io/override-annotation: "cluster-scoped-annotation"
   podAnnotations:
     key1: value1
     key2: value2
@@ -109,6 +112,9 @@ spec:
   nodes:
     brokers:
       nodeType: "broker"
+      workloadAnnotations:
+        kubernetes.io/node-scoped-annotation: "broker"
+        kubernetes.io/override-annotation: "node-scoped-annotation"
       services:
         - spec:
             type: ClusterIP
