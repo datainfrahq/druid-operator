@@ -147,6 +147,26 @@ rules:
     - patch
     - update
 - apiGroups:
+    - druid.apache.org
+  resources:
+    - druidlookups
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - druid.apache.org
+  resources:
+    - druidlookups/status
+  verbs:
+    - get
+    - patch
+    - update
+- apiGroups:
     - networking.k8s.io
   resources:
     - ingresses
@@ -320,6 +340,26 @@ rules:
     - druid.apache.org
   resources:
     - druidingestions/status
+  verbs:
+    - get
+    - patch
+    - update
+- apiGroups:
+    - druid.apache.org
+  resources:
+    - druidlookups
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
+    - druid.apache.org
+  resources:
+    - druidlookups/status
   verbs:
     - get
     - patch
