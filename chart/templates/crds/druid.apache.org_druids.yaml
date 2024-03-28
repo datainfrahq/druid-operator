@@ -9025,6 +9025,12 @@ spec:
                         - name
                         type: object
                       type: array
+                    workloadAnnotations:
+                      additionalProperties:
+                        type: string
+                      description: WorkloadAnnotations annotations to be populated
+                        in StatefulSet or Deployment spec.
+                      type: object
                   required:
                   - druid.port
                   - nodeConfigMountPath
@@ -12094,6 +12100,14 @@ spec:
                   - name
                   type: object
                 type: array
+              workloadAnnotations:
+                additionalProperties:
+                  type: string
+                description: WorkloadAnnotations annotations to be populated in StatefulSet
+                  or Deployment spec. if the same key is specified at both the DruidNodeSpec
+                  level and DruidSpec level, the DruidNodeSpec WorkloadAnnotations
+                  will take precedence.
+                type: object
               zookeeper:
                 description: 'Zookeeper IGNORED (Future API): In order to make Druid
                   dependency setup extensible from within Druid operator.'

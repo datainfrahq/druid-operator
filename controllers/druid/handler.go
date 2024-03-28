@@ -998,9 +998,10 @@ func makeStatefulSet(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s", nodeSpecUniqueStr),
-			Namespace: m.Namespace,
-			Labels:    ls,
+			Name:        fmt.Sprintf("%s", nodeSpecUniqueStr),
+			Annotations: makeAnnotationsForWorkload(nodeSpec, m),
+			Namespace:   m.Namespace,
+			Labels:      ls,
 		},
 		Spec: makeStatefulSetSpec(nodeSpec, m, ls, nodeSpecUniqueStr, configMapSHA, serviceName),
 	}, nil
@@ -1022,9 +1023,10 @@ func makeDeployment(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, ls map[
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s", nodeSpecUniqueStr),
-			Namespace: m.Namespace,
-			Labels:    ls,
+			Name:        fmt.Sprintf("%s", nodeSpecUniqueStr),
+			Annotations: makeAnnotationsForWorkload(nodeSpec, m),
+			Namespace:   m.Namespace,
+			Labels:      ls,
 		},
 		Spec: makeDeploymentSpec(nodeSpec, m, ls, nodeSpecUniqueStr, configMapSHA, serviceName),
 	}, nil
@@ -1285,6 +1287,22 @@ func makeLabelsForNodeSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, 
 	labels["nodeSpecUniqueStr"] = nodeSpecUniqueStr
 	labels["component"] = nodeSpec.NodeType
 	return labels
+}
+
+// makeAnnotationsForWorkload returns the annotations for a Deployment or StatefulSet
+// If a given key is set in both the DruidSpec and DruidNodeSpec, the node-scoped value will take precedence.
+func makeAnnotationsForWorkload(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid) map[string]string {
+	var annotations = map[string]string{}
+
+	if m.Spec.WorkloadAnnotations != nil {
+		annotations = m.Spec.WorkloadAnnotations
+	}
+
+	for k, v := range nodeSpec.WorkloadAnnotations {
+		annotations[k] = v
+	}
+
+	return annotations
 }
 
 // addOwnerRefToObject appends the desired OwnerReference to the object

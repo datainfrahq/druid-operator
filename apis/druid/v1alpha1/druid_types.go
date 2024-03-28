@@ -180,6 +180,11 @@ type DruidSpec struct {
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 
+	// WorkloadAnnotations annotations to be populated in StatefulSet or Deployment spec.
+	// if the same key is specified at both the DruidNodeSpec level and DruidSpec level, the DruidNodeSpec WorkloadAnnotations will take precedence.
+	// +optional
+	WorkloadAnnotations map[string]string `json:"workloadAnnotations,omitempty"`
+
 	// PodManagementPolicy
 	// +optional
 	// +kubebuilder:default:="Parallel"
@@ -432,6 +437,10 @@ type DruidNodeSpec struct {
 	// IngressAnnotations `Ingress` annotations to be populated in ingress spec.
 	// +optional
 	IngressAnnotations map[string]string `json:"ingressAnnotations,omitempty"`
+
+	// WorkloadAnnotations annotations to be populated in StatefulSet or Deployment spec.
+	// +optional
+	WorkloadAnnotations map[string]string `json:"workloadAnnotations,omitempty"`
 
 	// Ingress Kubernetes Native `Ingress` specification.
 	// +optional
