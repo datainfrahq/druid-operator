@@ -106,7 +106,7 @@ func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.D
 	}
 
 	pvcLabels := map[string]string{
-		"component": nodeSpec.NodeType,
+		"nodeSpecUniqueStr": nodeSpecUniqueStr,
 	}
 
 	pvcList, err := readers.List(ctx, sdk, drd, pvcLabels, emitEvent, func() objectList { return &v1.PersistentVolumeClaimList{} }, func(listObj runtime.Object) []object {
