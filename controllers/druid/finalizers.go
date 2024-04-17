@@ -2,12 +2,15 @@ package druid
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -34,10 +37,21 @@ func updateFinalizers(ctx context.Context, sdk client.Client, m *v1alpha1.Druid,
 		}
 	}
 
-	m.SetFinalizers(desiredFinalizers)
-	_, err := writers.Update(ctx, sdk, m, m, emitEvents)
-	if err != nil {
-		return err
+	if !equality.Semantic.DeepEqual(m.GetFinalizers(), desiredFinalizers) {
+		m.SetFinalizers(desiredFinalizers)
+
+		finalizersBytes, err := json.Marshal(m.GetFinalizers())
+		if err != nil {
+			return fmt.Errorf("failed to serialize finalizers patch to bytes: %v", err)
+		}
+
+		patch := []byte(fmt.Sprintf(`[{"op": "replace", "path": "/metadata/finalizers", "value": %s}]`, finalizersBytes))
+
+		err = sdk.Patch(ctx, m, client.RawPatch(types.JSONPatchType, patch))
+		if err != nil {
+			return err
+		}
+
 	}
 
 	return nil
