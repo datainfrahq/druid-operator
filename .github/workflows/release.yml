@@ -3,10 +3,9 @@ name: Release
 on:
   push:
     tags:
-      - '*'
+      - 'v*'
 
 env:
-  CONTROLLER: ${{ github.event.repository.name }}
   IMAGE_REPOSITORY: "docker.io/datainfrahq"
 
 jobs:
@@ -17,6 +16,11 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
 
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
       - name: Prepare
         id: prep
         run: |
@@ -24,8 +28,8 @@ jobs:
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF/refs\/tags\//}
           fi
-          echo ::set-output name=BUILD_DATE::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
-          echo ::set-output name=VERSION::${VERSION}
+          echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -36,43 +40,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v3
+      - name: Set up Go
+        uses: actions/setup-go@v3
         with:
-          images: <docker-repo>/<image-name>
-          tags: |
-            type=semver,pattern={{version}}
+          go-version: '1.20'
 
-      - name: Build and Push Image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-
-  package-and-release-chart:
-    name: Package and Release Helm Chart
-    needs: build-and-push-image
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v2
-
-      - name: Configure Git
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-
-      - name: Install Helm
-        uses: azure/setup-helm@v1
-
-      - name: Package Helm Chart
-        run: |
-          helm package charts/<chart-name> --version ${{ github.ref_name }} --app-version ${{ github.ref_name }}
-        working-directory: .
+      - name: Build and push operator image with Buildx
+        run: make docker-buildx IMG="${IMAGE_REPOSITORY}:${{ steps.prep.outputs.VERSION }}"
 
       - name: Create GitHub Release
         id: create_release
@@ -85,12 +59,7 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Upload Helm Chart to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish Helm chart in GitHub Pages
+        uses: stefanprodan/helm-gh-pages@v1.7.0
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ github.ref_name }}-<chart-name>.tgz
-          asset_name: <chart-name>.tgz
-          asset_content_type: application/octet-stream
+          token: ${{ secrets.GITHUB_TOKEN }}
