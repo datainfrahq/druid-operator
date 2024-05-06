@@ -47,15 +47,16 @@
 - druid-operator has moved Ingress apiVersion networking/v1beta1 to networking/v1. Users will need to update there Ingress Spec in the druid CR according networking/v1 syntax. In case users are using schema validated CRD, the CRD will also be needed to be updated.
 - The v1.0.0 release for druid-operator is compatible with k8s version 1.25. HPA API is kept to version v2beta2.
 - Release v1.2.2 had a bug for namespace scoped operator deployments, this is fixed in 1.2.3.
+- Release v1.2.3 had a bug in updating finalizers, this is fixed in 1.2.4.
 
 ### Kubernetes version compatibility
 
-| druid-operator | 0.0.9 | v1.0.0 | v1.1.0 | v1.2.2 | v1.2.3 |
-| :------------- | :-------------: | :-----: | :---: | :---: | :---: |
-| kubernetes <= 1.20 | :x:| :x: | :x: | :x: | :x: |
-| kubernetes == 1.21 | :white_check_mark:| :x: | :x: | :x: | :x: |
-| kubernetes >= 1.22 and <= 1.25 | :white_check_mark: | :white_check_mark: | :white_check_mark: |  :white_check_mark: | :white_check_mark: |
-| kubernetes > 1.25 and <= 1.29.1 | :x: | :x: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| druid-operator | 0.0.9 | v1.0.0 | v1.1.0 | v1.2.2 | v1.2.3 | v1.2.4 |
+| :------------- | :-------------: | :-----: | :---: | :---: | :---: | :---: |
+| kubernetes <= 1.20 | :x:| :x: | :x: | :x: | :x: | :x: |
+| kubernetes == 1.21 | :white_check_mark:| :x: | :x: | :x: | :x: | :x: |
+| kubernetes >= 1.22 and <= 1.25 | :white_check_mark: | :white_check_mark: | :white_check_mark: |  :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| kubernetes > 1.25 and <= 1.29.1 | :x: | :x: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 
 ### Contributors
 
