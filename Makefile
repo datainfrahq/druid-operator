@@ -58,7 +58,7 @@ kind: ## Bootstrap Kind Locally
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) crd:generateEmbeddedObjectMeta=true rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-	$(CONTROLLER_GEN) crd:generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=chart/templates/crds/
+	$(CONTROLLER_GEN) crd:generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=chart/crds/
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -195,7 +195,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 ##@ Helm
 .PHONY: helm-generate
 helm-generate: ## Generate the Helm chart directory
-	$(KUSTOMIZE) build config/crd > chart/templates/crds/druid.apache.org_druids.yaml
+	$(KUSTOMIZE) build config/crd > chart/crds/druid.apache.org_druids.yaml
 
 .PHONY: helm-lint
 helm-lint: ## Lint Helm chart.
