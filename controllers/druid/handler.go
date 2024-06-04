@@ -36,8 +36,6 @@ const (
 	deletionTSLabel              = "deletionTS"
 )
 
-//Initialize the slice to store node-specific unique identity strings for historical tiers
-var historicalTierList []string
 var logger = logf.Log.WithName("druid_operator_handler")
 
 func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Druid, emitEvents EventEmitter) error {
@@ -58,6 +56,7 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 	hpaNames := make(map[string]bool)
 	ingressNames := make(map[string]bool)
 	pvcNames := make(map[string]bool)
+	historicalTierList := []string{}
 
 	ls := makeLabelsForDruid(m)
 
