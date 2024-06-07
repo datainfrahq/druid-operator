@@ -185,10 +185,6 @@ func (r *DruidLookupReconciler) FindLookups(ctx context.Context, reports map[typ
 			continue
 		}
 
-		if lookupKey.Tier == "" {
-			lookupKey.Tier = "__default"
-		}
-
 		if lookupSpecsPerCluster[clusterKey] == nil {
 			lookupSpecsPerCluster[clusterKey] = make(map[LookupKey]Spec)
 		}
