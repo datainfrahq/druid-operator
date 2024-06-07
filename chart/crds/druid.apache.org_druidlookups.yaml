@@ -65,6 +65,7 @@ spec:
               spec:
                 type: string
               tier:
+                default: __default
                 type: string
             required:
             - druidCluster

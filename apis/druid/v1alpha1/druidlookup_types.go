@@ -35,6 +35,7 @@ type DruidLookupSpec struct {
 	Id string `json:"id"`
 
 	// +optional
+	// +kubebuilder:default:=__default
 	Tier string `json:"tier"`
 
 	// +required
