@@ -23,17 +23,17 @@ func NewK8sClient(client client.Client) K8sClient {
 	}
 }
 
-func (c *K8sClient) FindLookups(ctx context.Context, reports map[types.NamespacedName]Report) (map[ClusterKey]map[LookupKey]Spec, error) {
+func (c *K8sClient) FindLookups(ctx context.Context, reports map[types.NamespacedName]Report) (map[types.NamespacedName]map[LookupKey]Spec, error) {
 	specs := &v1alpha1.DruidLookupList{}
 	if err := c.client.List(ctx, specs); err != nil {
 		return nil, err
 	}
 
-	lookupSpecsPerCluster := make(map[ClusterKey]map[LookupKey]Spec)
+	lookupSpecsPerCluster := make(map[types.NamespacedName]map[LookupKey]Spec)
 	for _, spec := range specs.Items {
-		clusterKey := ClusterKey{
+		clusterKey := types.NamespacedName{
 			Namespace: spec.Namespace,
-			Cluster:   spec.Spec.DruidClusterName,
+			Name:      spec.Spec.DruidClusterName,
 		}
 		lookupKey := LookupKey{
 			Tier: spec.Spec.Tier,
@@ -49,7 +49,7 @@ func (c *K8sClient) FindLookups(ctx context.Context, reports map[types.Namespace
 						"lookup resource %v in cluster %v/%v contains invalid spec, should be JSON",
 						spec.Name,
 						clusterKey.Namespace,
-						clusterKey.Cluster,
+						clusterKey.Name,
 					),
 				)),
 			)
@@ -79,7 +79,7 @@ func (c *K8sClient) FindLookups(ctx context.Context, reports map[types.Namespace
 						lookupKey.Tier,
 						lookupKey.Id,
 						clusterKey.Namespace,
-						clusterKey.Cluster,
+						clusterKey.Name,
 					),
 				)),
 			)
@@ -90,9 +90,9 @@ func (c *K8sClient) FindLookups(ctx context.Context, reports map[types.Namespace
 	return lookupSpecsPerCluster, nil
 }
 
-func (c *K8sClient) FindDruidCluster(ctx context.Context) (map[ClusterKey]*DruidClient, []error, error) {
+func (c *K8sClient) FindDruidCluster(ctx context.Context) (map[types.NamespacedName]*DruidClient, []error, error) {
 	httpClient := internalhttp.NewHTTPClient(&http.Client{}, &internalhttp.Auth{BasicAuth: internalhttp.BasicAuth{}})
-	clusters := make(map[ClusterKey]*DruidClient)
+	clusters := make(map[types.NamespacedName]*DruidClient)
 	nonFatalErrors := make([]error, 0)
 
 	overrides, err := getOverrideUrls()
@@ -110,9 +110,9 @@ func (c *K8sClient) FindDruidCluster(ctx context.Context) (map[ClusterKey]*Druid
 	}
 
 	for _, service := range routerServices.Items {
-		key := ClusterKey{
+		key := types.NamespacedName{
 			Namespace: service.Namespace,
-			Cluster:   service.Labels["druid_cr"],
+			Name:      service.Labels["druid_cr"],
 		}
 
 		port, found := findFirst(service.Spec.Ports, func(p v1.ServicePort) bool {
@@ -136,7 +136,7 @@ func (c *K8sClient) FindDruidCluster(ctx context.Context) (map[ClusterKey]*Druid
 
 		_, replaced := replace(clusters, key, cluster)
 		if replaced {
-			nonFatalErrors = append(nonFatalErrors, fmt.Errorf("duplicate router services found for cluster %v/%v", key.Namespace, key.Cluster))
+			nonFatalErrors = append(nonFatalErrors, fmt.Errorf("duplicate router services found for cluster %v/%v", key.Namespace, key.Name))
 			continue
 		}
 	}
