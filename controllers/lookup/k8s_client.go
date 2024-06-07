@@ -24,30 +24,30 @@ func NewK8sClient(client client.Client) K8sClient {
 }
 
 func (c *K8sClient) FindLookups(ctx context.Context, reports map[types.NamespacedName]Report) (map[types.NamespacedName]map[LookupKey]Spec, error) {
-	specs := &v1alpha1.DruidLookupList{}
-	if err := c.client.List(ctx, specs); err != nil {
+	lookups := &v1alpha1.DruidLookupList{}
+	if err := c.client.List(ctx, lookups); err != nil {
 		return nil, err
 	}
 
 	lookupSpecsPerCluster := make(map[types.NamespacedName]map[LookupKey]Spec)
-	for _, spec := range specs.Items {
+	for _, lookup := range lookups.Items {
 		clusterKey := types.NamespacedName{
-			Namespace: spec.Namespace,
-			Name:      spec.Spec.DruidClusterName,
+			Namespace: lookup.Namespace,
+			Name:      lookup.Spec.DruidClusterName,
 		}
 		lookupKey := LookupKey{
-			Tier: spec.Spec.Tier,
-			Id:   spec.Spec.Id,
+			Tier: lookup.Spec.Tier,
+			Id:   lookup.Spec.Id,
 		}
 		var lookupSpec interface{}
-		if err := json.Unmarshal([]byte(spec.Spec.Spec), &lookupSpec); err != nil {
+		if err := json.Unmarshal([]byte(lookup.Spec.Spec), &lookupSpec); err != nil {
 			setIfNotPresent(
 				reports,
-				spec.GetNamespacedName(),
+				lookup.GetNamespacedName(),
 				Report(NewErrorReport(
 					fmt.Errorf(
 						"lookup resource %v in cluster %v/%v contains invalid spec, should be JSON",
-						spec.Name,
+						lookup.Name,
 						clusterKey.Namespace,
 						clusterKey.Name,
 					),
@@ -66,16 +66,16 @@ func (c *K8sClient) FindLookups(ctx context.Context, reports map[types.Namespace
 		ls := lookupSpecsPerCluster[clusterKey]
 
 		if _, replaced := replace(ls, lookupKey, Spec{
-			name: spec.GetNamespacedName(),
+			name: lookup.GetNamespacedName(),
 			spec: lookupSpec,
 		}); replaced {
 			setIfNotPresent(
 				reports,
-				spec.GetNamespacedName(),
+				lookup.GetNamespacedName(),
 				Report(NewErrorReport(
 					fmt.Errorf(
 						"resource %v specifies duplicate lookup %v/%v in cluster %v/%v",
-						spec.Name,
+						lookup.Name,
 						lookupKey.Tier,
 						lookupKey.Id,
 						clusterKey.Namespace,
