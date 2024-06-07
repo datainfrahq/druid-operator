@@ -152,13 +152,13 @@ func (r *DruidLookupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *DruidLookupReconciler) FindLookups(ctx context.Context, reports map[types.NamespacedName]Report) (map[types.NamespacedName]map[LookupKey]Spec, error) {
+func (r *DruidLookupReconciler) FindLookups(ctx context.Context, reports map[types.NamespacedName]Report) (LookupsPerCluster, error) {
 	lookups := &druidv1alpha1.DruidLookupList{}
 	if err := r.List(ctx, lookups); err != nil {
 		return nil, err
 	}
 
-	lookupSpecsPerCluster := make(map[types.NamespacedName]map[LookupKey]Spec)
+	lookupSpecsPerCluster := make(LookupsPerCluster)
 	for _, lookup := range lookups.Items {
 		clusterKey := types.NamespacedName{
 			Namespace: lookup.Namespace,

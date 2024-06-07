@@ -7,6 +7,8 @@ type LookupKey struct {
 	Id   string
 }
 
+type LookupsPerCluster map[types.NamespacedName]map[LookupKey]Spec
+
 type Spec struct {
 	name types.NamespacedName
 	spec interface{}
