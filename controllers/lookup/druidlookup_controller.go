@@ -68,7 +68,7 @@ func (r *DruidLookupReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (
 				err,
 				"could not reconcile lookups for cluster",
 				"namespace", key.Namespace,
-				"cluster", key.Cluster,
+				"cluster", key.Name,
 			)
 		}
 	}
@@ -91,7 +91,7 @@ func (r *DruidLookupReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (
 				err,
 				"couldn't fetch lookup statues",
 				"namespace", clusterKey.Namespace,
-				"cluster", clusterKey.Cluster,
+				"cluster", clusterKey.Name,
 			)
 			continue
 		}
