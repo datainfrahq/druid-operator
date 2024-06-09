@@ -5949,6 +5949,10 @@ spec:
                               type: string
                           type: object
                       type: object
+                    serviceAccountName:
+                      description: ServiceAccountName Kubernetes native `serviceAccountName`
+                        specification.
+                      type: string
                     services:
                       description: Services Overrides services at top level.
                       items:
