@@ -477,6 +477,10 @@ type DruidNodeSpec struct {
 	// Operator deploys the sidecar container based on these properties.
 	// +optional
 	AdditionalContainer []AdditionalContainer `json:"additionalContainer,omitempty"`
+
+	// ServiceAccountName Kubernetes native `serviceAccountName` specification.
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 
 // ZookeeperSpec IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.
