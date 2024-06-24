@@ -182,6 +182,7 @@ rules:
 {{- end }}
 
 ---
+{{- if .Values.global.createClusterRole }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -357,6 +358,7 @@ rules:
     - get
     - list
     - watch
+{{- end }}
 
 {{- $operatorName := (include "druid-operator.fullname" .) -}}
 {{- if and ($env.WATCH_NAMESPACE) (ne $env.WATCH_NAMESPACE "default") }}
@@ -382,6 +384,7 @@ roleRef:
 {{- end }}
 {{- end }}
 ---
+{{- if .Values.global.createClusterRole }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -399,3 +402,4 @@ subjects:
   - kind: ServiceAccount
     name: {{ include "druid-operator.fullname" . }}
     namespace: {{ .Release.Namespace }}
+{{- end }}
