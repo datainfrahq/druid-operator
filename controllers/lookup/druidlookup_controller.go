@@ -123,28 +123,6 @@ func (r *DruidLookupReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (
 	return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 }
 
-func findFirst[T any](list []T, pred func(T) bool) (T, bool) {
-	for _, elem := range list {
-		if pred(elem) {
-			return elem, true
-		}
-	}
-
-	return *new(T), false
-}
-
-func replace[K comparable, V any](m map[K]V, k K, v V) (V, bool) {
-	prev, present := m[k]
-	m[k] = v
-	return prev, present
-}
-
-func setIfNotPresent[K comparable, V any](m map[K]V, k K, v V) {
-	if _, present := m[k]; !present {
-		m[k] = v
-	}
-}
-
 // SetupWithManager sets up the controller with the Manager.
 func (r *DruidLookupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
@@ -170,18 +148,16 @@ func (r *DruidLookupReconciler) FindLookups(ctx context.Context, reports map[typ
 		}
 		var lookupSpec interface{}
 		if err := json.Unmarshal([]byte(lookup.Spec.Spec), &lookupSpec); err != nil {
-			setIfNotPresent(
-				reports,
-				lookup.GetNamespacedName(),
-				Report(NewErrorReport(
+			if _, ok := reports[lookup.GetNamespacedName()]; !ok {
+				reports[lookup.GetNamespacedName()] = Report(NewErrorReport(
 					fmt.Errorf(
 						"lookup resource %v in cluster %v/%v contains invalid spec, should be JSON",
 						lookup.Name,
 						clusterKey.Namespace,
 						clusterKey.Name,
 					),
-				)),
-			)
+				))
+			}
 			continue
 		}
 
@@ -190,14 +166,9 @@ func (r *DruidLookupReconciler) FindLookups(ctx context.Context, reports map[typ
 		}
 		ls := lookupSpecsPerCluster[clusterKey]
 
-		if _, replaced := replace(ls, lookupKey, Spec{
-			name: lookup.GetNamespacedName(),
-			spec: lookupSpec,
-		}); replaced {
-			setIfNotPresent(
-				reports,
-				lookup.GetNamespacedName(),
-				Report(NewErrorReport(
+		if _, ok := ls[lookupKey]; ok {
+			if _, ok := reports[lookup.GetNamespacedName()]; !ok {
+				reports[lookup.GetNamespacedName()] = Report(NewErrorReport(
 					fmt.Errorf(
 						"resource %v specifies duplicate lookup %v/%v in cluster %v/%v",
 						lookup.Name,
@@ -206,9 +177,14 @@ func (r *DruidLookupReconciler) FindLookups(ctx context.Context, reports map[typ
 						clusterKey.Namespace,
 						clusterKey.Name,
 					),
-				)),
-			)
+				))
+			}
 			continue
+		}
+
+		ls[lookupKey] = Spec{
+			name: lookup.GetNamespacedName(),
+			spec: lookupSpec,
 		}
 	}
 
@@ -240,10 +216,14 @@ func (r *DruidLookupReconciler) FindDruidCluster(ctx context.Context) (map[types
 			Name:      service.Labels["druid_cr"],
 		}
 
-		port, found := findFirst(service.Spec.Ports, func(p v1.ServicePort) bool {
-			return p.Name == "service-port"
-		})
-		if !found {
+		var port *v1.ServicePort = nil
+		for _, p := range service.Spec.Ports {
+			if p.Name == "service-port" {
+				port = &p
+			}
+		}
+
+		if port == nil {
 			nonFatalErrors = append(nonFatalErrors, fmt.Errorf(`could not find "service-port" of router service %v/%v`, key.Namespace, service.Name))
 			continue
 		}
@@ -259,11 +239,12 @@ func (r *DruidLookupReconciler) FindDruidCluster(ctx context.Context) (map[types
 			continue
 		}
 
-		_, replaced := replace(clusters, key, cluster)
-		if replaced {
+		if _, ok := clusters[key]; ok {
 			nonFatalErrors = append(nonFatalErrors, fmt.Errorf("duplicate router services found for cluster %v/%v", key.Namespace, key.Name))
 			continue
 		}
+
+		clusters[key] = cluster
 	}
 
 	return clusters, nonFatalErrors, nil

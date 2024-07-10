@@ -22,11 +22,11 @@ func getOverrideUrls() (map[types.NamespacedName]string, error) {
 			return nil, err
 		}
 
-		_, replaced := replace(urls, key, url)
-
-		if replaced {
+		if _, ok := urls[key]; ok {
 			return nil, fmt.Errorf("duplicate url override for cluster %v/%v specified", key.Namespace, key.Name)
 		}
+
+		urls[key] = url
 	}
 
 	return urls, nil

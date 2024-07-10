@@ -54,7 +54,9 @@ func (c *DruidClient) Reconcile(desiredLookups map[LookupKey]Spec, reports map[t
 		if err := c.upsert(key.Tier, key.Id, spec.spec); err != nil {
 			report = NewErrorReport(err)
 		}
-		setIfNotPresent(reports, spec.name, report)
+		if _, ok := reports[spec.name]; !ok {
+			reports[spec.name] = report
+		}
 	}
 
 	for key := range lookupsToDelete {
