@@ -99,6 +99,12 @@ deploy-testingestionjob: ## wait for the druidIngestion to complete and then ver
 	kubectl create job ingestion-test --image=${IMG_KIND}:${TEST_IMG_TAG}  -- sh /druid-ingestion-test.sh ${TASK_ID}
 	JOB_ID="ingestion-test" bash e2e/monitor-task.sh
 
+.PHONY: deploy-testingestionjob
+deploy-testlookupjob: ## wait for the druidLookup to load and then verify
+	kubectl create job lookup-test --image=${IMG_KIND}:${TEST_IMG_TAG}  -- sh /druid-lookup-test.sh
+	JOB_ID="lookup-test" bash e2e/monitor-task.sh
+
+
 .PHONY: helm-install-druid-operator
 helm-install-druid-operator: ## Helm install to deploy the druid operator
 	helm upgrade --install \
