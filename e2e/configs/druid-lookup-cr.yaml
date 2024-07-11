@@ -3,7 +3,8 @@ kind: DruidLookup
 metadata:
   name: druidlookup-sample
 spec:
-  druidCluster: tiny-cluster
+  druidCluster:
+    name: tiny-cluster
   id: country_code_names
   spec: |
     {

@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -29,7 +30,7 @@ type DruidLookupSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// +required
-	DruidClusterName string `json:"druidCluster"`
+	DruidCluster v1.LocalObjectReference `json:"druidCluster"`
 
 	// +required
 	Id string `json:"id"`

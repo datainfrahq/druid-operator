@@ -140,7 +140,7 @@ func (r *DruidLookupReconciler) FindLookups(ctx context.Context, reports map[typ
 	for _, lookup := range lookups.Items {
 		clusterKey := types.NamespacedName{
 			Namespace: lookup.Namespace,
-			Name:      lookup.Spec.DruidClusterName,
+			Name:      lookup.Spec.DruidCluster.Name,
 		}
 		lookupKey := LookupKey{
 			Tier: lookup.Spec.Tier,

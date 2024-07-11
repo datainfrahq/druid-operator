@@ -15,6 +15,15 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .spec.druidCluster.name
+      name: Target cluster
+      type: string
+    - jsonPath: .spec.tier
+      name: Target tier
+      type: string
+    - jsonPath: .spec.id
+      name: Target ID
+      type: string
     - jsonPath: .status.lastUpdateAttemptSuccessful
       name: Ok
       type: boolean
@@ -59,7 +68,18 @@ spec:
             description: DruidLookupSpec defines the desired state of DruidLookup
             properties:
               druidCluster:
-                type: string
+                description: |-
+                  LocalObjectReference contains enough information to let you locate the
+                  referenced object inside the same namespace.
+                properties:
+                  name:
+                    description: |-
+                      Name of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
               id:
                 type: string
               spec:
@@ -79,8 +99,25 @@ spec:
                 type: string
               lastAppliedSpec:
                 type: string
+              lastClusterAppliedIn:
+                description: |-
+                  LocalObjectReference contains enough information to let you locate the
+                  referenced object inside the same namespace.
+                properties:
+                  name:
+                    description: |-
+                      Name of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              lastIdAppliedAs:
+                type: string
               lastSuccessfulUpdateAt:
                 format: date-time
+                type: string
+              lastTierAppliedIn:
                 type: string
               lastUpdateAttemptAt:
                 format: date-time
