@@ -3,6 +3,7 @@ package lookup
 import (
 	"encoding/json"
 	"github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 )
@@ -12,14 +13,20 @@ type Report interface {
 }
 
 type SuccessReport struct {
-	ts   metav1.Time
-	spec interface{}
+	ts      metav1.Time
+	spec    interface{}
+	cluster v1.LocalObjectReference
+	tier    string
+	id      string
 }
 
-func NewSuccessReport(spec interface{}) *SuccessReport {
+func NewSuccessReport(cluster v1.LocalObjectReference, tier string, id string, spec interface{}) *SuccessReport {
 	return &SuccessReport{
-		ts:   metav1.Time{Time: time.Now()},
-		spec: spec,
+		ts:      metav1.Time{Time: time.Now()},
+		spec:    spec,
+		cluster: cluster,
+		tier:    tier,
+		id:      id,
 	}
 }
 
@@ -31,6 +38,9 @@ func (r *SuccessReport) MergeStatus(status *v1alpha1.DruidLookupStatus) error {
 		return err
 	}
 
+	status.LastClusterAppliedIn = r.cluster
+	status.LastTierAppliedIn = r.tier
+	status.LastIdAppliedAs = r.id
 	status.LastAppliedSpec = string(spec)
 	status.LastSuccessfulUpdateAt = now
 	status.LastUpdateAttemptAt = now

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	internalhttp "github.com/datainfrahq/druid-operator/pkg/http"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"net/http"
 	"reflect"
@@ -50,7 +51,7 @@ func (c *DruidClient) Reconcile(desiredLookups map[LookupKey]Spec, reports map[t
 	}
 
 	for key, spec := range lookupsToUpdate {
-		report := Report(NewSuccessReport(spec.spec))
+		report := Report(NewSuccessReport(v1.LocalObjectReference{Name: "placeholder"}, key.Tier, key.Id, spec.spec))
 		if err := c.upsert(key.Tier, key.Id, spec.spec); err != nil {
 			report = NewErrorReport(err)
 		}

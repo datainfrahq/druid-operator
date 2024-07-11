@@ -55,6 +55,15 @@ type DruidLookupStatus struct {
 	NumberOfPendingNodes *int `json:"numberOfPendingNodes,omitempty"`
 
 	// +optional
+	LastClusterAppliedIn v1.LocalObjectReference `json:"lastClusterAppliedIn"`
+
+	// +optional
+	LastTierAppliedIn string `json:"lastTierAppliedIn"`
+
+	// +optional
+	LastIdAppliedAs string `json:"lastIdAppliedAs"`
+
+	// +optional
 	LastAppliedSpec string `json:"lastAppliedSpec,omitempty"`
 
 	// +optional
@@ -72,6 +81,9 @@ type DruidLookupStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="Target cluster",JSONPath=`.spec.druidCluster.name`,type=string
+//+kubebuilder:printcolumn:name="Target tier",JSONPath=`.spec.tier`,type=string
+//+kubebuilder:printcolumn:name="Target ID",JSONPath=`.spec.id`,type=string
 //+kubebuilder:printcolumn:name="Ok",JSONPath=`.status.lastUpdateAttemptSuccessful`,type=boolean
 //+kubebuilder:printcolumn:name="Loaded",JSONPath=`.status.loaded`,type=boolean,priority=1
 //+kubebuilder:printcolumn:name="Pending Nodes",JSONPath=`.status.numberOfPendingNodes`,type=integer,priority=10
