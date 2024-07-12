@@ -1,6 +1,7 @@
 tenant:
   pools:
   - servers: 1
+    name: "main"
     volumesPerServer: 1
   certificate:
     requestAutoCert: false
