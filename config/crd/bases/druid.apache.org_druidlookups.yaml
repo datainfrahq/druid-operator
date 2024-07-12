@@ -80,8 +80,6 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
-              id:
-                type: string
               spec:
                 type: string
               tier:
@@ -89,7 +87,6 @@ spec:
                 type: string
             required:
             - druidCluster
-            - id
             - spec
             type: object
           status:
@@ -112,8 +109,6 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
-              lastIdAppliedAs:
-                type: string
               lastSuccessfulUpdateAt:
                 format: date-time
                 type: string

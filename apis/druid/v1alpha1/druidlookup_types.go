@@ -32,9 +32,6 @@ type DruidLookupSpec struct {
 	// +required
 	DruidCluster v1.LocalObjectReference `json:"druidCluster"`
 
-	// +required
-	Id string `json:"id"`
-
 	// +optional
 	// +kubebuilder:default:=__default
 	Tier string `json:"tier"`
@@ -59,9 +56,6 @@ type DruidLookupStatus struct {
 
 	// +optional
 	LastTierAppliedIn string `json:"lastTierAppliedIn"`
-
-	// +optional
-	LastIdAppliedAs string `json:"lastIdAppliedAs"`
 
 	// +optional
 	LastAppliedSpec string `json:"lastAppliedSpec,omitempty"`
@@ -107,7 +101,7 @@ func (dl *DruidLookup) GetNamespacedName() types.NamespacedName {
 }
 
 func (dl *DruidLookup) ShouldDeleteLastAppliedLookup() bool {
-	hasAppliedBefore := dl.Status.LastClusterAppliedIn.Name != "" && dl.Status.LastTierAppliedIn != "" && dl.Status.LastIdAppliedAs != ""
+	hasAppliedBefore := dl.Status.LastClusterAppliedIn.Name != "" && dl.Status.LastTierAppliedIn != ""
 	if !hasAppliedBefore {
 		return false
 	}
@@ -117,10 +111,6 @@ func (dl *DruidLookup) ShouldDeleteLastAppliedLookup() bool {
 	}
 
 	if dl.Status.LastTierAppliedIn != dl.Spec.Tier {
-		return true
-	}
-
-	if dl.Status.LastIdAppliedAs != dl.Spec.Id {
 		return true
 	}
 

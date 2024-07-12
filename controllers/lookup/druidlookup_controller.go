@@ -141,7 +141,7 @@ func (r *DruidLookupReconciler) handleLookup(ctx context.Context, druidClients m
 			return NewErrorReport(errors.New(fmt.Sprintf("could not find any druid cluster %s/%s", lookup.Namespace, lookup.Status.LastClusterAppliedIn.Name)))
 		}
 
-		if err := druidClient.Delete(lookup.Status.LastTierAppliedIn, lookup.Status.LastIdAppliedAs); err != nil {
+		if err := druidClient.Delete(lookup.Status.LastTierAppliedIn, lookup.Name); err != nil {
 			return NewErrorReport(err)
 		}
 	}
@@ -159,7 +159,7 @@ func (r *DruidLookupReconciler) handleLookup(ctx context.Context, druidClients m
 
 		if reflect.DeepEqual(oldSpec, currentSpec) {
 			// last applied spec and current spec is the same, no need to update
-			return NewSuccessReport(lookup.Spec.DruidCluster, lookup.Spec.Tier, lookup.Spec.Id, currentSpec)
+			return NewSuccessReport(lookup.Spec.DruidCluster, lookup.Spec.Tier, currentSpec)
 		}
 	}
 
@@ -167,11 +167,11 @@ func (r *DruidLookupReconciler) handleLookup(ctx context.Context, druidClients m
 	if !found {
 		return NewErrorReport(errors.New(fmt.Sprintf("could not find any druid cluster %s/%s", lookup.Namespace, lookup.Status.LastClusterAppliedIn.Name)))
 	}
-	if err := druidClient.Upsert(lookup.Status.LastTierAppliedIn, lookup.Status.LastIdAppliedAs, currentSpec); err != nil {
+	if err := druidClient.Upsert(lookup.Status.LastTierAppliedIn, lookup.Name, currentSpec); err != nil {
 		return NewErrorReport(err)
 	}
 
-	return NewSuccessReport(lookup.Spec.DruidCluster, lookup.Spec.Tier, lookup.Spec.Id, currentSpec)
+	return NewSuccessReport(lookup.Spec.DruidCluster, lookup.Spec.Tier, currentSpec)
 }
 
 func (r *DruidLookupReconciler) handleDeletingLookup(ctx context.Context, druidClients map[types.NamespacedName]*DruidClient, lookup *druidv1alpha1.DruidLookup) error {
@@ -185,7 +185,7 @@ func (r *DruidLookupReconciler) handleDeletingLookup(ctx context.Context, druidC
 	if !found {
 		return errors.New(fmt.Sprintf("could not find any druid cluster %s/%s", lookup.Namespace, lookup.Status.LastClusterAppliedIn.Name))
 	}
-	if err := druidClient.Delete(lookup.Status.LastTierAppliedIn, lookup.Status.LastIdAppliedAs); err != nil {
+	if err := druidClient.Delete(lookup.Status.LastTierAppliedIn, lookup.Name); err != nil {
 		return err
 	}
 
@@ -203,7 +203,7 @@ func (r *DruidLookupReconciler) handleLookupStatusPoll(ctx context.Context, drui
 		return true, errors.New(fmt.Sprintf("could not find any druid cluster %s/%s", lookup.Namespace, lookup.Spec.DruidCluster.Name))
 	}
 
-	status, err := druidClient.GetStatus(lookup.Spec.Tier, lookup.Spec.Id)
+	status, err := druidClient.GetStatus(lookup.Spec.Tier, lookup.Name)
 	if err != nil {
 		return true, err
 	}

@@ -18,16 +18,14 @@ type SuccessReport struct {
 	spec    interface{}
 	cluster v1.LocalObjectReference
 	tier    string
-	id      string
 }
 
-func NewSuccessReport(cluster v1.LocalObjectReference, tier string, id string, spec interface{}) *SuccessReport {
+func NewSuccessReport(cluster v1.LocalObjectReference, tier string, spec interface{}) *SuccessReport {
 	return &SuccessReport{
 		ts:      metav1.Time{Time: time.Now()},
 		spec:    spec,
 		cluster: cluster,
 		tier:    tier,
-		id:      id,
 	}
 }
 
@@ -41,7 +39,6 @@ func (r *SuccessReport) MergeStatus(status *v1alpha1.DruidLookupStatus) error {
 
 	status.LastClusterAppliedIn = r.cluster
 	status.LastTierAppliedIn = r.tier
-	status.LastIdAppliedAs = r.id
 	status.LastAppliedSpec = string(spec)
 	status.LastSuccessfulUpdateAt = now
 	status.LastUpdateAttemptAt = now
