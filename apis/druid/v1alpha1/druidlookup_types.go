@@ -37,7 +37,7 @@ type DruidLookupSpec struct {
 	Tier string `json:"tier"`
 
 	// +required
-	Spec string `json:"spec"`
+	Template string `json:"template"`
 }
 
 // DruidLookupStatus defines the observed state of DruidLookup
@@ -58,7 +58,7 @@ type DruidLookupStatus struct {
 	LastTierAppliedIn string `json:"lastTierAppliedIn"`
 
 	// +optional
-	LastAppliedSpec string `json:"lastAppliedSpec,omitempty"`
+	LastAppliedTemplate string `json:"lastAppliedTemplate,omitempty"`
 
 	// +optional
 	LastSuccessfulUpdateAt *metav1.Time `json:"lastSuccessfulUpdateAt,omitempty"`

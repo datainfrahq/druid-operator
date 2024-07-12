@@ -80,21 +80,21 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
-              spec:
+              template:
                 type: string
               tier:
                 default: __default
                 type: string
             required:
             - druidCluster
-            - spec
+            - template
             type: object
           status:
             description: DruidLookupStatus defines the observed state of DruidLookup
             properties:
               errorMessage:
                 type: string
-              lastAppliedSpec:
+              lastAppliedTemplate:
                 type: string
               lastClusterAppliedIn:
                 description: |-

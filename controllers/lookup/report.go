@@ -39,7 +39,7 @@ func (r *SuccessReport) MergeStatus(status *v1alpha1.DruidLookupStatus) error {
 
 	status.LastClusterAppliedIn = r.cluster
 	status.LastTierAppliedIn = r.tier
-	status.LastAppliedSpec = string(spec)
+	status.LastAppliedTemplate = string(spec)
 	status.LastSuccessfulUpdateAt = now
 	status.LastUpdateAttemptAt = now
 	status.LastUpdateAttemptSuccessful = true

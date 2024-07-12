@@ -147,13 +147,13 @@ func (r *DruidLookupReconciler) handleLookup(ctx context.Context, druidClients m
 	}
 
 	var currentSpec interface{}
-	if err := json.Unmarshal([]byte(lookup.Spec.Spec), &currentSpec); err != nil {
+	if err := json.Unmarshal([]byte(lookup.Spec.Template), &currentSpec); err != nil {
 		return NewErrorReport(err)
 	}
 
-	if lookup.Status.LastAppliedSpec != "" {
+	if lookup.Status.LastAppliedTemplate != "" {
 		var oldSpec interface{}
-		if err := json.Unmarshal([]byte(lookup.Status.LastAppliedSpec), &oldSpec); err != nil {
+		if err := json.Unmarshal([]byte(lookup.Status.LastAppliedTemplate), &oldSpec); err != nil {
 			return NewErrorReport(err)
 		}
 
