@@ -5,8 +5,7 @@ metadata:
 spec:
   druidCluster:
     name: tiny-cluster
-  id: country_code_names
-  spec: |
+  template: |
     {
       "type": "map",
       "map": {

@@ -3,9 +3,9 @@ kind: DruidLookup
 metadata:
   name: druidlookup-sample
 spec:
-  druidCluster: tiny-cluster
-  id: country_code_names
-  spec: |
+  druidCluster:
+    name: tiny-cluster
+  template: |
     {
       "type": "map",
       "map": {
