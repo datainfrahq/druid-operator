@@ -55,8 +55,8 @@ const (
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *DruidLookupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logr := log.FromContext(ctx)
-	logr.Info("reconciling lookup", "namespace", req.Namespace, "name", req.Name)
+	logger := log.FromContext(ctx)
+	logger.Info("reconciling lookup", "namespace", req.Namespace, "name", req.Name)
 
 	lookup := &druidv1alpha1.DruidLookup{}
 	if err := r.Get(ctx, req.NamespacedName, lookup); err != nil {
@@ -68,7 +68,7 @@ func (r *DruidLookupReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, fatalErr
 	}
 	for _, nonFatalError := range nonFatalErrors {
-		logr.Error(nonFatalError, "error occurred while constructing druid client")
+		logger.Error(nonFatalError, "error occurred while constructing druid client")
 	}
 
 	shouldRequeue := false
@@ -78,9 +78,9 @@ func (r *DruidLookupReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		// lookup is not under deletion
 		report := r.handleLookup(ctx, druidClients, lookup)
 		if err := r.UpdateStatus(ctx, req.NamespacedName, report); err != nil {
-			logr.Error(
+			logger.Error(
 				err,
-				"an error occurred while updating lookup resource status",
+				"an error occurred while updating lookup resource status after handling lookup",
 				"namespace", req.NamespacedName.Name,
 				"name", req.NamespacedName.Name,
 			)
@@ -90,26 +90,26 @@ func (r *DruidLookupReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	} else {
 		// lookup is under deletion
 		if err := r.handleDeletingLookup(ctx, druidClients, lookup); err != nil {
-			logr.Error(
+			logger.Error(
 				err,
-				"an error occurred while finalizing lookup resource",
+				"an error occurred while finalizing lookup resource after handling deleting lookup",
 				"namespace", req.NamespacedName.Name,
 				"name", req.NamespacedName.Name,
 			)
 		}
 	}
 
-	statusShouldRequeue, err := r.handleLookupStatusPoll(ctx, druidClients, lookup)
-	if err != nil {
-		logr.Error(
+	report := r.pollLookupStatus(ctx, druidClients, lookup)
+	if err := r.UpdateStatus(ctx, req.NamespacedName, report); err != nil {
+		logger.Error(
 			err,
-			"an error occurred while finalizing lookup resource",
+			"an error occurred while updating lookup resource status after polling lookup status",
 			"namespace", req.NamespacedName.Name,
 			"name", req.NamespacedName.Name,
 		)
 	}
 
-	shouldRequeue = shouldRequeue || statusShouldRequeue
+	shouldRequeue = shouldRequeue || report.ShouldResultInRequeue()
 
 	res := ctrl.Result{}
 
@@ -197,22 +197,18 @@ func (r *DruidLookupReconciler) handleDeletingLookup(ctx context.Context, druidC
 	return nil
 }
 
-func (r *DruidLookupReconciler) handleLookupStatusPoll(ctx context.Context, druidClients map[types.NamespacedName]*DruidClient, lookup *druidv1alpha1.DruidLookup) (bool, error) {
+func (r *DruidLookupReconciler) pollLookupStatus(_ context.Context, druidClients map[types.NamespacedName]*DruidClient, lookup *druidv1alpha1.DruidLookup) Report {
 	druidClient, found := druidClients[types.NamespacedName{Namespace: lookup.Namespace, Name: lookup.Spec.DruidCluster.Name}]
 	if !found {
-		return true, errors.New(fmt.Sprintf("could not find any druid cluster %s/%s", lookup.Namespace, lookup.Spec.DruidCluster.Name))
+		return NewErrorReport(errors.New(fmt.Sprintf("could not find any druid cluster %s/%s", lookup.Namespace, lookup.Spec.DruidCluster.Name)))
 	}
 
 	status, err := druidClient.GetStatus(lookup.Spec.Tier, lookup.Name)
 	if err != nil {
-		return true, err
+		return NewErrorReport(err)
 	}
 
-	if err := r.UpdateStatus(ctx, lookup.GetNamespacedName(), &status); err != nil {
-		return true, err
-	}
-
-	return status.ShouldResultInRequeue(), nil
+	return &status
 }
 
 func (r *DruidLookupReconciler) FindDruidCluster(ctx context.Context) (map[types.NamespacedName]*DruidClient, []error, error) {
