@@ -21,9 +21,6 @@ spec:
     - jsonPath: .spec.tier
       name: Target tier
       type: string
-    - jsonPath: .spec.id
-      name: Target ID
-      type: string
     - jsonPath: .status.lastUpdateAttemptSuccessful
       name: Ok
       type: boolean

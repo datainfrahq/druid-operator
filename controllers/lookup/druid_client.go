@@ -3,6 +3,7 @@ package lookup
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/datainfrahq/druid-operator/controllers/lookup/report"
 	internalhttp "github.com/datainfrahq/druid-operator/pkg/http"
 	"net/http"
 	"time"
@@ -26,17 +27,17 @@ func NewCluster(baseUrl string, httpClient internalhttp.DruidHTTP) (*DruidClient
 	return &cluster, nil
 }
 
-func (c *DruidClient) GetStatus(tier string, id string) (Status, error) {
+func (c *DruidClient) GetStatus(tier string, id string) (report.StatusReport, error) {
 	url := fmt.Sprintf("%s/druid/coordinator/v1/lookups/status/%s/%s?detailed=true", c.baseUrl, tier, id)
 
 	resp, err := c.httpClient.Do(http.MethodGet, url, nil)
 	if err != nil {
-		return Status{}, err
+		return report.StatusReport{}, err
 	}
 
-	var response Status
+	var response report.StatusReport
 	if err := json.Unmarshal([]byte(resp.ResponseBody), &response); err != nil {
-		return Status{}, err
+		return report.StatusReport{}, err
 	}
 
 	return response, nil

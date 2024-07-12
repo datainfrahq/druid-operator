@@ -1,15 +1,13 @@
-package lookup
+package report
 
-import (
-	"github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
-)
+import "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 
-type Status struct {
+type StatusReport struct {
 	Loaded       bool     `json:"loaded"`
 	PendingNodes []string `json:"pendingNodes"`
 }
 
-func (r *Status) MergeStatus(status *v1alpha1.DruidLookupStatus) error {
+func (r *StatusReport) MergeStatus(status *v1alpha1.DruidLookupStatus) error {
 	numberOfPendingNodes := len(r.PendingNodes)
 
 	status.PendingNodes = r.PendingNodes
@@ -19,6 +17,6 @@ func (r *Status) MergeStatus(status *v1alpha1.DruidLookupStatus) error {
 	return nil
 }
 
-func (r *Status) ShouldResultInRequeue() bool {
+func (r *StatusReport) ShouldResultInRequeue() bool {
 	return !r.Loaded
 }

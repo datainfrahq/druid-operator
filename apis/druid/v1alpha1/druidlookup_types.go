@@ -17,9 +17,11 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"encoding/json"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"reflect"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -77,7 +79,6 @@ type DruidLookupStatus struct {
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="Target cluster",JSONPath=`.spec.druidCluster.name`,type=string
 //+kubebuilder:printcolumn:name="Target tier",JSONPath=`.spec.tier`,type=string
-//+kubebuilder:printcolumn:name="Target ID",JSONPath=`.spec.id`,type=string
 //+kubebuilder:printcolumn:name="Ok",JSONPath=`.status.lastUpdateAttemptSuccessful`,type=boolean
 //+kubebuilder:printcolumn:name="Loaded",JSONPath=`.status.loaded`,type=boolean,priority=1
 //+kubebuilder:printcolumn:name="Pending Nodes",JSONPath=`.status.numberOfPendingNodes`,type=integer,priority=10
@@ -115,6 +116,35 @@ func (dl *DruidLookup) ShouldDeleteLastAppliedLookup() bool {
 	}
 
 	return false
+}
+
+func (dl *DruidLookup) GetTemplateToApply() (interface{}, error) {
+	var currentTemplate interface{}
+	if err := json.Unmarshal([]byte(dl.Spec.Template), &currentTemplate); err != nil {
+		return nil, err
+	}
+
+	if dl.Status.LastAppliedTemplate == "" {
+		return currentTemplate, nil
+	}
+
+	clusterChanged := dl.Spec.DruidCluster.Name != dl.Status.LastClusterAppliedIn.Name
+	tierChanged := dl.Spec.Tier != dl.Status.LastTierAppliedIn
+
+	if clusterChanged || tierChanged {
+		return currentTemplate, nil
+	}
+
+	var oldTemplate interface{}
+	if err := json.Unmarshal([]byte(dl.Status.LastAppliedTemplate), &oldTemplate); err != nil {
+		return nil, err
+	}
+
+	if !reflect.DeepEqual(currentTemplate, oldTemplate) {
+		return currentTemplate, nil
+	}
+
+	return nil, nil
 }
 
 //+kubebuilder:object:root=true

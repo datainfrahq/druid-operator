@@ -18,16 +18,15 @@ package lookup
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	druidv1alpha1 "github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
+	"github.com/datainfrahq/druid-operator/controllers/lookup/report"
 	internalhttp "github.com/datainfrahq/druid-operator/pkg/http"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"net/http"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -63,7 +62,7 @@ func (r *DruidLookupReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	druidClients, nonFatalErrors, fatalErr := r.FindDruidCluster(ctx)
+	druidClients, nonFatalErrors, fatalErr := r.findDruidCluster(ctx)
 	if fatalErr != nil {
 		return ctrl.Result{}, fatalErr
 	}
@@ -71,23 +70,8 @@ func (r *DruidLookupReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		logger.Error(nonFatalError, "error occurred while constructing druid client")
 	}
 
-	shouldRequeue := false
-
 	// examine if lookup is under deletion
-	if lookup.ObjectMeta.DeletionTimestamp.IsZero() {
-		// lookup is not under deletion
-		report := r.handleLookup(ctx, druidClients, lookup)
-		if err := r.UpdateStatus(ctx, req.NamespacedName, report); err != nil {
-			logger.Error(
-				err,
-				"an error occurred while updating lookup resource status after handling lookup",
-				"namespace", req.NamespacedName.Name,
-				"name", req.NamespacedName.Name,
-			)
-		}
-
-		shouldRequeue = report.ShouldResultInRequeue()
-	} else {
+	if !lookup.ObjectMeta.DeletionTimestamp.IsZero() {
 		// lookup is under deletion
 		if err := r.handleDeletingLookup(ctx, druidClients, lookup); err != nil {
 			logger.Error(
@@ -97,10 +81,24 @@ func (r *DruidLookupReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				"name", req.NamespacedName.Name,
 			)
 		}
+
+		// do not do any further reconciliation actions
+		return ctrl.Result{}, nil
 	}
 
-	report := r.pollLookupStatus(ctx, druidClients, lookup)
-	if err := r.UpdateStatus(ctx, req.NamespacedName, report); err != nil {
+	// lookup is not under deletion
+	handleReport := r.handleLookup(ctx, druidClients, lookup)
+	if err := r.updateStatus(ctx, req.NamespacedName, handleReport); err != nil {
+		logger.Error(
+			err,
+			"an error occurred while updating lookup resource status after handling lookup",
+			"namespace", req.NamespacedName.Name,
+			"name", req.NamespacedName.Name,
+		)
+	}
+
+	statusReport := r.pollLookupStatus(ctx, druidClients, lookup)
+	if err := r.updateStatus(ctx, req.NamespacedName, statusReport); err != nil {
 		logger.Error(
 			err,
 			"an error occurred while updating lookup resource status after polling lookup status",
@@ -109,11 +107,9 @@ func (r *DruidLookupReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		)
 	}
 
-	shouldRequeue = shouldRequeue || report.ShouldResultInRequeue()
-
 	res := ctrl.Result{}
 
-	if shouldRequeue {
+	if handleReport.ShouldResultInRequeue() || statusReport.ShouldResultInRequeue() {
 		res.RequeueAfter = time.Second * 5
 	}
 
@@ -127,51 +123,42 @@ func (r *DruidLookupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *DruidLookupReconciler) handleLookup(ctx context.Context, druidClients map[types.NamespacedName]*DruidClient, lookup *druidv1alpha1.DruidLookup) Report {
+func (r *DruidLookupReconciler) handleLookup(ctx context.Context, druidClients map[types.NamespacedName]*DruidClient, lookup *druidv1alpha1.DruidLookup) report.Report {
 	// ensure lookup has finalizer registered
 	if controllerutil.AddFinalizer(lookup, DruidLookupControllerFinalizer) {
 		if err := r.Update(ctx, lookup); err != nil {
-			return NewErrorReport(err)
+			return report.NewErrorReport(err)
 		}
 	}
 
 	if lookup.ShouldDeleteLastAppliedLookup() {
 		druidClient, found := druidClients[types.NamespacedName{Namespace: lookup.Namespace, Name: lookup.Status.LastClusterAppliedIn.Name}]
 		if !found {
-			return NewErrorReport(errors.New(fmt.Sprintf("could not find any druid cluster %s/%s", lookup.Namespace, lookup.Status.LastClusterAppliedIn.Name)))
+			return report.NewErrorReport(errors.New(fmt.Sprintf("could not find any druid cluster %s/%s", lookup.Namespace, lookup.Status.LastClusterAppliedIn.Name)))
 		}
 
 		if err := druidClient.Delete(lookup.Status.LastTierAppliedIn, lookup.Name); err != nil {
-			return NewErrorReport(err)
+			return report.NewErrorReport(err)
 		}
 	}
 
-	var currentSpec interface{}
-	if err := json.Unmarshal([]byte(lookup.Spec.Template), &currentSpec); err != nil {
-		return NewErrorReport(err)
+	template, err := lookup.GetTemplateToApply()
+	if err != nil {
+		return report.NewErrorReport(err)
+	}
+	if template == nil {
+		return report.NewNothingChangedReport()
 	}
 
-	if lookup.Status.LastAppliedTemplate != "" {
-		var oldSpec interface{}
-		if err := json.Unmarshal([]byte(lookup.Status.LastAppliedTemplate), &oldSpec); err != nil {
-			return NewErrorReport(err)
-		}
-
-		if reflect.DeepEqual(oldSpec, currentSpec) {
-			// last applied spec and current spec is the same, no need to update
-			return NewSuccessReport(lookup.Spec.DruidCluster, lookup.Spec.Tier, currentSpec)
-		}
-	}
-
-	druidClient, found := druidClients[types.NamespacedName{Namespace: lookup.Namespace, Name: lookup.Status.LastClusterAppliedIn.Name}]
+	druidClient, found := druidClients[types.NamespacedName{Namespace: lookup.Namespace, Name: lookup.Spec.DruidCluster.Name}]
 	if !found {
-		return NewErrorReport(errors.New(fmt.Sprintf("could not find any druid cluster %s/%s", lookup.Namespace, lookup.Status.LastClusterAppliedIn.Name)))
+		return report.NewErrorReport(errors.New(fmt.Sprintf("could not find any druid cluster %s/%s", lookup.Namespace, lookup.Spec.DruidCluster.Name)))
 	}
-	if err := druidClient.Upsert(lookup.Status.LastTierAppliedIn, lookup.Name, currentSpec); err != nil {
-		return NewErrorReport(err)
+	if err := druidClient.Upsert(lookup.Spec.Tier, lookup.Name, template); err != nil {
+		return report.NewErrorReport(err)
 	}
 
-	return NewSuccessReport(lookup.Spec.DruidCluster, lookup.Spec.Tier, currentSpec)
+	return report.NewSuccessReport(lookup.Spec.DruidCluster, lookup.Spec.Tier, lookup.Spec.Template)
 }
 
 func (r *DruidLookupReconciler) handleDeletingLookup(ctx context.Context, druidClients map[types.NamespacedName]*DruidClient, lookup *druidv1alpha1.DruidLookup) error {
@@ -197,21 +184,21 @@ func (r *DruidLookupReconciler) handleDeletingLookup(ctx context.Context, druidC
 	return nil
 }
 
-func (r *DruidLookupReconciler) pollLookupStatus(_ context.Context, druidClients map[types.NamespacedName]*DruidClient, lookup *druidv1alpha1.DruidLookup) Report {
+func (r *DruidLookupReconciler) pollLookupStatus(_ context.Context, druidClients map[types.NamespacedName]*DruidClient, lookup *druidv1alpha1.DruidLookup) report.Report {
 	druidClient, found := druidClients[types.NamespacedName{Namespace: lookup.Namespace, Name: lookup.Spec.DruidCluster.Name}]
 	if !found {
-		return NewErrorReport(errors.New(fmt.Sprintf("could not find any druid cluster %s/%s", lookup.Namespace, lookup.Spec.DruidCluster.Name)))
+		return report.NewErrorReport(errors.New(fmt.Sprintf("could not find any druid cluster %s/%s", lookup.Namespace, lookup.Spec.DruidCluster.Name)))
 	}
 
 	status, err := druidClient.GetStatus(lookup.Spec.Tier, lookup.Name)
 	if err != nil {
-		return NewErrorReport(err)
+		return report.NewErrorReport(err)
 	}
 
 	return &status
 }
 
-func (r *DruidLookupReconciler) FindDruidCluster(ctx context.Context) (map[types.NamespacedName]*DruidClient, []error, error) {
+func (r *DruidLookupReconciler) findDruidCluster(ctx context.Context) (map[types.NamespacedName]*DruidClient, []error, error) {
 	httpClient := internalhttp.NewHTTPClient(&http.Client{}, &internalhttp.Auth{BasicAuth: internalhttp.BasicAuth{}})
 	clusters := make(map[types.NamespacedName]*DruidClient)
 	nonFatalErrors := make([]error, 0)
@@ -236,6 +223,10 @@ func (r *DruidLookupReconciler) FindDruidCluster(ctx context.Context) (map[types
 			Name:      service.Labels["druid_cr"],
 		}
 
+		if _, overrideExists := overrides[key]; overrideExists {
+			continue
+		}
+
 		var port *v1.ServicePort = nil
 		for _, p := range service.Spec.Ports {
 			if p.Name == "service-port" {
@@ -249,9 +240,6 @@ func (r *DruidLookupReconciler) FindDruidCluster(ctx context.Context) (map[types
 		}
 
 		url := fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", service.Name, service.Namespace, port.Port)
-		if override, found := overrides[key]; found {
-			url = override
-		}
 
 		cluster, err := NewCluster(url, httpClient)
 		if err != nil {
@@ -267,10 +255,24 @@ func (r *DruidLookupReconciler) FindDruidCluster(ctx context.Context) (map[types
 		clusters[key] = cluster
 	}
 
+	for key, url := range overrides {
+		cluster, err := NewCluster(url, httpClient)
+		if err != nil {
+			nonFatalErrors = append(nonFatalErrors, errors.Join(fmt.Errorf("could not create druid cluster client for cluster at %v", url), err))
+			continue
+		}
+
+		if _, ok := clusters[key]; ok {
+			nonFatalErrors = append(nonFatalErrors, fmt.Errorf("duplicate router services found for cluster %v/%v", key.Namespace, key.Name))
+			continue
+		}
+		clusters[key] = cluster
+	}
+
 	return clusters, nonFatalErrors, nil
 }
 
-func (r *DruidLookupReconciler) UpdateStatus(ctx context.Context, name types.NamespacedName, report Report) error {
+func (r *DruidLookupReconciler) updateStatus(ctx context.Context, name types.NamespacedName, report report.Report) error {
 	lookup := &druidv1alpha1.DruidLookup{}
 	err := r.Get(ctx, name, lookup)
 	if err != nil {
