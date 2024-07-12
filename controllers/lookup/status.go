@@ -18,3 +18,7 @@ func (r *Status) MergeStatus(status *v1alpha1.DruidLookupStatus) error {
 
 	return nil
 }
+
+func (r *Status) ShouldResultInRequeue() bool {
+	return !r.Loaded
+}

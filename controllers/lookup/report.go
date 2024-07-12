@@ -10,6 +10,7 @@ import (
 
 type Report interface {
 	MergeStatus(status *v1alpha1.DruidLookupStatus) error
+	ShouldResultInRequeue() bool
 }
 
 type SuccessReport struct {
@@ -50,6 +51,10 @@ func (r *SuccessReport) MergeStatus(status *v1alpha1.DruidLookupStatus) error {
 	return nil
 }
 
+func (r *SuccessReport) ShouldResultInRequeue() bool {
+	return false
+}
+
 type ErrorReport struct {
 	ts  metav1.Time
 	err error
@@ -70,4 +75,8 @@ func (r *ErrorReport) MergeStatus(status *v1alpha1.DruidLookupStatus) error {
 	status.ErrorMessage = r.err.Error()
 
 	return nil
+}
+
+func (r *ErrorReport) ShouldResultInRequeue() bool {
+	return true
 }

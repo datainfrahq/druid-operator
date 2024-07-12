@@ -106,6 +106,27 @@ func (dl *DruidLookup) GetNamespacedName() types.NamespacedName {
 	}
 }
 
+func (dl *DruidLookup) ShouldDeleteLastAppliedLookup() bool {
+	hasAppliedBefore := dl.Status.LastClusterAppliedIn.Name != "" && dl.Status.LastTierAppliedIn != "" && dl.Status.LastIdAppliedAs != ""
+	if !hasAppliedBefore {
+		return false
+	}
+
+	if dl.Status.LastClusterAppliedIn.Name != dl.Spec.DruidCluster.Name {
+		return true
+	}
+
+	if dl.Status.LastTierAppliedIn != dl.Spec.Tier {
+		return true
+	}
+
+	if dl.Status.LastIdAppliedAs != dl.Spec.Id {
+		return true
+	}
+
+	return false
+}
+
 //+kubebuilder:object:root=true
 
 // DruidLookupList contains a list of DruidLookup

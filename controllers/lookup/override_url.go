@@ -7,11 +7,14 @@ import (
 	"strings"
 )
 
+const (
+	RouterOverrideVarsEnvVar = "ROUTER_OVERRIDE_VARS"
+)
+
 func getOverrideUrls() (map[types.NamespacedName]string, error) {
 	urls := make(map[types.NamespacedName]string)
 
-	// TODO set env var name as const
-	overrideVars, ok := os.LookupEnv("ROUTER_OVERRIDE_VARS")
+	overrideVars, ok := os.LookupEnv(RouterOverrideVarsEnvVar)
 	if !ok {
 		return urls, nil
 	}

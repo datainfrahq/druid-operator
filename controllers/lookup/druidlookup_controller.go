@@ -27,8 +27,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"net/http"
+	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"time"
 )
@@ -39,6 +41,10 @@ type DruidLookupReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+const (
+	DruidLookupControllerFinalizer = "druidlookup.datainfra.io/finalizer"
+)
+
 //+kubebuilder:rbac:groups=druid.apache.org,resources=druidlookups,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=druid.apache.org,resources=druidlookups/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=druid.apache.org,resources=druidlookups/finalizers,verbs=update
@@ -48,14 +54,13 @@ type DruidLookupReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
-func (r *DruidLookupReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
+func (r *DruidLookupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logr := log.FromContext(ctx)
+	logr.Info("reconciling lookup", "namespace", req.Namespace, "name", req.Name)
 
-	reports := make(map[types.NamespacedName]Report)
-
-	lookupSpecsPerCluster, err := r.FindLookups(ctx, reports)
-	if err != nil {
-		return ctrl.Result{}, err
+	lookup := &druidv1alpha1.DruidLookup{}
+	if err := r.Get(ctx, req.NamespacedName, lookup); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	druidClients, nonFatalErrors, fatalErr := r.FindDruidCluster(ctx)
@@ -66,61 +71,53 @@ func (r *DruidLookupReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (
 		logr.Error(nonFatalError, "error occurred while constructing druid client")
 	}
 
-	for key, druidClient := range druidClients {
-		lookupSpecs := lookupSpecsPerCluster[key]
-		if err := druidClient.Reconcile(lookupSpecs, reports); err != nil {
-			logr.Error(
-				err,
-				"could not reconcile lookups for cluster",
-				"namespace", key.Namespace,
-				"cluster", key.Name,
-			)
-		}
-	}
+	shouldRequeue := false
 
-	for name, report := range reports {
-		if err := r.UpdateStatus(ctx, name, report); err != nil {
+	// examine if lookup is under deletion
+	if lookup.ObjectMeta.DeletionTimestamp.IsZero() {
+		// lookup is not under deletion
+		report := r.handleLookup(ctx, druidClients, lookup)
+		if err := r.UpdateStatus(ctx, req.NamespacedName, report); err != nil {
 			logr.Error(
 				err,
 				"an error occurred while updating lookup resource status",
-				"namespace", name.Namespace,
-				"name", name.Name,
+				"namespace", req.NamespacedName.Name,
+				"name", req.NamespacedName.Name,
 			)
 		}
-	}
 
-	for clusterKey, druidClient := range druidClients {
-		lookupStatuses, err := druidClient.GetStatus()
-		if err != nil {
+		shouldRequeue = report.ShouldResultInRequeue()
+	} else {
+		// lookup is under deletion
+		if err := r.handleDeletingLookup(ctx, druidClients, lookup); err != nil {
 			logr.Error(
 				err,
-				"couldn't fetch lookup statues",
-				"namespace", clusterKey.Namespace,
-				"cluster", clusterKey.Name,
+				"an error occurred while finalizing lookup resource",
+				"namespace", req.NamespacedName.Name,
+				"name", req.NamespacedName.Name,
 			)
-			continue
-		}
-
-		for lookupKey, lookupStatus := range lookupStatuses {
-			lookupSpec, found := lookupSpecsPerCluster[clusterKey][lookupKey]
-			if !found {
-				continue
-			}
-
-			name := lookupSpec.name
-
-			if err := r.UpdateStatus(ctx, name, &lookupStatus); err != nil {
-				logr.Error(
-					err,
-					"an error occurred while updating lookup resource status",
-					"namespace", name.Namespace,
-					"name", name.Name,
-				)
-			}
 		}
 	}
 
-	return ctrl.Result{RequeueAfter: time.Second * 10}, nil
+	statusShouldRequeue, err := r.handleLookupStatusPoll(ctx, druidClients, lookup)
+	if err != nil {
+		logr.Error(
+			err,
+			"an error occurred while finalizing lookup resource",
+			"namespace", req.NamespacedName.Name,
+			"name", req.NamespacedName.Name,
+		)
+	}
+
+	shouldRequeue = shouldRequeue || statusShouldRequeue
+
+	res := ctrl.Result{}
+
+	if shouldRequeue {
+		res.RequeueAfter = time.Second * 5
+	}
+
+	return res, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -130,65 +127,92 @@ func (r *DruidLookupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *DruidLookupReconciler) FindLookups(ctx context.Context, reports map[types.NamespacedName]Report) (LookupsPerCluster, error) {
-	lookups := &druidv1alpha1.DruidLookupList{}
-	if err := r.List(ctx, lookups); err != nil {
-		return nil, err
-	}
-
-	lookupSpecsPerCluster := make(LookupsPerCluster)
-	for _, lookup := range lookups.Items {
-		clusterKey := types.NamespacedName{
-			Namespace: lookup.Namespace,
-			Name:      lookup.Spec.DruidCluster.Name,
-		}
-		lookupKey := LookupKey{
-			Tier: lookup.Spec.Tier,
-			Id:   lookup.Spec.Id,
-		}
-		var lookupSpec interface{}
-		if err := json.Unmarshal([]byte(lookup.Spec.Spec), &lookupSpec); err != nil {
-			if _, ok := reports[lookup.GetNamespacedName()]; !ok {
-				reports[lookup.GetNamespacedName()] = Report(NewErrorReport(
-					fmt.Errorf(
-						"lookup resource %v in cluster %v/%v contains invalid spec, should be JSON",
-						lookup.Name,
-						clusterKey.Namespace,
-						clusterKey.Name,
-					),
-				))
-			}
-			continue
-		}
-
-		if lookupSpecsPerCluster[clusterKey] == nil {
-			lookupSpecsPerCluster[clusterKey] = make(map[LookupKey]Spec)
-		}
-		ls := lookupSpecsPerCluster[clusterKey]
-
-		if _, ok := ls[lookupKey]; ok {
-			if _, ok := reports[lookup.GetNamespacedName()]; !ok {
-				reports[lookup.GetNamespacedName()] = Report(NewErrorReport(
-					fmt.Errorf(
-						"resource %v specifies duplicate lookup %v/%v in cluster %v/%v",
-						lookup.Name,
-						lookupKey.Tier,
-						lookupKey.Id,
-						clusterKey.Namespace,
-						clusterKey.Name,
-					),
-				))
-			}
-			continue
-		}
-
-		ls[lookupKey] = Spec{
-			name: lookup.GetNamespacedName(),
-			spec: lookupSpec,
+func (r *DruidLookupReconciler) handleLookup(ctx context.Context, druidClients map[types.NamespacedName]*DruidClient, lookup *druidv1alpha1.DruidLookup) Report {
+	// ensure lookup has finalizer registered
+	if controllerutil.AddFinalizer(lookup, DruidLookupControllerFinalizer) {
+		if err := r.Update(ctx, lookup); err != nil {
+			return NewErrorReport(err)
 		}
 	}
 
-	return lookupSpecsPerCluster, nil
+	if lookup.ShouldDeleteLastAppliedLookup() {
+		druidClient, found := druidClients[types.NamespacedName{Namespace: lookup.Namespace, Name: lookup.Status.LastClusterAppliedIn.Name}]
+		if !found {
+			return NewErrorReport(errors.New(fmt.Sprintf("could not find any druid cluster %s/%s", lookup.Namespace, lookup.Status.LastClusterAppliedIn.Name)))
+		}
+
+		if err := druidClient.Delete(lookup.Status.LastTierAppliedIn, lookup.Status.LastIdAppliedAs); err != nil {
+			return NewErrorReport(err)
+		}
+	}
+
+	var currentSpec interface{}
+	if err := json.Unmarshal([]byte(lookup.Spec.Spec), &currentSpec); err != nil {
+		return NewErrorReport(err)
+	}
+
+	if lookup.Status.LastAppliedSpec != "" {
+		var oldSpec interface{}
+		if err := json.Unmarshal([]byte(lookup.Status.LastAppliedSpec), &oldSpec); err != nil {
+			return NewErrorReport(err)
+		}
+
+		if reflect.DeepEqual(oldSpec, currentSpec) {
+			// last applied spec and current spec is the same, no need to update
+			return NewSuccessReport(lookup.Spec.DruidCluster, lookup.Spec.Tier, lookup.Spec.Id, currentSpec)
+		}
+	}
+
+	druidClient, found := druidClients[types.NamespacedName{Namespace: lookup.Namespace, Name: lookup.Status.LastClusterAppliedIn.Name}]
+	if !found {
+		return NewErrorReport(errors.New(fmt.Sprintf("could not find any druid cluster %s/%s", lookup.Namespace, lookup.Status.LastClusterAppliedIn.Name)))
+	}
+	if err := druidClient.Upsert(lookup.Status.LastTierAppliedIn, lookup.Status.LastIdAppliedAs, currentSpec); err != nil {
+		return NewErrorReport(err)
+	}
+
+	return NewSuccessReport(lookup.Spec.DruidCluster, lookup.Spec.Tier, lookup.Spec.Id, currentSpec)
+}
+
+func (r *DruidLookupReconciler) handleDeletingLookup(ctx context.Context, druidClients map[types.NamespacedName]*DruidClient, lookup *druidv1alpha1.DruidLookup) error {
+	if !controllerutil.ContainsFinalizer(lookup, DruidLookupControllerFinalizer) {
+		// lookup does not contain our finalizer, therefore, we're already done with this object
+		return nil
+	}
+
+	// delete last applied lookup
+	druidClient, found := druidClients[types.NamespacedName{Namespace: lookup.Namespace, Name: lookup.Status.LastClusterAppliedIn.Name}]
+	if !found {
+		return errors.New(fmt.Sprintf("could not find any druid cluster %s/%s", lookup.Namespace, lookup.Status.LastClusterAppliedIn.Name))
+	}
+	if err := druidClient.Delete(lookup.Status.LastTierAppliedIn, lookup.Status.LastIdAppliedAs); err != nil {
+		return err
+	}
+
+	controllerutil.RemoveFinalizer(lookup, DruidLookupControllerFinalizer)
+	if err := r.Update(ctx, lookup); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *DruidLookupReconciler) handleLookupStatusPoll(ctx context.Context, druidClients map[types.NamespacedName]*DruidClient, lookup *druidv1alpha1.DruidLookup) (bool, error) {
+	druidClient, found := druidClients[types.NamespacedName{Namespace: lookup.Namespace, Name: lookup.Spec.DruidCluster.Name}]
+	if !found {
+		return true, errors.New(fmt.Sprintf("could not find any druid cluster %s/%s", lookup.Namespace, lookup.Spec.DruidCluster.Name))
+	}
+
+	status, err := druidClient.GetStatus(lookup.Spec.Tier, lookup.Spec.Id)
+	if err != nil {
+		return true, err
+	}
+
+	if err := r.UpdateStatus(ctx, lookup.GetNamespacedName(), &status); err != nil {
+		return true, err
+	}
+
+	return status.ShouldResultInRequeue(), nil
 }
 
 func (r *DruidLookupReconciler) FindDruidCluster(ctx context.Context) (map[types.NamespacedName]*DruidClient, []error, error) {
