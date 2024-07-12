@@ -66,8 +66,10 @@ spec:
             properties:
               druidCluster:
                 description: |-
-                  LocalObjectReference contains enough information to let you locate the
-                  referenced object inside the same namespace.
+                  The name of the druid cluster to apply the lookup in.
+
+
+                  Assumed to be within the same k8s namespace.
                 properties:
                   name:
                     description: |-
@@ -78,9 +80,18 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
               template:
+                description: |-
+                  Lookup template.
+
+
+                  Any stringified json value that is applicable in the `lookupExtractorFactory` field.
+
+
+                  Please see https://druid.apache.org/docs/latest/api-reference/lookups-api#update-lookup.
                 type: string
               tier:
                 default: __default
+                description: The tier to put the lookup in.
                 type: string
             required:
             - druidCluster
@@ -90,13 +101,22 @@ spec:
             description: DruidLookupStatus defines the observed state of DruidLookup
             properties:
               errorMessage:
+                description: If the last application attempt failed, this property
+                  contains the associated error message, otherwise unset.
                 type: string
               lastAppliedTemplate:
+                description: |-
+                  The template that the last successful application of this lookup applied.
+
+
+                  Used to determine if changes require old lookup to be deleted.
                 type: string
               lastClusterAppliedIn:
                 description: |-
-                  LocalObjectReference contains enough information to let you locate the
-                  referenced object inside the same namespace.
+                  The druid cluster that the last successful application of this lookup happened in.
+
+
+                  Used to determine if changes require old lookup to be deleted.
                 properties:
                   name:
                     description: |-
@@ -107,20 +127,40 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
               lastSuccessfulUpdateAt:
+                description: The time that the last successful application of this
+                  lookup happened at.
                 format: date-time
                 type: string
               lastTierAppliedIn:
+                description: |-
+                  The tier that the last successful application of this lookup happened in.
+
+
+                  Used to determine if changes require old lookup to be deleted.
                 type: string
               lastUpdateAttemptAt:
+                description: The time that the last attempt to apply this lookup happened
+                  at.
                 format: date-time
                 type: string
               lastUpdateAttemptSuccessful:
+                description: '`true` if the last application attempt were successful,
+                  `false` otherwise.'
                 type: boolean
               loaded:
+                description: '`true` if the druid cluster has reported that the lookup
+                  is loaded on all relevant nodes, otherwise false.'
                 type: boolean
               numberOfPendingNodes:
+                description: |-
+                  The number of nodes that the druid cluster reports to yet have loaded the lookup.
+
+
+                  (Exists in conjunction with `PendingNodes` to facilitate displaying this summary using kubebuilders print column feature.)
                 type: integer
               pendingNodes:
+                description: A list of the nodes that the druid cluster reports to
+                  yet have loaded the lookup.
                 items:
                   type: string
                 type: array

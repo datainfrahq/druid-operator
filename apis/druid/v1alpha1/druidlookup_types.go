@@ -31,46 +31,74 @@ import (
 type DruidLookupSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// The name of the druid cluster to apply the lookup in.
+	//
+	// Assumed to be within the same k8s namespace.
 	// +required
 	DruidCluster v1.LocalObjectReference `json:"druidCluster"`
 
+	// The tier to put the lookup in.
 	// +optional
 	// +kubebuilder:default:=__default
 	Tier string `json:"tier"`
 
+	// Lookup template.
+	//
+	// Any stringified json value that is applicable in the `lookupExtractorFactory` field.
+	//
+	// Please see https://druid.apache.org/docs/latest/api-reference/lookups-api#update-lookup.
 	// +required
 	Template string `json:"template"`
 }
 
 // DruidLookupStatus defines the observed state of DruidLookup
 type DruidLookupStatus struct {
+
+	// `true` if the druid cluster has reported that the lookup is loaded on all relevant nodes, otherwise false.
 	// +optional
 	Loaded *bool `json:"loaded,omitempty"`
 
+	// A list of the nodes that the druid cluster reports to yet have loaded the lookup.
 	// +optional
 	PendingNodes []string `json:"pendingNodes,omitempty"`
 
+	// The number of nodes that the druid cluster reports to yet have loaded the lookup.
+	//
+	// (Exists in conjunction with `PendingNodes` to facilitate displaying this summary using kubebuilders print column feature.)
 	// +optional
 	NumberOfPendingNodes *int `json:"numberOfPendingNodes,omitempty"`
 
+	// The druid cluster that the last successful application of this lookup happened in.
+	//
+	// Used to determine if changes require old lookup to be deleted.
 	// +optional
 	LastClusterAppliedIn v1.LocalObjectReference `json:"lastClusterAppliedIn"`
 
+	// The tier that the last successful application of this lookup happened in.
+	//
+	// Used to determine if changes require old lookup to be deleted.
 	// +optional
 	LastTierAppliedIn string `json:"lastTierAppliedIn"`
 
+	// The template that the last successful application of this lookup applied.
+	//
+	// Used to determine if changes require old lookup to be deleted.
 	// +optional
 	LastAppliedTemplate string `json:"lastAppliedTemplate,omitempty"`
 
+	// The time that the last successful application of this lookup happened at.
 	// +optional
 	LastSuccessfulUpdateAt *metav1.Time `json:"lastSuccessfulUpdateAt,omitempty"`
 
+	// The time that the last attempt to apply this lookup happened at.
 	// +optional
 	LastUpdateAttemptAt *metav1.Time `json:"lastUpdateAttemptAt,omitempty"`
 
+	// `true` if the last application attempt were successful, `false` otherwise.
 	// +optional
 	LastUpdateAttemptSuccessful bool `json:"lastUpdateAttemptSuccessful,omitempty"`
 
+	// If the last application attempt failed, this property contains the associated error message, otherwise unset.
 	// +optional
 	ErrorMessage string `json:"errorMessage,omitempty"`
 }
