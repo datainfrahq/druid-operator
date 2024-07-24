@@ -213,7 +213,7 @@ All the probes definitions are documented bellow:
     periodSeconds: 10
     successThreshold: 1
     timeoutSeconds: 5
-  startupProbe:
+  startUpProbe:
     failureThreshold: 20
     httpGet:
       path: /druid/historical/v1/readiness
