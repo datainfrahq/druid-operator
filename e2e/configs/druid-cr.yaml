@@ -13,6 +13,8 @@ spec:
     release: alpha
   podAnnotations:
     dummy: k8s_extn_needs_atleast_one_annotation
+  workloadAnnotations:
+    kubernetes.io/cluster-scoped-annotation: "cluster"
   readinessProbe:
     httpGet:
       path: /status/health
@@ -54,7 +56,7 @@ spec:
     -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager
   log4j.config: |-
     <?xml version="1.0" encoding="UTF-8" ?>
-    <Configuration status="TRACE">
+    <Configuration status="WARN">
         <Appenders>
             <Http name="Http" url="https://demo.parseable.com/api/v1/ingest" method="POST">
               <Property name="Authorization" value="Basic YWRtaW46YWRtaW4=" />
@@ -66,7 +68,7 @@ spec:
         </Appenders>
         <Loggers>
             <Root level="info">
-                <AppenderRef ref="Http"/>
+                <AppenderRef ref="Console"/>
             </Root>
         </Loggers>
     </Configuration>
@@ -129,6 +131,8 @@ spec:
       # imagePullSecrets:
       # - name: tutu
       priorityClassName: system-cluster-critical 
+      workloadAnnotations:
+        kubernetes.io/node-scoped-annotation: "broker"
       druid.port: 8088
       services:
         - spec:

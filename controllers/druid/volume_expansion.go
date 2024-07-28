@@ -77,7 +77,7 @@ func isVolumeExpansionEnabled(ctx context.Context, sdk client.Client, m *v1alpha
 // scalePVCForSts shall expand the StatefulSet's VolumeClaimTemplates size as well as N no of pvc supported by the sts.
 func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.DruidNodeSpec, nodeSpecUniqueStr string, drd *v1alpha1.Druid, emitEvent EventEmitter) error {
 
-	getSTSList, err := readers.List(ctx, sdk, drd, makeLabelsForDruid(drd.Name), emitEvent, func() objectList { return &appsv1.StatefulSetList{} }, func(listObj runtime.Object) []object {
+	getSTSList, err := readers.List(ctx, sdk, drd, makeLabelsForDruid(drd), emitEvent, func() objectList { return &appsv1.StatefulSetList{} }, func(listObj runtime.Object) []object {
 		items := listObj.(*appsv1.StatefulSetList).Items
 		result := make([]object, len(items))
 		for i := 0; i < len(items); i++ {
@@ -106,7 +106,7 @@ func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.D
 	}
 
 	pvcLabels := map[string]string{
-		"component": nodeSpec.NodeType,
+		"nodeSpecUniqueStr": nodeSpecUniqueStr,
 	}
 
 	pvcList, err := readers.List(ctx, sdk, drd, pvcLabels, emitEvent, func() objectList { return &v1.PersistentVolumeClaimList{} }, func(listObj runtime.Object) []object {

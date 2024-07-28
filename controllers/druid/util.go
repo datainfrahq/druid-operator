@@ -1,6 +1,8 @@
 package druid
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"reflect"
 	"strconv"
@@ -77,6 +79,23 @@ func Str2Int(s string) int {
 		return 1
 	}
 	return i
+}
+
+func IsEqualJson(s1, s2 string) (bool, error) {
+	var o1 interface{}
+	var o2 interface{}
+
+	var err error
+	err = json.Unmarshal([]byte(s1), &o1)
+	if err != nil {
+		return false, fmt.Errorf("error mashalling string 1 :: %s", err.Error())
+	}
+	err = json.Unmarshal([]byte(s2), &o2)
+	if err != nil {
+		return false, fmt.Errorf("error mashalling string 2 :: %s", err.Error())
+	}
+
+	return reflect.DeepEqual(o1, o2), nil
 }
 
 // to find the time difference between two epoch times

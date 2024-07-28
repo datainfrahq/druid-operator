@@ -173,6 +173,56 @@ Kubernetes core/v1.ResourceRequirements
 </table>
 </div>
 </div>
+<h3 id="druid.apache.org/v1alpha1.Auth">Auth
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#druid.apache.org/v1alpha1.DruidIngestionSpec">DruidIngestionSpec</a>)
+</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>type</code><br>
+<em>
+<a href="#druid.apache.org/v1alpha1.AuthType">
+AuthType
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>secretRef</code><br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#secretreference-v1-core">
+Kubernetes core/v1.SecretReference
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h3 id="druid.apache.org/v1alpha1.AuthType">AuthType
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#druid.apache.org/v1alpha1.Auth">Auth</a>)
+</p>
 <h3 id="druid.apache.org/v1alpha1.DeepStorageSpec">DeepStorageSpec
 </h3>
 <p>
@@ -555,6 +605,19 @@ map[string]string
 <td>
 <em>(Optional)</em>
 <p>PodAnnotations Custom annotations to be populated in <code>Druid</code> pods.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>workloadAnnotations</code><br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>WorkloadAnnotations annotations to be populated in StatefulSet or Deployment spec.
+if the same key is specified at both the DruidNodeSpec level and DruidSpec level, the DruidNodeSpec WorkloadAnnotations will take precedence.</p>
 </td>
 </tr>
 <tr>
@@ -979,6 +1042,277 @@ Important: Run &ldquo;make&rdquo; to regenerate code after modifying this file</
 <code>persistentVolumeClaims</code><br>
 <em>
 []string
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h3 id="druid.apache.org/v1alpha1.DruidIngestion">DruidIngestion
+</h3>
+<p>Ingestion is the Schema for the Ingestion API</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metadata</code><br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br>
+<em>
+<a href="#druid.apache.org/v1alpha1.DruidIngestionSpec">
+DruidIngestionSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>suspend</code><br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>druidCluster</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>ingestion</code><br>
+<em>
+<a href="#druid.apache.org/v1alpha1.IngestionSpec">
+IngestionSpec
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>auth</code><br>
+<em>
+<a href="#druid.apache.org/v1alpha1.Auth">
+Auth
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br>
+<em>
+<a href="#druid.apache.org/v1alpha1.DruidIngestionStatus">
+DruidIngestionStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h3 id="druid.apache.org/v1alpha1.DruidIngestionMethod">DruidIngestionMethod
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#druid.apache.org/v1alpha1.IngestionSpec">IngestionSpec</a>)
+</p>
+<h3 id="druid.apache.org/v1alpha1.DruidIngestionSpec">DruidIngestionSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#druid.apache.org/v1alpha1.DruidIngestion">DruidIngestion</a>)
+</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>suspend</code><br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>druidCluster</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>ingestion</code><br>
+<em>
+<a href="#druid.apache.org/v1alpha1.IngestionSpec">
+IngestionSpec
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>auth</code><br>
+<em>
+<a href="#druid.apache.org/v1alpha1.Auth">
+Auth
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h3 id="druid.apache.org/v1alpha1.DruidIngestionStatus">DruidIngestionStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#druid.apache.org/v1alpha1.DruidIngestion">DruidIngestion</a>)
+</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>taskId</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>type</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#conditionstatus-v1-core">
+Kubernetes core/v1.ConditionStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>reason</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>message</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastUpdateTime</code><br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>currentIngestionSpec.json</code><br>
+<em>
+string
 </em>
 </td>
 <td>
@@ -1468,6 +1802,18 @@ map[string]string
 <td>
 <em>(Optional)</em>
 <p>IngressAnnotations <code>Ingress</code> annotations to be populated in ingress spec.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>workloadAnnotations</code><br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>WorkloadAnnotations annotations to be populated in StatefulSet or Deployment spec.</p>
 </td>
 </tr>
 <tr>
@@ -1982,6 +2328,19 @@ map[string]string
 </tr>
 <tr>
 <td>
+<code>workloadAnnotations</code><br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>WorkloadAnnotations annotations to be populated in StatefulSet or Deployment spec.
+if the same key is specified at both the DruidNodeSpec level and DruidSpec level, the DruidNodeSpec WorkloadAnnotations will take precedence.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>podManagementPolicy</code><br>
 <em>
 <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#podmanagementpolicytype-v1-apps">
@@ -2265,6 +2624,52 @@ string
 <td>
 <em>(Optional)</em>
 <p>CoreSite Contents of <code>core-site.xml</code>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h3 id="druid.apache.org/v1alpha1.IngestionSpec">IngestionSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#druid.apache.org/v1alpha1.DruidIngestionSpec">DruidIngestionSpec</a>)
+</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>type</code><br>
+<em>
+<a href="#druid.apache.org/v1alpha1.DruidIngestionMethod">
+DruidIngestionMethod
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+</table>
 </td>
 </tr>
 </tbody>

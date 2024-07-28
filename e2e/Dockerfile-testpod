@@ -4,3 +4,4 @@ RUN  apk add --update-cache \
     && rm -rf /var/cache/apk/*
 
 ADD e2e/wikipedia-test.sh .
+ADD e2e/druid-ingestion-test.sh .

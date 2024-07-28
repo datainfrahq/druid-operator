@@ -58,7 +58,7 @@ kind: ## Bootstrap Kind Locally
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) crd:generateEmbeddedObjectMeta=true rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-	$(CONTROLLER_GEN) crd:generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=chart/templates/crds/
+	$(CONTROLLER_GEN) crd:generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=chart/crds/
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -92,7 +92,12 @@ docker-push-local-test: ## Push docker image with the manager to kind registry.
 .PHONY: deploy-testjob
 deploy-testjob: ## Run a wikipedia test pod
 	kubectl create job wiki-test --image=${IMG_KIND}:${TEST_IMG_TAG}  -- sh /wikipedia-test.sh
-	bash e2e/monitor-task.sh
+	JOB_ID="wiki-test" bash e2e/monitor-task.sh
+
+.PHONY: deploy-testingestionjob
+deploy-testingestionjob: ## wait for the druidIngestion to complete and then verify dataset
+	kubectl create job ingestion-test --image=${IMG_KIND}:${TEST_IMG_TAG}  -- sh /druid-ingestion-test.sh ${TASK_ID}
+	JOB_ID="ingestion-test" bash e2e/monitor-task.sh
 
 .PHONY: helm-install-druid-operator
 helm-install-druid-operator: ## Helm install to deploy the druid operator
@@ -190,7 +195,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 ##@ Helm
 .PHONY: helm-generate
 helm-generate: ## Generate the Helm chart directory
-	$(KUSTOMIZE) build config/crd > chart/templates/crds/druid.apache.org_druids.yaml
+	$(KUSTOMIZE) build config/crd > chart/crds/druid.apache.org_druids.yaml
 
 .PHONY: helm-lint
 helm-lint: ## Lint Helm chart.
@@ -221,7 +226,7 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v3.8.7
-CONTROLLER_TOOLS_VERSION ?= v0.11.2
+CONTROLLER_TOOLS_VERSION ?= v0.14.0
 GEN_CRD_API_REF_VERSION ?= v0.3.0
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"

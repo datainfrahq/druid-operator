@@ -180,6 +180,11 @@ type DruidSpec struct {
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
 
+	// WorkloadAnnotations annotations to be populated in StatefulSet or Deployment spec.
+	// if the same key is specified at both the DruidNodeSpec level and DruidSpec level, the DruidNodeSpec WorkloadAnnotations will take precedence.
+	// +optional
+	WorkloadAnnotations map[string]string `json:"workloadAnnotations,omitempty"`
+
 	// PodManagementPolicy
 	// +optional
 	// +kubebuilder:default:="Parallel"
@@ -433,6 +438,10 @@ type DruidNodeSpec struct {
 	// +optional
 	IngressAnnotations map[string]string `json:"ingressAnnotations,omitempty"`
 
+	// WorkloadAnnotations annotations to be populated in StatefulSet or Deployment spec.
+	// +optional
+	WorkloadAnnotations map[string]string `json:"workloadAnnotations,omitempty"`
+
 	// Ingress Kubernetes Native `Ingress` specification.
 	// +optional
 	Ingress *networkingv1.IngressSpec `json:"ingress,omitempty"`
@@ -468,6 +477,10 @@ type DruidNodeSpec struct {
 	// Operator deploys the sidecar container based on these properties.
 	// +optional
 	AdditionalContainer []AdditionalContainer `json:"additionalContainer,omitempty"`
+
+	// ServiceAccountName Kubernetes native `serviceAccountName` specification.
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 
 // ZookeeperSpec IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.

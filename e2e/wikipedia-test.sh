@@ -21,6 +21,7 @@ done
 if [ $STATUS == "SUCCESS" ]
 then 
     echo "TASK $task_id COMPLETED SUCCESSFULLY"
+    sleep 60 # need time for the segments to become queryable
 else 
     echo "TASK $task_id  FAILED !!!!"
 fi
