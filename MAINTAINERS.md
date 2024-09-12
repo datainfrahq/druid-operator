@@ -1,6 +1,7 @@
 # Maintainers for the druid operator project.
 
 - [Adheip Singh](https://github.com/AdheipSingh)
+- [TessaIO](https://github.com/TessaIO)
 
 # Collaborators for the druid operator project
 
