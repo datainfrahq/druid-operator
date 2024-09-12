@@ -1268,17 +1268,16 @@ func makeLabelsForDruid(druid *v1alpha1.Druid) map[string]string {
 }
 
 // makeLabelsForDruid returns the labels for selecting the resources
-// belonging to the given druid CR name.
+// belonging to the given druid CR name. adds labels from both node &
+// cluster specs. node spec labels will take precedence over clusters labels
 func makeLabelsForNodeSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, clusterName, nodeSpecUniqueStr string) map[string]string {
 	var labels = map[string]string{}
 
-	// if both labels are present at both cluster and node spec
-	// labels should be merged.
-	if nodeSpec.PodLabels != nil && m.Spec.PodLabels != nil {
-		labels = nodeSpec.PodLabels
+	for k, v := range m.Spec.PodLabels {
+		labels[k] = v
 	}
 
-	for k, v := range m.Spec.PodLabels {
+	for k, v := range nodeSpec.PodLabels {
 		labels[k] = v
 	}
 
