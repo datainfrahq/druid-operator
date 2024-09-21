@@ -2,6 +2,9 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+global:
+  createClusterRole: true
+
 env:
   DENY_LIST: "default,kube-system" # Comma-separated list of namespaces to ignore
   RECONCILE_WAIT: "10s" # Reconciliation delay
@@ -21,7 +24,6 @@ kube_rbac_proxy:
     repository: gcr.io/kubebuilder/kube-rbac-proxy
     pullPolicy: IfNotPresent
     tag: "v0.13.1"
-
 
 imagePullSecrets: []
 nameOverride: ""
