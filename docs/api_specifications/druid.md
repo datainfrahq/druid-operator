@@ -1322,6 +1322,315 @@ string
 </table>
 </div>
 </div>
+<h3 id="druid.apache.org/v1alpha1.DruidLookup">DruidLookup
+</h3>
+<p>DruidLookup is the Schema for the druidlookups API</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>metadata</code><br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code><br>
+<em>
+<a href="#druid.apache.org/v1alpha1.DruidLookupSpec">
+DruidLookupSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+<tr>
+<td>
+<code>druidCluster</code><br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#localobjectreference-v1-core">
+Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>The name of the druid cluster to apply the lookup in.</p>
+<p>Assumed to be within the same k8s namespace.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tier</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The tier to put the lookup in.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>template</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Lookup template.</p>
+<p>Any stringified json value that is applicable in the <code>lookupExtractorFactory</code> field.</p>
+<p>Please see <a href="https://druid.apache.org/docs/latest/api-reference/lookups-api#update-lookup">https://druid.apache.org/docs/latest/api-reference/lookups-api#update-lookup</a>.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code><br>
+<em>
+<a href="#druid.apache.org/v1alpha1.DruidLookupStatus">
+DruidLookupStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h3 id="druid.apache.org/v1alpha1.DruidLookupSpec">DruidLookupSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#druid.apache.org/v1alpha1.DruidLookup">DruidLookup</a>)
+</p>
+<p>DruidLookupSpec defines the desired state of DruidLookup</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>druidCluster</code><br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#localobjectreference-v1-core">
+Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<p>The name of the druid cluster to apply the lookup in.</p>
+<p>Assumed to be within the same k8s namespace.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>tier</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The tier to put the lookup in.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>template</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Lookup template.</p>
+<p>Any stringified json value that is applicable in the <code>lookupExtractorFactory</code> field.</p>
+<p>Please see <a href="https://druid.apache.org/docs/latest/api-reference/lookups-api#update-lookup">https://druid.apache.org/docs/latest/api-reference/lookups-api#update-lookup</a>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h3 id="druid.apache.org/v1alpha1.DruidLookupStatus">DruidLookupStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#druid.apache.org/v1alpha1.DruidLookup">DruidLookup</a>)
+</p>
+<p>DruidLookupStatus defines the observed state of DruidLookup</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>loaded</code><br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p><code>true</code> if the druid cluster has reported that the lookup is loaded on all relevant nodes, otherwise false.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>pendingNodes</code><br>
+<em>
+[]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>A list of the nodes that the druid cluster reports to yet have loaded the lookup.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>numberOfPendingNodes</code><br>
+<em>
+int
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The number of nodes that the druid cluster reports to yet have loaded the lookup.</p>
+<p>(Exists in conjunction with <code>PendingNodes</code> to facilitate displaying this summary using kubebuilders print column feature.)</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastClusterAppliedIn</code><br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#localobjectreference-v1-core">
+Kubernetes core/v1.LocalObjectReference
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The druid cluster that the last successful application of this lookup happened in.</p>
+<p>Used to determine if changes require old lookup to be deleted.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastTierAppliedIn</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The tier that the last successful application of this lookup happened in.</p>
+<p>Used to determine if changes require old lookup to be deleted.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastAppliedTemplate</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The template that the last successful application of this lookup applied.</p>
+<p>Used to determine if changes require old lookup to be deleted.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastSuccessfulUpdateAt</code><br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The time that the last successful application of this lookup happened at.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastUpdateAttemptAt</code><br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The time that the last attempt to apply this lookup happened at.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>lastUpdateAttemptSuccessful</code><br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p><code>true</code> if the last application attempt were successful, <code>false</code> otherwise.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>errorMessage</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If the last application attempt failed, this property contains the associated error message, otherwise unset.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <h3 id="druid.apache.org/v1alpha1.DruidNodeConditionType">DruidNodeConditionType
 (<code>string</code> alias)</h3>
 <p>
@@ -1940,6 +2249,18 @@ Kubernetes autoscaling/v2.HorizontalPodAutoscalerSpec
 <td>
 <em>(Optional)</em>
 <p>Operator deploys the sidecar container based on these properties.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>serviceAccountName</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ServiceAccountName Kubernetes native <code>serviceAccountName</code> specification.</p>
 </td>
 </tr>
 </tbody>

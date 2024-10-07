@@ -64,6 +64,11 @@ sleep 30 # wait for the manager to submit the ingestion task
 taskId=`kubectl get druidingestion -n druid wikipedia-ingestion --template={{.status.taskId}}`
 make deploy-testingestionjob TASK_ID=$taskId
 
+# Running a test DruidLookup resource and wait for the task to be submitted
+kubectl apply -f e2e/configs/druid-lookup-cr.yaml -n ${NAMESPACE}
+sleep 5 # wait for the manager to create the lookup
+make deploy-testlookupjob # launch the monitoring job
+
 # Delete old druid
 kubectl delete -f e2e/configs/druid-cr.yaml -n ${NAMESPACE}
 for d in $(kubectl get pods -n ${NAMESPACE} -l app=druid -l druid_cr=tiny-cluster -o name)

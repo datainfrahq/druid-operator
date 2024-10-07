@@ -1,0 +1,172 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: druidlookups.druid.apache.org
+spec:
+  group: druid.apache.org
+  names:
+    kind: DruidLookup
+    listKind: DruidLookupList
+    plural: druidlookups
+    singular: druidlookup
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.druidCluster.name
+      name: Target cluster
+      type: string
+    - jsonPath: .spec.tier
+      name: Target tier
+      type: string
+    - jsonPath: .status.lastUpdateAttemptSuccessful
+      name: Ok
+      type: boolean
+    - jsonPath: .status.loaded
+      name: Loaded
+      priority: 1
+      type: boolean
+    - jsonPath: .status.numberOfPendingNodes
+      name: Pending Nodes
+      priority: 10
+      type: integer
+    - jsonPath: .status.lastSuccessfulUpdateAt
+      name: Updated At
+      priority: 5
+      type: date
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: DruidLookup is the Schema for the druidlookups API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DruidLookupSpec defines the desired state of DruidLookup
+            properties:
+              druidCluster:
+                description: |-
+                  The name of the druid cluster to apply the lookup in.
+
+
+                  Assumed to be within the same k8s namespace.
+                properties:
+                  name:
+                    description: |-
+                      Name of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              template:
+                description: |-
+                  Lookup template.
+
+
+                  Any stringified json value that is applicable in the `lookupExtractorFactory` field.
+
+
+                  Please see https://druid.apache.org/docs/latest/api-reference/lookups-api#update-lookup.
+                type: string
+              tier:
+                default: __default
+                description: The tier to put the lookup in.
+                type: string
+            required:
+            - druidCluster
+            - template
+            type: object
+          status:
+            description: DruidLookupStatus defines the observed state of DruidLookup
+            properties:
+              errorMessage:
+                description: If the last application attempt failed, this property
+                  contains the associated error message, otherwise unset.
+                type: string
+              lastAppliedTemplate:
+                description: |-
+                  The template that the last successful application of this lookup applied.
+
+
+                  Used to determine if changes require old lookup to be deleted.
+                type: string
+              lastClusterAppliedIn:
+                description: |-
+                  The druid cluster that the last successful application of this lookup happened in.
+
+
+                  Used to determine if changes require old lookup to be deleted.
+                properties:
+                  name:
+                    description: |-
+                      Name of the referent.
+                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              lastSuccessfulUpdateAt:
+                description: The time that the last successful application of this
+                  lookup happened at.
+                format: date-time
+                type: string
+              lastTierAppliedIn:
+                description: |-
+                  The tier that the last successful application of this lookup happened in.
+
+
+                  Used to determine if changes require old lookup to be deleted.
+                type: string
+              lastUpdateAttemptAt:
+                description: The time that the last attempt to apply this lookup happened
+                  at.
+                format: date-time
+                type: string
+              lastUpdateAttemptSuccessful:
+                description: '`true` if the last application attempt were successful,
+                  `false` otherwise.'
+                type: boolean
+              loaded:
+                description: '`true` if the druid cluster has reported that the lookup
+                  is loaded on all relevant nodes, otherwise false.'
+                type: boolean
+              numberOfPendingNodes:
+                description: |-
+                  The number of nodes that the druid cluster reports to yet have loaded the lookup.
+
+
+                  (Exists in conjunction with `PendingNodes` to facilitate displaying this summary using kubebuilders print column feature.)
+                type: integer
+              pendingNodes:
+                description: A list of the nodes that the druid cluster reports to
+                  yet have loaded the lookup.
+                items:
+                  type: string
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
