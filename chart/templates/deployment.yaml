@@ -76,6 +76,13 @@ spec:
             - name: {{ $key }}
               value: {{ tpl $value $ | quote }}
             {{- end }}
+            {{- range $entry := .Values.envFromSecrets }}
+            - name: "{{ $entry.name | quote }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $entry.secretKeyRefName | quote }}
+                  key: {{ $entry.secretKeyRefKey  | quote }}
+            {{- end }}
             - name: POD_NAME
               valueFrom:
                 fieldRef:
