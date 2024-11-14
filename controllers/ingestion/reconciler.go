@@ -125,13 +125,16 @@ func (r *DruidIngestionReconciler) CreateOrUpdate(
 	// check if task id does not exist in status
 	if di.Status.TaskId == "" && di.Status.CurrentIngestionSpec == "" {
 		// if does not exist create task
-
 		postHttp := internalhttp.NewHTTPClient(
 			&http.Client{},
 			&auth,
 		)
 
-		respCreateTask, err := postHttp.Do(http.MethodPost, getPath(di.Spec.Ingestion.Type, svcName, http.MethodPost, "", false), []byte(di.Spec.Ingestion.Spec))
+		respCreateTask, err := postHttp.Do(
+			http.MethodPost,
+			getPath(di.Spec.Ingestion.Type, svcName, http.MethodPost, "", false),
+			[]byte(di.Spec.Ingestion.Spec),
+		)
 
 		if err != nil {
 			return controllerutil.OperationResultNone, err
@@ -203,7 +206,11 @@ func (r *DruidIngestionReconciler) CreateOrUpdate(
 				&auth,
 			)
 
-			respUpdateSpec, err := postHttp.Do(http.MethodPost, getPath(di.Spec.Ingestion.Type, svcName, http.MethodPost, "", false), []byte(di.Spec.Ingestion.Spec))
+			respUpdateSpec, err := postHttp.Do(
+				http.MethodPost,
+				getPath(di.Spec.Ingestion.Type, svcName, http.MethodPost, "", false),
+				[]byte(di.Spec.Ingestion.Spec),
+			)
 			if err != nil {
 				return controllerutil.OperationResultNone, err
 			}
@@ -290,6 +297,13 @@ func getPath(
 		}
 	case v1alpha1.HadoopIndexHadoop:
 	case v1alpha1.Kafka:
+		if httpMethod == http.MethodGet {
+			return makeSupervisorGetTaskPath(svcName, taskId)
+		} else if httpMethod == http.MethodPost && !shutDownTask {
+			return makeSupervisorCreateUpdateTaskPath(svcName)
+		} else if shutDownTask {
+			return makeSupervisorShutDownTaskPath(svcName, taskId)
+		}
 	case v1alpha1.Kinesis:
 	case v1alpha1.QueryControllerSQL:
 	default:
@@ -312,8 +326,21 @@ func makeRouterGetTaskPath(svcName, taskId string) string {
 	return svcName + "/druid/indexer/v1/task/" + taskId
 }
 
+func makeSupervisorCreateUpdateTaskPath(svcName string) string {
+	return svcName + "/druid/indexer/v1/supervisor"
+}
+
+func makeSupervisorShutDownTaskPath(svcName, taskId string) string {
+	return svcName + "/druid/indexer/v1/supervisor/" + taskId + "/shutdown"
+}
+
+func makeSupervisorGetTaskPath(svcName, taskId string) string {
+	return svcName + "/druid/indexer/v1/supervisor/" + taskId
+}
+
 type taskHolder struct {
-	Task string `json:"task"`
+	Task string `json:"task"` // tasks
+	ID   string `json:"id"`   // supervisor
 }
 
 func getTaskIdFromResponse(resp string) (string, error) {
@@ -321,7 +348,17 @@ func getTaskIdFromResponse(resp string) (string, error) {
 	if err := json.Unmarshal([]byte(resp), &task); err != nil {
 		return "", err
 	}
-	return task.Task, nil
+
+	// check both fields and return the appropriate value
+	// tasks use different field names than supervisors
+	if task.Task != "" {
+		return task.Task, nil
+	}
+	if task.ID != "" {
+		return task.ID, nil
+	}
+
+	return "", errors.New("task id not found")
 }
 
 func (r *DruidIngestionReconciler) getRouterSvcUrl(namespace, druidClusterName string) (string, error) {
