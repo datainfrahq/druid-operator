@@ -178,6 +178,13 @@ rules:
     - get
     - list
     - watch
+- apiGroups:
+    - ""
+  resources:
+    - secrets
+  verbs:
+    - get
+    - list
 {{- end }}
 {{- end }}
 
