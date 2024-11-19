@@ -3,8 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.2
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.14.0
   name: druidingestions.druid.apache.org
 spec:
   group: druid.apache.org
@@ -28,14 +27,19 @@ spec:
         description: Ingestion is the Schema for the Ingestion API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -44,8 +48,9 @@ spec:
               auth:
                 properties:
                   secretRef:
-                    description: SecretReference represents a Secret Reference. It
-                      has enough information to retrieve secret in any namespace
+                    description: |-
+                      SecretReference represents a Secret Reference. It has enough information to retrieve secret
+                      in any namespace
                     properties:
                       name:
                         description: name is unique within a namespace to reference
@@ -67,6 +72,110 @@ spec:
                 type: string
               ingestion:
                 properties:
+                  compaction:
+                    properties:
+                      dimensionSpec:
+                        properties:
+                          dimension:
+                            items:
+                              type: string
+                            type: array
+                          dimensionExclusion:
+                            items:
+                              type: string
+                            type: array
+                        required:
+                        - dimension
+                        - dimensionExclusion
+                        type: object
+                      granularitySpec:
+                        description: |-
+                          Takes query granularity values
+                          https://druid.apache.org/docs/latest/querying/granularities/
+                        properties:
+                          queryGranularity:
+                            type: string
+                          rollup:
+                            type: boolean
+                          segmentGranularity:
+                            type: string
+                        required:
+                        - segmentGranularity
+                        type: object
+                      ioConfig:
+                        properties:
+                          allowNonAlignedInterval:
+                            type: boolean
+                          dropExisting:
+                            type: boolean
+                          inputSpec:
+                            properties:
+                              interval:
+                                type: string
+                              segments:
+                                type: string
+                              type:
+                                type: string
+                            required:
+                            - type
+                            type: object
+                          type:
+                            type: string
+                        required:
+                        - allowNonAlignedInterval
+                        - dropExisting
+                        - inputSpec
+                        - type
+                        type: object
+                      metricsSpec:
+                        type: string
+                      skipOffsetFromLatest:
+                        type: string
+                      taskContext:
+                        type: string
+                      taskPriority:
+                        type: string
+                      transformSpec:
+                        description: https://druid.apache.org/docs/latest/data-management/manual-compaction/#compaction-transform-spec
+                        properties:
+                          filter:
+                            type: string
+                        required:
+                        - filter
+                        type: object
+                      tuningConfig:
+                        properties:
+                          partitionsSpec:
+                            properties:
+                              type:
+                                type: string
+                            required:
+                            - type
+                            type: object
+                          type:
+                            type: string
+                        required:
+                        - partitionsSpec
+                        - type
+                        type: object
+                    required:
+                    - skipOffsetFromLatest
+                    type: object
+                  rules:
+                    items:
+                      properties:
+                        includeFuture:
+                          type: boolean
+                        period:
+                          type: string
+                        type:
+                          type: string
+                      required:
+                      - includeFuture
+                      - period
+                      - type
+                      type: object
+                    type: array
                   spec:
                     type: string
                   type:
@@ -82,6 +191,95 @@ spec:
             type: object
           status:
             properties:
+              compaction:
+                properties:
+                  dimensionSpec:
+                    properties:
+                      dimension:
+                        items:
+                          type: string
+                        type: array
+                      dimensionExclusion:
+                        items:
+                          type: string
+                        type: array
+                    required:
+                    - dimension
+                    - dimensionExclusion
+                    type: object
+                  granularitySpec:
+                    description: |-
+                      Takes query granularity values
+                      https://druid.apache.org/docs/latest/querying/granularities/
+                    properties:
+                      queryGranularity:
+                        type: string
+                      rollup:
+                        type: boolean
+                      segmentGranularity:
+                        type: string
+                    required:
+                    - segmentGranularity
+                    type: object
+                  ioConfig:
+                    properties:
+                      allowNonAlignedInterval:
+                        type: boolean
+                      dropExisting:
+                        type: boolean
+                      inputSpec:
+                        properties:
+                          interval:
+                            type: string
+                          segments:
+                            type: string
+                          type:
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      type:
+                        type: string
+                    required:
+                    - allowNonAlignedInterval
+                    - dropExisting
+                    - inputSpec
+                    - type
+                    type: object
+                  metricsSpec:
+                    type: string
+                  skipOffsetFromLatest:
+                    type: string
+                  taskContext:
+                    type: string
+                  taskPriority:
+                    type: string
+                  transformSpec:
+                    description: https://druid.apache.org/docs/latest/data-management/manual-compaction/#compaction-transform-spec
+                    properties:
+                      filter:
+                        type: string
+                    required:
+                    - filter
+                    type: object
+                  tuningConfig:
+                    properties:
+                      partitionsSpec:
+                        properties:
+                          type:
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      type:
+                        type: string
+                    required:
+                    - partitionsSpec
+                    - type
+                    type: object
+                required:
+                - skipOffsetFromLatest
+                type: object
               currentIngestionSpec.json:
                 type: string
               lastUpdateTime:
@@ -91,6 +289,21 @@ spec:
                 type: string
               reason:
                 type: string
+              rules:
+                items:
+                  properties:
+                    includeFuture:
+                      type: boolean
+                    period:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - includeFuture
+                  - period
+                  - type
+                  type: object
+                type: array
               status:
                 type: string
               taskId:

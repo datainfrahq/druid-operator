@@ -47,6 +47,10 @@ type IngestionSpec struct {
 	Type DruidIngestionMethod `json:"type"`
 	// +required
 	Spec string `json:"spec,omitempty"`
+	// +optional
+	Compaction Compaction `json:"compaction,omitempty"`
+	// +optional
+	Rules []Rule `json:"rules,omitempty"`
 }
 
 type DruidIngestionStatus struct {
@@ -57,6 +61,8 @@ type DruidIngestionStatus struct {
 	Message              string             `json:"message,omitempty"`
 	LastUpdateTime       metav1.Time        `json:"lastUpdateTime,omitempty"`
 	CurrentIngestionSpec string             `json:"currentIngestionSpec.json"`
+	CurrentCompaction    Compaction         `json:"compaction,omitempty"`
+	CurrentRules         []Rule             `json:"rules,omitempty"`
 }
 
 type AuthType string
@@ -70,6 +76,74 @@ type Auth struct {
 	Type AuthType `json:"type"`
 	// +required
 	SecretRef v1.SecretReference `json:"secretRef"`
+}
+
+type InputSpec struct {
+	InputType string `json:"type"`
+	Interval  string `json:"interval,omitempty"`
+	Segments  string `json:"segments,omitempty"`
+}
+
+type IoConfig struct {
+	IoType                  string    `json:"type"`
+	InputSpec               InputSpec `json:"inputSpec"`
+	DropExisting            bool      `json:"dropExisting"`
+	AllowNonAlignedInterval bool      `json:"allowNonAlignedInterval"`
+}
+
+type DimensionSpec struct {
+	Dimension           []string `json:"dimension"`
+	DimensionExclusions []string `json:"dimensionExclusion"`
+}
+
+// https://druid.apache.org/docs/latest/data-management/manual-compaction/#compaction-transform-spec
+type TransformSpec struct {
+	Filter string `json:"filter"`
+}
+
+// Takes query granularity values
+// https://druid.apache.org/docs/latest/querying/granularities/
+type GranularitySpec struct {
+	SegmentGranularity string `json:"segmentGranularity"`
+	// +optional
+	QueryGranularity string `json:"queryGranularity"`
+	// +optional
+	Rollup bool `json:"rollup"`
+}
+
+type PartitionsSpec struct {
+	Type string `json:"type"`
+}
+
+type TuningConfig struct {
+	Type           string         `json:"type"`
+	PartitionsSpec PartitionsSpec `json:"partitionsSpec"`
+}
+
+type Compaction struct {
+	SkipOffsetFromLatest string `json:"skipOffsetFromLatest"`
+	// +optional
+	IoConfig IoConfig `json:"ioConfig"`
+	// +optional
+	DimensionSpec DimensionSpec `json:"dimensionSpec"`
+	// +optional
+	TransformSpec TransformSpec `json:"transformSpec"`
+	// +optional
+	MetricsSpec string `json:"metricsSpec"`
+	// +optional
+	TuningConfig TuningConfig `json:"tuningConfig"`
+	// +optional
+	TaskPriority string `json:"taskPriority"`
+	// +optional
+	TaskContext string `json:"taskContext"`
+	// +optional
+	GranularitySpec GranularitySpec `json:"granularitySpec"`
+}
+
+type Rule struct {
+	Type          string `json:"type"`
+	Period        string `json:"period"`
+	IncludeFuture bool   `json:"includeFuture"`
 }
 
 // +kubebuilder:object:root=true
