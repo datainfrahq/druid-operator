@@ -72,111 +72,26 @@ spec:
                 type: string
               ingestion:
                 properties:
-                  compaction:
-                    properties:
-                      dimensionSpec:
-                        properties:
-                          dimension:
-                            items:
-                              type: string
-                            type: array
-                          dimensionExclusion:
-                            items:
-                              type: string
-                            type: array
-                        required:
-                        - dimension
-                        - dimensionExclusion
-                        type: object
-                      granularitySpec:
-                        description: |-
-                          Takes query granularity values
-                          https://druid.apache.org/docs/latest/querying/granularities/
-                        properties:
-                          queryGranularity:
-                            type: string
-                          rollup:
-                            type: boolean
-                          segmentGranularity:
-                            type: string
-                        required:
-                        - segmentGranularity
-                        type: object
-                      ioConfig:
-                        properties:
-                          allowNonAlignedInterval:
-                            type: boolean
-                          dropExisting:
-                            type: boolean
-                          inputSpec:
-                            properties:
-                              interval:
-                                type: string
-                              segments:
-                                type: string
-                              type:
-                                type: string
-                            required:
-                            - type
-                            type: object
-                          type:
-                            type: string
-                        required:
-                        - allowNonAlignedInterval
-                        - dropExisting
-                        - inputSpec
-                        - type
-                        type: object
-                      metricsSpec:
-                        type: string
-                      skipOffsetFromLatest:
-                        type: string
-                      taskContext:
-                        type: string
-                      taskPriority:
-                        type: string
-                      transformSpec:
-                        description: https://druid.apache.org/docs/latest/data-management/manual-compaction/#compaction-transform-spec
-                        properties:
-                          filter:
-                            type: string
-                        required:
-                        - filter
-                        type: object
-                      tuningConfig:
-                        properties:
-                          partitionsSpec:
-                            properties:
-                              type:
-                                type: string
-                            required:
-                            - type
-                            type: object
-                          type:
-                            type: string
-                        required:
-                        - partitionsSpec
-                        - type
-                        type: object
-                    required:
-                    - skipOffsetFromLatest
+                  NativeSpec:
+                    description: |-
+                      NativeSpec allows the ingestion specification to be defined in a native Kubernetes format.
+                      This is particularly useful for environment-specific configurations and will eventually
+                      replace the JSON-based Spec field.
+                      Note: Spec will be ignored if NativeSpec is provided.
                     type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  compaction:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
                   rules:
                     items:
-                      properties:
-                        includeFuture:
-                          type: boolean
-                        period:
-                          type: string
-                        type:
-                          type: string
-                      required:
-                      - includeFuture
-                      - period
-                      - type
                       type: object
+                      x-kubernetes-preserve-unknown-fields: true
                     type: array
                   spec:
+                    description: |-
+                      Spec should be passed in as a JSON string.
+                      Note: This field is planned for deprecation in favor of NativeSpec.
                     type: string
                   type:
                     type: string
@@ -192,96 +107,11 @@ spec:
           status:
             properties:
               compaction:
-                properties:
-                  dimensionSpec:
-                    properties:
-                      dimension:
-                        items:
-                          type: string
-                        type: array
-                      dimensionExclusion:
-                        items:
-                          type: string
-                        type: array
-                    required:
-                    - dimension
-                    - dimensionExclusion
-                    type: object
-                  granularitySpec:
-                    description: |-
-                      Takes query granularity values
-                      https://druid.apache.org/docs/latest/querying/granularities/
-                    properties:
-                      queryGranularity:
-                        type: string
-                      rollup:
-                        type: boolean
-                      segmentGranularity:
-                        type: string
-                    required:
-                    - segmentGranularity
-                    type: object
-                  ioConfig:
-                    properties:
-                      allowNonAlignedInterval:
-                        type: boolean
-                      dropExisting:
-                        type: boolean
-                      inputSpec:
-                        properties:
-                          interval:
-                            type: string
-                          segments:
-                            type: string
-                          type:
-                            type: string
-                        required:
-                        - type
-                        type: object
-                      type:
-                        type: string
-                    required:
-                    - allowNonAlignedInterval
-                    - dropExisting
-                    - inputSpec
-                    - type
-                    type: object
-                  metricsSpec:
-                    type: string
-                  skipOffsetFromLatest:
-                    type: string
-                  taskContext:
-                    type: string
-                  taskPriority:
-                    type: string
-                  transformSpec:
-                    description: https://druid.apache.org/docs/latest/data-management/manual-compaction/#compaction-transform-spec
-                    properties:
-                      filter:
-                        type: string
-                    required:
-                    - filter
-                    type: object
-                  tuningConfig:
-                    properties:
-                      partitionsSpec:
-                        properties:
-                          type:
-                            type: string
-                        required:
-                        - type
-                        type: object
-                      type:
-                        type: string
-                    required:
-                    - partitionsSpec
-                    - type
-                    type: object
-                required:
-                - skipOffsetFromLatest
                 type: object
+                x-kubernetes-preserve-unknown-fields: true
               currentIngestionSpec.json:
-                type: string
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
               lastUpdateTime:
                 format: date-time
                 type: string
@@ -291,18 +121,8 @@ spec:
                 type: string
               rules:
                 items:
-                  properties:
-                    includeFuture:
-                      type: boolean
-                    period:
-                      type: string
-                    type:
-                      type: string
-                  required:
-                  - includeFuture
-                  - period
-                  - type
                   type: object
+                  x-kubernetes-preserve-unknown-fields: true
                 type: array
               status:
                 type: string

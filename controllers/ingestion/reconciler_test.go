@@ -1,6 +1,7 @@
 package ingestion
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -8,6 +9,9 @@ import (
 	"github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 
 	internalhttp "github.com/datainfrahq/druid-operator/pkg/http"
+
+	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestUpdateCompaction_Success(t *testing.T) {
@@ -16,8 +20,8 @@ func TestUpdateCompaction_Success(t *testing.T) {
 		Spec: v1alpha1.DruidIngestionSpec{
 			Ingestion: v1alpha1.IngestionSpec{
 				Spec: `{"dataSource": "testDataSource"}`,
-				Compaction: v1alpha1.Compaction{
-					MetricsSpec: "testMetric",
+				Compaction: runtime.RawExtension{
+					Raw: []byte(`{"metricsSpec": "testMetric"}`),
 				},
 			},
 		},
@@ -59,8 +63,8 @@ func TestUpdateCompaction_Failure(t *testing.T) {
 		Spec: v1alpha1.DruidIngestionSpec{
 			Ingestion: v1alpha1.IngestionSpec{
 				Spec: `{"dataSource": "testDataSource"}`,
-				Compaction: v1alpha1.Compaction{
-					MetricsSpec: "testMetric",
+				Compaction: runtime.RawExtension{
+					Raw: []byte(`{"metricsSpec": "testMetric"}`),
 				},
 			},
 		},
@@ -94,55 +98,6 @@ func TestUpdateCompaction_Failure(t *testing.T) {
 
 	if success {
 		t.Fatalf("expected failure, got success")
-	}
-}
-
-func TestExtractDataSource(t *testing.T) {
-	tests := []struct {
-		name      string
-		spec      string
-		expected  string
-		expectErr bool
-	}{
-		{
-			name:      "ValidDataSource",
-			spec:      `{"spec": {"dataSchema": {"dataSource": "wikipedia"}}}`,
-			expected:  "wikipedia",
-			expectErr: false,
-		},
-		{
-			name:      "MissingDataSource",
-			spec:      `{"spec": {"dataSchema": {}}}`,
-			expected:  "",
-			expectErr: true,
-		},
-		{
-			name:      "InvalidJSON",
-			spec:      `{"spec": {"dataSchema": {"dataSource": "wikipedia"}`,
-			expected:  "",
-			expectErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			di := &v1alpha1.DruidIngestion{
-				Spec: v1alpha1.DruidIngestionSpec{
-					Ingestion: v1alpha1.IngestionSpec{
-						Spec: tt.spec,
-					},
-				},
-			}
-			actual, err := extractDataSource(di)
-
-			if (err != nil) != tt.expectErr {
-				t.Errorf("extractDataSource() error = %v, expectErr %v", err, tt.expectErr)
-				return
-			}
-			if actual != tt.expected {
-				t.Errorf("extractDataSource() = %v, expected %v", actual, tt.expected)
-			}
-		})
 	}
 }
 
@@ -271,6 +226,155 @@ func TestMakePath(t *testing.T) {
 			actual := makePath(tt.baseURL, tt.componentType, tt.apiType, tt.additionalPaths...)
 			if actual != tt.expected {
 				t.Errorf("makePath() = %v, expected %v", actual, tt.expected)
+			}
+		})
+	}
+}
+
+func TestGetCurrentSpec(t *testing.T) {
+	tests := []struct {
+		name           string
+		di             *v1alpha1.DruidIngestion
+		expectedSpec   map[string]interface{}
+		expectingError bool
+	}{
+		{
+			name: "NativeSpec is used",
+			di: &v1alpha1.DruidIngestion{
+				Spec: v1alpha1.DruidIngestionSpec{
+					Ingestion: v1alpha1.IngestionSpec{
+						NativeSpec: runtime.RawExtension{
+							Raw: []byte(`{"key": "value"}`),
+						},
+					},
+				},
+			},
+			expectedSpec: map[string]interface{}{
+				"key": "value",
+			},
+			expectingError: false,
+		},
+		{
+			name: "Spec is used when NativeSpec is empty",
+			di: &v1alpha1.DruidIngestion{
+				Spec: v1alpha1.DruidIngestionSpec{
+					Ingestion: v1alpha1.IngestionSpec{
+						Spec: `{"key": "value"}`,
+					},
+				},
+			},
+			expectedSpec: map[string]interface{}{
+				"key": "value",
+			},
+			expectingError: false,
+		},
+		{
+			name: "Error when both NativeSpec and Spec are empty",
+			di: &v1alpha1.DruidIngestion{
+				Spec: v1alpha1.DruidIngestionSpec{
+					Ingestion: v1alpha1.IngestionSpec{
+						NativeSpec: runtime.RawExtension{},
+						Spec:       "",
+					},
+				},
+			},
+			expectedSpec:   nil,
+			expectingError: true,
+		},
+		{
+			name: "Error when Spec is invalid JSON",
+			di: &v1alpha1.DruidIngestion{
+				Spec: v1alpha1.DruidIngestionSpec{
+					Ingestion: v1alpha1.IngestionSpec{
+						Spec: `{"key": "value"`, // Invalid JSON
+					},
+				},
+			},
+			expectedSpec:   nil,
+			expectingError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			spec, err := getCurrentSpec(tt.di)
+			if tt.expectingError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedSpec, spec)
+			}
+		})
+	}
+}
+
+func TestExtractDataSourceFromSpec(t *testing.T) {
+	tests := []struct {
+		name         string
+		specJSON     string
+		expected     string
+		expectingErr bool
+	}{
+		{
+			name: "Valid dataSource extraction",
+			specJSON: `
+            {
+                "spec": {
+                    "dataSchema": {
+                        "dataSource": "wikipedia-2"
+                    }
+                }
+            }`,
+			expected:     "wikipedia-2",
+			expectingErr: false,
+		},
+		{
+			name: "Missing dataSource",
+			specJSON: `
+            {
+                "spec": {
+                    "dataSchema": {}
+                }
+            }`,
+			expected:     "",
+			expectingErr: true,
+		},
+		{
+			name: "Incorrect dataSource type",
+			specJSON: `
+            {
+                "spec": {
+                    "dataSchema": {
+                        "dataSource": 123
+                    }
+                }
+            }`,
+			expected:     "",
+			expectingErr: true,
+		},
+		{
+			name: "Missing spec section",
+			specJSON: `
+            {
+                "otherField": {}
+            }`,
+			expected:     "",
+			expectingErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var specData map[string]interface{}
+			err := json.Unmarshal([]byte(tt.specJSON), &specData)
+			assert.NoError(t, err, "Failed to unmarshal JSON")
+
+			dataSource, err := extractDataSourceFromSpec(specData)
+			if tt.expectingErr {
+				assert.Error(t, err, "Expected an error but got none")
+			} else {
+				assert.NoError(t, err, "Unexpected error")
+				assert.Equal(t, tt.expected, dataSource, "DataSource does not match expected value")
 			}
 		})
 	}
