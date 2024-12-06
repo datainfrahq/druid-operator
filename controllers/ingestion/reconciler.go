@@ -17,6 +17,7 @@ import (
 	"github.com/datainfrahq/operator-runtime/builder"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -118,29 +119,53 @@ func (r *DruidIngestionReconciler) do(ctx context.Context, di *v1alpha1.DruidIng
 	return nil
 }
 
-// extractDataSource extracts the dataSource from the DruidIngestion spec.
-func extractDataSource(di *v1alpha1.DruidIngestion) (string, error) {
-	var specData map[string]interface{}
-	if err := json.Unmarshal([]byte(di.Spec.Ingestion.Spec), &specData); err != nil {
+// getCurrentSpec extracts the current ingestion spec from the DruidIngestion object.
+func getCurrentSpec(di *v1alpha1.DruidIngestion) (map[string]interface{}, error) {
+	if di.Spec.Ingestion.NativeSpec.Size() > 0 {
+		var nativeSpecMap map[string]interface{}
+		if err := json.Unmarshal(di.Spec.Ingestion.NativeSpec.Raw, &nativeSpecMap); err != nil {
+			return nil, fmt.Errorf("error unmarshalling NativeSpec: %v", err)
+		}
+		return nativeSpecMap, nil
+	} else if di.Spec.Ingestion.Spec != "" {
+		// Attempt to unmarshal the JSON Spec if NativeSpec is not available
+		var spec map[string]interface{}
+		err := json.Unmarshal([]byte(di.Spec.Ingestion.Spec), &spec)
+		if err != nil {
+			return nil, fmt.Errorf("error unmarshalling Spec: %v", err)
+		}
+		return spec, nil
+	} else {
+		// Return an error if neither NativeSpec nor Spec is valid
+		return nil, fmt.Errorf("no valid ingestion spec provided")
+	}
+}
+
+// getCurrentSpecJson extracts the current ingestion spec from the DruidIngestion object and returns it as a string.
+func getCurrentSpecJson(di *v1alpha1.DruidIngestion) (string, error) {
+	specData, err := getCurrentSpec(di)
+	if err != nil {
 		return "", err
 	}
 
-	spec, ok := specData["spec"].(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("spec is required in the ingestion spec")
+	specJson, err := json.Marshal(specData)
+	if err != nil {
+		return "", err
 	}
+	return string(specJson), nil
+}
 
-	dataSchema, ok := spec["dataSchema"].(map[string]interface{})
-	if !ok {
-		return "", fmt.Errorf("dataSchema is required in the spec")
+// extractDataSourceFromSpec extracts the dataSource from the spec map
+func extractDataSourceFromSpec(spec map[string]interface{}) (string, error) {
+	// Navigate through the nested structure to find dataSource
+	if specSection, ok := spec["spec"].(map[string]interface{}); ok {
+		if dataSchema, ok := specSection["dataSchema"].(map[string]interface{}); ok {
+			if dataSource, ok := dataSchema["dataSource"].(string); ok {
+				return dataSource, nil
+			}
+		}
 	}
-
-	dataSource, ok := dataSchema["dataSource"].(string)
-	if !ok {
-		return "", fmt.Errorf("dataSource is required in the dataSchema")
-	}
-
-	return dataSource, nil
+	return "", fmt.Errorf("dataSource not found in spec")
 }
 
 // UpdateCompaction updates the compaction settings for a Druid data source.
@@ -151,7 +176,7 @@ func (r *DruidIngestionReconciler) UpdateCompaction(
 	auth internalhttp.Auth,
 ) (bool, error) {
 	// If there are no compaction settings, return true
-	if reflect.DeepEqual(di.Spec.Ingestion.Compaction, v1alpha1.Compaction{}) {
+	if di.Spec.Ingestion.Compaction.Size() == 0 {
 		return true, nil
 	}
 
@@ -249,13 +274,28 @@ func (r *DruidIngestionReconciler) CreateOrUpdate(
 	auth internalhttp.Auth,
 ) (controllerutil.OperationResult, error) {
 
-	dataSource, err := extractDataSource(di)
+	var specJson string
+	var err error
+
+	// Get current spec using the helper function
+	currentSpec, err := getCurrentSpec(di)
+	if err != nil {
+		return controllerutil.OperationResultNone, err
+	}
+
+	dataSource, err := extractDataSourceFromSpec(currentSpec)
+	if err != nil {
+		return controllerutil.OperationResultNone, err
+	}
+
+	// Marshal the current spec to JSON
+	specJson, err = getCurrentSpecJson(di)
 	if err != nil {
 		return controllerutil.OperationResultNone, err
 	}
 
 	// check if task id does not exist in status
-	if di.Status.TaskId == "" && di.Status.CurrentIngestionSpec == "" {
+	if di.Status.TaskId == "" && di.Status.CurrentIngestionSpec.Size() == 0 {
 		// if does not exist create task
 		postHttp := internalhttp.NewHTTPClient(
 			&http.Client{},
@@ -266,7 +306,7 @@ func (r *DruidIngestionReconciler) CreateOrUpdate(
 		respCreateTask, err := postHttp.Do(
 			http.MethodPost,
 			getPath(di.Spec.Ingestion.Type, svcName, http.MethodPost, "", false),
-			[]byte(di.Spec.Ingestion.Spec),
+			[]byte(specJson),
 		)
 
 		if err != nil {
@@ -338,8 +378,20 @@ func (r *DruidIngestionReconciler) CreateOrUpdate(
 			return controllerutil.OperationResultCreated, nil
 		}
 	} else {
-		// compare the ingestion spec state
-		ok, err := druid.IsEqualJson(di.Status.CurrentIngestionSpec, di.Spec.Ingestion.Spec)
+
+		currentIngestionSpec, err := getCurrentSpecJson(di)
+		if err != nil {
+			return controllerutil.OperationResultNone, err
+		}
+		storedIngestionSpecBytes, err := di.Status.CurrentIngestionSpec.MarshalJSON()
+		if err != nil {
+			return controllerutil.OperationResultNone, err
+		}
+		storedIngestionSpec := string(storedIngestionSpecBytes)
+		if err != nil {
+			return controllerutil.OperationResultNone, err
+		}
+		ok, err := druid.IsEqualJson(storedIngestionSpec, currentIngestionSpec)
 		if err != nil {
 			return controllerutil.OperationResultNone, err
 		}
@@ -353,7 +405,7 @@ func (r *DruidIngestionReconciler) CreateOrUpdate(
 			respUpdateSpec, err := postHttp.Do(
 				http.MethodPost,
 				getPath(di.Spec.Ingestion.Type, svcName, http.MethodPost, "", false),
-				[]byte(di.Spec.Ingestion.Spec),
+				[]byte(specJson),
 			)
 			if err != nil {
 				return controllerutil.OperationResultNone, err
@@ -468,9 +520,14 @@ func (r *DruidIngestionReconciler) makePatchDruidIngestionStatus(
 
 ) (controllerutil.OperationResult, error) {
 
+	currentSpec, err := getCurrentSpecJson(di)
+	if err != nil {
+		return controllerutil.OperationResultNone, err
+	}
+
 	if _, _, err := patchStatus(context.Background(), r.Client, di, func(obj client.Object) client.Object {
 		in := obj.(*v1alpha1.DruidIngestion)
-		in.Status.CurrentIngestionSpec = di.Spec.Ingestion.Spec
+		in.Status.CurrentIngestionSpec = runtime.RawExtension{Raw: []byte(currentSpec)}
 		in.Status.CurrentCompaction = di.Spec.Ingestion.Compaction
 		in.Status.CurrentRules = di.Spec.Ingestion.Rules
 		in.Status.TaskId = taskId

@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type DruidIngestionMethod string
@@ -45,24 +46,32 @@ type DruidIngestionSpec struct {
 type IngestionSpec struct {
 	// +required
 	Type DruidIngestionMethod `json:"type"`
-	// +required
+	// +optional
+	// Spec should be passed in as a JSON string.
+	// Note: This field is planned for deprecation in favor of NativeSpec.
 	Spec string `json:"spec,omitempty"`
 	// +optional
-	Compaction Compaction `json:"compaction,omitempty"`
+	// NativeSpec allows the ingestion specification to be defined in a native Kubernetes format.
+	// This is particularly useful for environment-specific configurations and will eventually
+	// replace the JSON-based Spec field.
+	// Note: Spec will be ignored if NativeSpec is provided.
+	NativeSpec runtime.RawExtension `json:"NativeSpec,omitempty"`
 	// +optional
-	Rules []Rule `json:"rules,omitempty"`
+	Compaction runtime.RawExtension `json:"compaction,omitempty"`
+	// +optional
+	Rules []runtime.RawExtension `json:"rules,omitempty"`
 }
 
 type DruidIngestionStatus struct {
-	TaskId               string             `json:"taskId"`
-	Type                 string             `json:"type,omitempty"`
-	Status               v1.ConditionStatus `json:"status,omitempty"`
-	Reason               string             `json:"reason,omitempty"`
-	Message              string             `json:"message,omitempty"`
-	LastUpdateTime       metav1.Time        `json:"lastUpdateTime,omitempty"`
-	CurrentIngestionSpec string             `json:"currentIngestionSpec.json"`
-	CurrentCompaction    Compaction         `json:"compaction,omitempty"`
-	CurrentRules         []Rule             `json:"rules,omitempty"`
+	TaskId               string                 `json:"taskId"`
+	Type                 string                 `json:"type,omitempty"`
+	Status               v1.ConditionStatus     `json:"status,omitempty"`
+	Reason               string                 `json:"reason,omitempty"`
+	Message              string                 `json:"message,omitempty"`
+	LastUpdateTime       metav1.Time            `json:"lastUpdateTime,omitempty"`
+	CurrentIngestionSpec runtime.RawExtension   `json:"currentIngestionSpec.json"`
+	CurrentCompaction    runtime.RawExtension   `json:"compaction,omitempty"`
+	CurrentRules         []runtime.RawExtension `json:"rules,omitempty"`
 }
 
 type AuthType string
@@ -76,74 +85,6 @@ type Auth struct {
 	Type AuthType `json:"type"`
 	// +required
 	SecretRef v1.SecretReference `json:"secretRef"`
-}
-
-type InputSpec struct {
-	InputType string `json:"type"`
-	Interval  string `json:"interval,omitempty"`
-	Segments  string `json:"segments,omitempty"`
-}
-
-type IoConfig struct {
-	IoType                  string    `json:"type"`
-	InputSpec               InputSpec `json:"inputSpec"`
-	DropExisting            bool      `json:"dropExisting"`
-	AllowNonAlignedInterval bool      `json:"allowNonAlignedInterval"`
-}
-
-type DimensionSpec struct {
-	Dimension           []string `json:"dimension"`
-	DimensionExclusions []string `json:"dimensionExclusion"`
-}
-
-// https://druid.apache.org/docs/latest/data-management/manual-compaction/#compaction-transform-spec
-type TransformSpec struct {
-	Filter string `json:"filter"`
-}
-
-// Takes query granularity values
-// https://druid.apache.org/docs/latest/querying/granularities/
-type GranularitySpec struct {
-	SegmentGranularity string `json:"segmentGranularity"`
-	// +optional
-	QueryGranularity string `json:"queryGranularity"`
-	// +optional
-	Rollup bool `json:"rollup"`
-}
-
-type PartitionsSpec struct {
-	Type string `json:"type"`
-}
-
-type TuningConfig struct {
-	Type           string         `json:"type"`
-	PartitionsSpec PartitionsSpec `json:"partitionsSpec"`
-}
-
-type Compaction struct {
-	SkipOffsetFromLatest string `json:"skipOffsetFromLatest"`
-	// +optional
-	IoConfig IoConfig `json:"ioConfig"`
-	// +optional
-	DimensionSpec DimensionSpec `json:"dimensionSpec"`
-	// +optional
-	TransformSpec TransformSpec `json:"transformSpec"`
-	// +optional
-	MetricsSpec string `json:"metricsSpec"`
-	// +optional
-	TuningConfig TuningConfig `json:"tuningConfig"`
-	// +optional
-	TaskPriority string `json:"taskPriority"`
-	// +optional
-	TaskContext string `json:"taskContext"`
-	// +optional
-	GranularitySpec GranularitySpec `json:"granularitySpec"`
-}
-
-type Rule struct {
-	Type          string `json:"type"`
-	Period        string `json:"period"`
-	IncludeFuture bool   `json:"includeFuture"`
 }
 
 // +kubebuilder:object:root=true
