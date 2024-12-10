@@ -4,7 +4,7 @@ set -x
 # Get Kind
 go install sigs.k8s.io/kind@v0.21.0
 # minio statefulset name
-MINIO_STS_NAME=myminio-ss-0
+MINIO_STS_NAME=myminio-minio
 # druid namespace
 NAMESPACE=druid
 # fmt code
@@ -23,8 +23,6 @@ make docker-build-local-test
 make docker-push-local-test
 # try to install the CRD with make
 make install
-# delete the crd
-make uninstall
 # install druid-operator
 make helm-install-druid-operator
 # install minio-operator and tenant
@@ -63,6 +61,19 @@ sleep 30 # wait for the manager to submit the ingestion task
 # get the ingestion task ID and launch the monitoring job
 taskId=`kubectl get druidingestion -n druid wikipedia-ingestion --template={{.status.taskId}}`
 make deploy-testingestionjob TASK_ID=$taskId
+
+# Running a test Kafka DruidIngestion resource and wait for the task to be submitted
+kubectl apply -f e2e/configs/kafka-ingestion.yaml -n ${NAMESPACE}
+sleep 30 # wait for the manager to submit the ingestion task
+
+# Verify the supervisor task has been created
+supervisorTaskId=`kubectl get druidingestion -n druid kafka-1 --template={{.status.taskId}}`
+if [ -z "$supervisorTaskId" ]; then
+  echo "Failed to get supervisor task ID"
+  exit 1
+else
+  echo "Supervisor task ID: $supervisorTaskId"
+fi
 
 # Delete old druid
 kubectl delete -f e2e/configs/druid-cr.yaml -n ${NAMESPACE}
