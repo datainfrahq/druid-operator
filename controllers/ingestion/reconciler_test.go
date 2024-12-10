@@ -1,7 +1,6 @@
 package ingestion
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,20 +13,127 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+func TestGetRules(t *testing.T) {
+	tests := []struct {
+		name           string
+		druidIngestion *v1alpha1.DruidIngestion
+		expectedRules  []map[string]interface{}
+		expectError    bool
+	}{
+		{
+			name: "No rules",
+			druidIngestion: &v1alpha1.DruidIngestion{
+				Spec: v1alpha1.DruidIngestionSpec{
+					Ingestion: v1alpha1.IngestionSpec{
+						Rules: []runtime.RawExtension{},
+					},
+				},
+			},
+			expectedRules: nil,
+			expectError:   false,
+		},
+		{
+			name: "Valid rules",
+			druidIngestion: &v1alpha1.DruidIngestion{
+				Spec: v1alpha1.DruidIngestionSpec{
+					Ingestion: v1alpha1.IngestionSpec{
+						Rules: []runtime.RawExtension{
+							{Raw: []byte(`{"type": "load", "tieredReplicants": {"hot": 2}}`)},
+							{Raw: []byte(`{"type": "drop", "interval": "2012-01-01/2013-01-01"}`)},
+						},
+					},
+				},
+			},
+			expectedRules: []map[string]interface{}{
+				{"type": "load", "tieredReplicants": map[string]interface{}{"hot": float64(2)}},
+				{"type": "drop", "interval": "2012-01-01/2013-01-01"},
+			},
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rules, err := getRules(tt.druidIngestion)
+
+			if tt.expectError {
+				assert.Error(t, err, "expected an error but got none")
+			} else {
+				assert.NoError(t, err, "unexpected error")
+				assert.Equal(t, tt.expectedRules, rules, "rules do not match expected")
+			}
+		})
+	}
+}
+
+func TestGetRulesJson(t *testing.T) {
+	tests := []struct {
+		name           string
+		druidIngestion *v1alpha1.DruidIngestion
+		expectedJson   string
+		expectError    bool
+	}{
+		{
+			name: "No rules",
+			druidIngestion: &v1alpha1.DruidIngestion{
+				Spec: v1alpha1.DruidIngestionSpec{
+					Ingestion: v1alpha1.IngestionSpec{
+						Rules: []runtime.RawExtension{},
+					},
+				},
+			},
+			expectedJson: "null",
+			expectError:  false,
+		},
+		{
+			name: "Valid rules",
+			druidIngestion: &v1alpha1.DruidIngestion{
+				Spec: v1alpha1.DruidIngestionSpec{
+					Ingestion: v1alpha1.IngestionSpec{
+						Rules: []runtime.RawExtension{
+							{Raw: []byte(`{"type": "load", "tieredReplicants": {"hot": 2}}`)},
+							{Raw: []byte(`{"type": "drop", "interval": "2012-01-01/2013-01-01"}`)},
+						},
+					},
+				},
+			},
+			expectedJson: `[{"type":"load","tieredReplicants":{"hot":2}},{"type":"drop","interval":"2012-01-01/2013-01-01"}]`,
+			expectError:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actualJson, err := getRulesJson(tt.druidIngestion)
+
+			if tt.expectError {
+				assert.Error(t, err, "expected an error but got none")
+			} else {
+				assert.NoError(t, err, "unexpected error")
+				assert.JSONEq(t, tt.expectedJson, actualJson, "JSON output does not match expected")
+			}
+		})
+	}
+}
+
 func TestUpdateCompaction_Success(t *testing.T) {
 	// Mock DruidIngestion data
 	di := &v1alpha1.DruidIngestion{
 		Spec: v1alpha1.DruidIngestionSpec{
 			Ingestion: v1alpha1.IngestionSpec{
-				Spec: `{"dataSource": "testDataSource"}`,
+				Spec: `{
+					"spec": {
+						"dataSchema": {
+							"dataSource": "testDataSource"
+						}
+					}
+				}`,
 				Compaction: runtime.RawExtension{
 					Raw: []byte(`{"metricsSpec": "testMetric"}`),
 				},
 			},
 		},
 	}
-
-	dataSource := "testDataSource"
 
 	// Mock HTTP server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +153,7 @@ func TestUpdateCompaction_Success(t *testing.T) {
 	r := &DruidIngestionReconciler{}
 
 	// Call UpdateCompaction
-	success, err := r.UpdateCompaction(di, server.URL, dataSource, auth)
+	success, err := r.UpdateCompaction(di, server.URL, auth)
 
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -62,15 +168,19 @@ func TestUpdateCompaction_Failure(t *testing.T) {
 	di := &v1alpha1.DruidIngestion{
 		Spec: v1alpha1.DruidIngestionSpec{
 			Ingestion: v1alpha1.IngestionSpec{
-				Spec: `{"dataSource": "testDataSource"}`,
+				Spec: `{
+					"spec": {
+						"dataSchema": {
+							"dataSource": "testDataSource"
+						}
+					}
+				}`,
 				Compaction: runtime.RawExtension{
 					Raw: []byte(`{"metricsSpec": "testMetric"}`),
 				},
 			},
 		},
 	}
-
-	dataSource := "testDataSource"
 
 	// Mock HTTP server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +200,7 @@ func TestUpdateCompaction_Failure(t *testing.T) {
 	r := &DruidIngestionReconciler{}
 
 	// Call UpdateCompaction
-	success, err := r.UpdateCompaction(di, server.URL, dataSource, auth)
+	success, err := r.UpdateCompaction(di, server.URL, auth)
 
 	if err == nil {
 		t.Fatalf("expected error, got nil")
@@ -98,6 +208,167 @@ func TestUpdateCompaction_Failure(t *testing.T) {
 
 	if success {
 		t.Fatalf("expected failure, got success")
+	}
+}
+
+func TestGetCompaction(t *testing.T) {
+	compactionMap := make(map[string]interface{})
+	tests := []struct {
+		name          string
+		compactionRaw string
+		specRaw       string
+		expectedMap   map[string]interface{}
+		expectingErr  bool
+	}{
+		{
+			name: "Valid compaction settings with dataSource",
+			compactionRaw: `{
+                "metricsSpec": "testMetric",
+                "tuningConfig": {"maxRowsInMemory": 10000}
+            }`,
+			specRaw: `{
+                "spec": {
+                    "dataSchema": {
+                        "dataSource": "testDataSource"
+                    }
+                }
+            }`,
+			expectedMap: map[string]interface{}{
+				"metricsSpec": "testMetric",
+				"tuningConfig": map[string]interface{}{
+					"maxRowsInMemory": float64(10000),
+				},
+				"dataSource": "testDataSource",
+			},
+			expectingErr: false,
+		},
+		{
+			name:          "No compaction settings",
+			compactionRaw: ``,
+			specRaw: `{
+                "spec": {
+                    "dataSchema": {
+                        "dataSource": "testDataSource"
+                    }
+                }
+            }`,
+			expectedMap:  compactionMap,
+			expectingErr: false,
+		},
+		{
+			name: "Missing dataSource",
+			compactionRaw: `{
+                "metricsSpec": "testMetric",
+                "tuningConfig": {"maxRowsInMemory": 10000}
+            }`,
+			specRaw: `{
+                "spec": {
+                    "dataSchema": {}
+                }
+            }`,
+			expectedMap:  nil,
+			expectingErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			di := &v1alpha1.DruidIngestion{
+				Spec: v1alpha1.DruidIngestionSpec{
+					Ingestion: v1alpha1.IngestionSpec{
+						Compaction: runtime.RawExtension{
+							Raw: []byte(tt.compactionRaw),
+						},
+						Spec: string(tt.specRaw),
+					},
+				},
+			}
+
+			compactionMap, err := getCompaction(di)
+			if tt.expectingErr {
+				assert.Error(t, err, "Expected an error but got none")
+			} else {
+				assert.NoError(t, err, "Unexpected error")
+				assert.Equal(t, tt.expectedMap, compactionMap, "Compaction map does not match expected value")
+			}
+		})
+	}
+}
+
+func TestGetCompactionJson(t *testing.T) {
+	tests := []struct {
+		name          string
+		compactionRaw string
+		specRaw       string
+		expectedJson  string
+		expectingErr  bool
+	}{
+		{
+			name: "Valid compaction settings with dataSource",
+			compactionRaw: `{
+                "metricsSpec": "testMetric",
+                "tuningConfig": {"maxRowsInMemory": 10000}
+            }`,
+			specRaw: `{
+                "spec": {
+                    "dataSchema": {
+                        "dataSource": "testDataSource"
+                    }
+                }
+            }`,
+			expectedJson: `{"metricsSpec":"testMetric","tuningConfig":{"maxRowsInMemory":10000},"dataSource":"testDataSource"}`,
+			expectingErr: false,
+		},
+		{
+			name:          "No compaction settings",
+			compactionRaw: ``,
+			specRaw: `{
+                "spec": {
+                    "dataSchema": {
+                        "dataSource": "testDataSource"
+                    }
+                }
+            }`,
+			expectedJson: "{}",
+			expectingErr: false,
+		},
+		{
+			name: "Missing dataSource",
+			compactionRaw: `{
+                "metricsSpec": "testMetric",
+                "tuningConfig": {"maxRowsInMemory": 10000}
+            }`,
+			specRaw: `{
+                "spec": {
+                    "dataSchema": {}
+                }
+            }`,
+			expectedJson: "",
+			expectingErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			di := &v1alpha1.DruidIngestion{
+				Spec: v1alpha1.DruidIngestionSpec{
+					Ingestion: v1alpha1.IngestionSpec{
+						Compaction: runtime.RawExtension{
+							Raw: []byte(tt.compactionRaw),
+						},
+						Spec: string(tt.specRaw),
+					},
+				},
+			}
+
+			compactionJson, err := getCompactionJson(di)
+			if tt.expectingErr {
+				assert.Error(t, err, "Expected an error but got none")
+			} else {
+				assert.NoError(t, err, "Unexpected error")
+				assert.JSONEq(t, tt.expectedJson, compactionJson, "Compaction JSON does not match expected value")
+			}
+		})
 	}
 }
 
@@ -231,7 +502,7 @@ func TestMakePath(t *testing.T) {
 	}
 }
 
-func TestGetCurrentSpec(t *testing.T) {
+func TestGetSpec(t *testing.T) {
 	tests := []struct {
 		name           string
 		di             *v1alpha1.DruidIngestion
@@ -297,7 +568,7 @@ func TestGetCurrentSpec(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			spec, err := getCurrentSpec(tt.di)
+			spec, err := getSpec(tt.di)
 			if tt.expectingError {
 				assert.Error(t, err)
 			} else {
@@ -308,7 +579,7 @@ func TestGetCurrentSpec(t *testing.T) {
 	}
 }
 
-func TestExtractDataSourceFromSpec(t *testing.T) {
+func TestGetDataSource(t *testing.T) {
 	tests := []struct {
 		name         string
 		specJSON     string
@@ -365,11 +636,16 @@ func TestExtractDataSourceFromSpec(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var specData map[string]interface{}
-			err := json.Unmarshal([]byte(tt.specJSON), &specData)
-			assert.NoError(t, err, "Failed to unmarshal JSON")
+			// Prepare the DruidIngestion object with the test JSON
+			di := &v1alpha1.DruidIngestion{
+				Spec: v1alpha1.DruidIngestionSpec{
+					Ingestion: v1alpha1.IngestionSpec{
+						Spec: (tt.specJSON),
+					},
+				},
+			}
 
-			dataSource, err := extractDataSourceFromSpec(specData)
+			dataSource, err := getDataSource(di)
 			if tt.expectingErr {
 				assert.Error(t, err, "Expected an error but got none")
 			} else {

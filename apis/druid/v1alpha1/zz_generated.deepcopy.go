@@ -286,7 +286,6 @@ func (in *DruidIngestionSpec) DeepCopy() *DruidIngestionSpec {
 func (in *DruidIngestionStatus) DeepCopyInto(out *DruidIngestionStatus) {
 	*out = *in
 	in.LastUpdateTime.DeepCopyInto(&out.LastUpdateTime)
-	in.CurrentIngestionSpec.DeepCopyInto(&out.CurrentIngestionSpec)
 	in.CurrentCompaction.DeepCopyInto(&out.CurrentCompaction)
 	if in.CurrentRules != nil {
 		in, out := &in.CurrentRules, &out.CurrentRules
