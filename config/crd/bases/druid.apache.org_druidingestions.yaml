@@ -72,15 +72,15 @@ spec:
                 type: string
               ingestion:
                 properties:
-                  NativeSpec:
-                    description: |-
-                      NativeSpec allows the ingestion specification to be defined in a native Kubernetes format.
-                      This is particularly useful for environment-specific configurations and will eventually
-                      replace the JSON-based Spec field.
-                      Note: Spec will be ignored if NativeSpec is provided.
+                  compaction:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
-                  compaction:
+                  nativeSpec:
+                    description: |-
+                      nativeSpec allows the ingestion specification to be defined in a native Kubernetes format.
+                      This is particularly useful for environment-specific configurations and will eventually
+                      replace the JSON-based Spec field.
+                      Note: Spec will be ignored if nativeSpec is provided.
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                   rules:
@@ -91,7 +91,7 @@ spec:
                   spec:
                     description: |-
                       Spec should be passed in as a JSON string.
-                      Note: This field is planned for deprecation in favor of NativeSpec.
+                      Note: This field is planned for deprecation in favor of nativeSpec.
                     type: string
                   type:
                     type: string
@@ -110,8 +110,10 @@ spec:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
               currentIngestionSpec.json:
-                type: object
-                x-kubernetes-preserve-unknown-fields: true
+                description: |-
+                  CurrentIngestionSpec is a string instead of RawExtension to maintain compatibility with existing
+                  IngestionSpecs that are stored as JSON strings.
+                type: string
               lastUpdateTime:
                 format: date-time
                 type: string

@@ -48,14 +48,14 @@ type IngestionSpec struct {
 	Type DruidIngestionMethod `json:"type"`
 	// +optional
 	// Spec should be passed in as a JSON string.
-	// Note: This field is planned for deprecation in favor of NativeSpec.
+	// Note: This field is planned for deprecation in favor of nativeSpec.
 	Spec string `json:"spec,omitempty"`
 	// +optional
-	// NativeSpec allows the ingestion specification to be defined in a native Kubernetes format.
+	// nativeSpec allows the ingestion specification to be defined in a native Kubernetes format.
 	// This is particularly useful for environment-specific configurations and will eventually
 	// replace the JSON-based Spec field.
-	// Note: Spec will be ignored if NativeSpec is provided.
-	NativeSpec runtime.RawExtension `json:"NativeSpec,omitempty"`
+	// Note: Spec will be ignored if nativeSpec is provided.
+	NativeSpec runtime.RawExtension `json:"nativeSpec,omitempty"`
 	// +optional
 	Compaction runtime.RawExtension `json:"compaction,omitempty"`
 	// +optional
@@ -63,13 +63,15 @@ type IngestionSpec struct {
 }
 
 type DruidIngestionStatus struct {
-	TaskId               string                 `json:"taskId"`
-	Type                 string                 `json:"type,omitempty"`
-	Status               v1.ConditionStatus     `json:"status,omitempty"`
-	Reason               string                 `json:"reason,omitempty"`
-	Message              string                 `json:"message,omitempty"`
-	LastUpdateTime       metav1.Time            `json:"lastUpdateTime,omitempty"`
-	CurrentIngestionSpec runtime.RawExtension   `json:"currentIngestionSpec.json"`
+	TaskId         string             `json:"taskId"`
+	Type           string             `json:"type,omitempty"`
+	Status         v1.ConditionStatus `json:"status,omitempty"`
+	Reason         string             `json:"reason,omitempty"`
+	Message        string             `json:"message,omitempty"`
+	LastUpdateTime metav1.Time        `json:"lastUpdateTime,omitempty"`
+	// CurrentIngestionSpec is a string instead of RawExtension to maintain compatibility with existing
+	// IngestionSpecs that are stored as JSON strings.
+	CurrentIngestionSpec string                 `json:"currentIngestionSpec.json"`
 	CurrentCompaction    runtime.RawExtension   `json:"compaction,omitempty"`
 	CurrentRules         []runtime.RawExtension `json:"rules,omitempty"`
 }
