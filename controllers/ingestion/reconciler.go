@@ -635,6 +635,18 @@ func makePath(baseURL, componentType, apiType string, additionalPaths ...string)
 	return u.String()
 }
 
+func makeSupervisorCreateUpdateTaskPath(svcName string) string {
+	return svcName + "/druid/indexer/v1/supervisor"
+}
+
+func makeSupervisorShutDownTaskPath(svcName, taskId string) string {
+	return svcName + "/druid/indexer/v1/supervisor/" + taskId + "/shutdown"
+}
+
+func makeSupervisorGetTaskPath(svcName, taskId string) string {
+	return svcName + "/druid/indexer/v1/supervisor/" + taskId
+}
+
 type taskHolder struct {
 	Task string `json:"task"` // tasks
 	ID   string `json:"id"`   // supervisor
