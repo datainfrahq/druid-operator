@@ -72,11 +72,18 @@ func (r *DruidReconciler) Reconcile(ctx context.Context, request reconcile.Reque
 	// Initialize Emit Events
 	var emitEvent EventEmitter = EmitEventFuncs{r.Recorder}
 
+	// Deploy Druid Cluster
 	if err := deployDruidCluster(ctx, r.Client, instance, emitEvent); err != nil {
 		return ctrl.Result{}, err
-	} else {
-		return ctrl.Result{RequeueAfter: r.ReconcileWait}, nil
 	}
+
+	// Update Druid Dynamic Configs
+	if err := updateDruidDynamicConfigs(ctx, r.Client, instance, emitEvent); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// If both operations succeed, requeue after specified wait time
+	return ctrl.Result{RequeueAfter: r.ReconcileWait}, nil
 }
 
 func (r *DruidReconciler) SetupWithManager(mgr ctrl.Manager) error {

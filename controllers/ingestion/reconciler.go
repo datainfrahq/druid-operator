@@ -6,14 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
-	"path"
 	"reflect"
 	"time"
 
 	"github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 	"github.com/datainfrahq/druid-operator/controllers/druid"
+	druidapi "github.com/datainfrahq/druid-operator/pkg/druidapi"
 	internalhttp "github.com/datainfrahq/druid-operator/pkg/http"
+	"github.com/datainfrahq/druid-operator/pkg/util"
 	"github.com/datainfrahq/operator-runtime/builder"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,30 +36,17 @@ const (
 	DruidIngestionControllerFinalizer          = "druidingestion.datainfra.io/finalizer"
 )
 
-const (
-	OperatorUserName = "OperatorUserName"
-	OperatorPassword = "OperatorPassword"
-)
-const (
-	DruidRouterPort = "8088"
-)
-
-// toJsonString marshals the given data into a JSON string.
-func toJsonString(data interface{}) (string, error) {
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return "", err
-	}
-	return string(jsonData), nil
-}
-
 func (r *DruidIngestionReconciler) do(ctx context.Context, di *v1alpha1.DruidIngestion) error {
-	basicAuth, err := r.getAuthCreds(ctx, di)
+	basicAuth, err := druidapi.GetAuthCreds(
+		ctx,
+		r.Client,
+		di.Spec.Auth,
+	)
 	if err != nil {
 		return err
 	}
 
-	svcName, err := r.getRouterSvcUrl(di.Namespace, di.Spec.DruidClusterName)
+	svcName, err := druidapi.GetRouterSvcUrl(di.Namespace, di.Spec.DruidClusterName, r.Client)
 	if err != nil {
 		return err
 	}
@@ -86,7 +73,7 @@ func (r *DruidIngestionReconciler) do(ctx context.Context, di *v1alpha1.DruidIng
 	} else {
 		if controllerutil.ContainsFinalizer(di, DruidIngestionControllerFinalizer) {
 			// our finalizer is present, so lets handle any external dependency
-			svcName, err := r.getRouterSvcUrl(di.Namespace, di.Spec.DruidClusterName)
+			svcName, err := druidapi.GetRouterSvcUrl(di.Namespace, di.Spec.DruidClusterName, r.Client)
 			if err != nil {
 				return err
 			}
@@ -96,7 +83,11 @@ func (r *DruidIngestionReconciler) do(ctx context.Context, di *v1alpha1.DruidIng
 				&internalhttp.Auth{BasicAuth: basicAuth},
 			)
 
-			respShutDownTask, err := posthttp.Do(http.MethodPost, getPath(di.Spec.Ingestion.Type, svcName, http.MethodPost, di.Status.TaskId, true), []byte{})
+			respShutDownTask, err := posthttp.Do(
+				http.MethodPost,
+				getPath(di.Spec.Ingestion.Type, svcName, http.MethodPost, di.Status.TaskId, true),
+				[]byte{},
+			)
 			if err != nil {
 				return err
 			}
@@ -156,7 +147,7 @@ func getSpecJson(di *v1alpha1.DruidIngestion) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return toJsonString(specData)
+	return util.ToJsonString(specData)
 }
 
 // getRules extracts the rules from the DruidIngestion object and returns them as a slice of maps.
@@ -183,7 +174,7 @@ func getRulesJson(di *v1alpha1.DruidIngestion) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return toJsonString(rules)
+	return util.ToJsonString(rules)
 }
 
 // extractDataSourceFromSpec extracts the dataSource from the spec map
@@ -233,7 +224,7 @@ func getCompactionJson(di *v1alpha1.DruidIngestion) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return toJsonString(compaction)
+	return util.ToJsonString(compaction)
 }
 
 // UpdateCompaction updates the compaction settings for a Druid data source.
@@ -242,28 +233,60 @@ func (r *DruidIngestionReconciler) UpdateCompaction(
 	svcName string,
 	auth internalhttp.Auth,
 ) (bool, error) {
-	// If there are no compaction settings, return true
+	// If there are no compaction settings, return false
 	if di.Spec.Ingestion.Compaction.Size() == 0 {
-		return true, nil
+		return false, nil
 	}
 
-	postHttp := internalhttp.NewHTTPClient(
+	httpClient := internalhttp.NewHTTPClient(
 		&http.Client{},
 		&auth,
 	)
 
-	compactionData, err := getCompactionJson(di)
+	dataSource, err := getDataSource(di)
 	if err != nil {
 		return false, err
 	}
 
-	// Update compaction settings
-	respUpdateCompaction, err := postHttp.Do(
-		http.MethodPost,
-		makePath(svcName, "coordinator", "config", "compaction"),
-		[]byte(compactionData),
+	// Get current compaction settings
+	currentResp, err := httpClient.Do(
+		http.MethodGet,
+		druidapi.MakePath(svcName, "coordinator", "config", "compaction", dataSource),
+		nil,
 	)
+	if err != nil {
+		return false, err
+	}
 
+	var currentCompactionJson string
+	if currentResp.StatusCode == http.StatusOK {
+		currentCompactionJson = string(currentResp.ResponseBody)
+	} else if currentResp.StatusCode == http.StatusNotFound {
+		// Assume no compaction settings are currently set
+		currentCompactionJson = "{}"
+	} else {
+		return false, fmt.Errorf("failed to retrieve current compaction settings, status code: %d", currentResp.StatusCode)
+	}
+
+	desiredCompactionJson, err := getCompactionJson(di)
+	if err != nil {
+		return false, err
+	}
+
+	// Compare current and desired compaction settings
+	if areEqual, err := util.IncludesJson(currentCompactionJson, desiredCompactionJson); err != nil {
+		return false, err
+	} else if areEqual {
+		// Compaction settings are already up-to-date
+		return false, nil
+	}
+
+	// Update compaction settings
+	respUpdateCompaction, err := httpClient.Do(
+		http.MethodPost,
+		druidapi.MakePath(svcName, "coordinator", "config", "compaction"),
+		[]byte(desiredCompactionJson),
+	)
 	if err != nil {
 		return false, err
 	}
@@ -305,7 +328,7 @@ func (r *DruidIngestionReconciler) UpdateRules(
 	// Update rules
 	respUpdateRules, err := postHttp.Do(
 		http.MethodPost,
-		makePath(svcName, "coordinator", "rules", dataSource),
+		druidapi.MakePath(svcName, "coordinator", "rules", dataSource),
 		[]byte(rulesData),
 	)
 
@@ -475,35 +498,30 @@ func (r *DruidIngestionReconciler) CreateOrUpdate(
 
 		}
 
-		// compare the compaction state
-		compactionEqual := reflect.DeepEqual(di.Status.CurrentCompaction, di.Spec.Ingestion.Compaction)
+		compactionOk, err := r.UpdateCompaction(di, svcName, auth)
+		if err != nil {
+			return controllerutil.OperationResultNone, err
+		}
 
-		if !compactionEqual {
-			compactionOk, err := r.UpdateCompaction(di, svcName, auth)
+		if compactionOk {
+			// patch status to store the current compaction json
+			_, err := r.makePatchDruidIngestionStatus(
+				di,
+				di.Status.TaskId,
+				DruidIngestionControllerUpdateSuccess,
+				"compaction updated",
+				v1.ConditionTrue,
+				DruidIngestionControllerUpdateSuccess,
+			)
 			if err != nil {
 				return controllerutil.OperationResultNone, err
 			}
-
-			if compactionOk {
-				// patch status to store the current compaction json
-				_, err := r.makePatchDruidIngestionStatus(
-					di,
-					di.Status.TaskId,
-					DruidIngestionControllerUpdateSuccess,
-					"compaction updated",
-					v1.ConditionTrue,
-					DruidIngestionControllerUpdateSuccess,
-				)
-				if err != nil {
-					return controllerutil.OperationResultNone, err
-				}
-				build.Recorder.GenericEvent(
-					di,
-					v1.EventTypeNormal,
-					"compaction updated",
-					DruidIngestionControllerUpdateSuccess,
-				)
-			}
+			build.Recorder.GenericEvent(
+				di,
+				v1.EventTypeNormal,
+				"compaction updated",
+				DruidIngestionControllerUpdateSuccess,
+			)
 		}
 
 		// compare the rules state
@@ -562,7 +580,6 @@ func (r *DruidIngestionReconciler) makePatchDruidIngestionStatus(
 
 		in := obj.(*v1alpha1.DruidIngestion)
 		in.Status.CurrentIngestionSpec = ingestionSpec
-		in.Status.CurrentCompaction = di.Spec.Ingestion.Compaction
 		in.Status.CurrentRules = di.Spec.Ingestion.Rules
 		in.Status.TaskId = taskId
 		in.Status.LastUpdateTime = metav1.Time{Time: time.Now()}
@@ -587,25 +604,25 @@ func getPath(
 	case v1alpha1.NativeBatchIndexParallel:
 		if httpMethod == http.MethodGet {
 			// get task
-			return makePath(svcName, "indexer", "task", taskId)
+			return druidapi.MakePath(svcName, "indexer", "task", taskId)
 		} else if httpMethod == http.MethodPost && !shutDownTask {
 			// create or update task
-			return makePath(svcName, "indexer", "task")
+			return druidapi.MakePath(svcName, "indexer", "task")
 		} else if shutDownTask {
 			// shutdown task
-			return makePath(svcName, "indexer", "task", taskId, "shutdown")
+			return druidapi.MakePath(svcName, "indexer", "task", taskId, "shutdown")
 		}
 	case v1alpha1.HadoopIndexHadoop:
 	case v1alpha1.Kafka:
 		if httpMethod == http.MethodGet {
 			// get supervisor task
-			return makePath(svcName, "indexer", "supervisor", taskId)
+			return druidapi.MakePath(svcName, "indexer", "supervisor", taskId)
 		} else if httpMethod == http.MethodPost && !shutDownTask {
 			// create or update supervisor task
-			return makePath(svcName, "indexer", "supervisor")
+			return druidapi.MakePath(svcName, "indexer", "supervisor")
 		} else if shutDownTask {
 			// shut down supervisor
-			return makePath(svcName, "indexer", "supervisor", taskId, "shutdown")
+			return druidapi.MakePath(svcName, "indexer", "supervisor", taskId, "shutdown")
 		}
 	case v1alpha1.Kinesis:
 	case v1alpha1.QueryControllerSQL:
@@ -614,37 +631,6 @@ func getPath(
 	}
 
 	return ""
-}
-
-// makePath constructs the appropriate path for the specified Druid API.
-func makePath(baseURL, componentType, apiType string, additionalPaths ...string) string {
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		fmt.Println("Error parsing URL:", err)
-		return ""
-	}
-
-	// Construct the initial path
-	u.Path = path.Join("druid", componentType, "v1", apiType)
-
-	// Append additional path components
-	for _, p := range additionalPaths {
-		u.Path = path.Join(u.Path, p)
-	}
-
-	return u.String()
-}
-
-func makeSupervisorCreateUpdateTaskPath(svcName string) string {
-	return svcName + "/druid/indexer/v1/supervisor"
-}
-
-func makeSupervisorShutDownTaskPath(svcName, taskId string) string {
-	return svcName + "/druid/indexer/v1/supervisor/" + taskId + "/shutdown"
-}
-
-func makeSupervisorGetTaskPath(svcName, taskId string) string {
-	return svcName + "/druid/indexer/v1/supervisor/" + taskId
 }
 
 type taskHolder struct {
@@ -668,67 +654,6 @@ func getTaskIdFromResponse(resp string) (string, error) {
 	}
 
 	return "", errors.New("task id not found")
-}
-
-func (r *DruidIngestionReconciler) getRouterSvcUrl(namespace, druidClusterName string) (string, error) {
-	listOpts := []client.ListOption{
-		client.InNamespace(namespace),
-		client.MatchingLabels(map[string]string{
-			"druid_cr":  druidClusterName,
-			"component": "router",
-		}),
-	}
-	svcList := &v1.ServiceList{}
-	if err := r.Client.List(context.Background(), svcList, listOpts...); err != nil {
-		return "", err
-	}
-	var svcName string
-
-	for range svcList.Items {
-		svcName = svcList.Items[0].Name
-	}
-
-	if svcName == "" {
-		return "", errors.New("router svc discovery fail")
-	}
-
-	newName := "http://" + svcName + "." + namespace + ".svc.cluster.local:" + DruidRouterPort
-
-	return newName, nil
-}
-
-func (r *DruidIngestionReconciler) getAuthCreds(ctx context.Context, di *v1alpha1.DruidIngestion) (internalhttp.BasicAuth, error) {
-	druid := v1alpha1.Druid{}
-	// check if the mentioned druid cluster exists
-	if err := r.Client.Get(ctx, types.NamespacedName{
-		Namespace: di.Namespace,
-		Name:      di.Spec.DruidClusterName,
-	},
-		&druid,
-	); err != nil {
-		return internalhttp.BasicAuth{}, err
-	}
-	// check if the mentioned secret exists
-	if di.Spec.Auth != (v1alpha1.Auth{}) {
-		secret := v1.Secret{}
-		if err := r.Client.Get(ctx, types.NamespacedName{
-			Namespace: di.Spec.Auth.SecretRef.Namespace,
-			Name:      di.Spec.Auth.SecretRef.Name,
-		},
-			&secret,
-		); err != nil {
-			return internalhttp.BasicAuth{}, err
-		}
-		creds := internalhttp.BasicAuth{
-			UserName: string(secret.Data[OperatorUserName]),
-			Password: string(secret.Data[OperatorPassword]),
-		}
-
-		return creds, nil
-
-	}
-
-	return internalhttp.BasicAuth{}, nil
 }
 
 type VerbType string

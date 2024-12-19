@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	druidapi "github.com/datainfrahq/druid-operator/pkg/druidapi"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,7 +41,7 @@ type DruidIngestionSpec struct {
 	// +required
 	Ingestion IngestionSpec `json:"ingestion"`
 	// +optional
-	Auth Auth `json:"auth"`
+	Auth druidapi.Auth `json:"auth"`
 }
 
 type IngestionSpec struct {
@@ -72,21 +73,7 @@ type DruidIngestionStatus struct {
 	// CurrentIngestionSpec is a string instead of RawExtension to maintain compatibility with existing
 	// IngestionSpecs that are stored as JSON strings.
 	CurrentIngestionSpec string                 `json:"currentIngestionSpec.json"`
-	CurrentCompaction    runtime.RawExtension   `json:"compaction,omitempty"`
 	CurrentRules         []runtime.RawExtension `json:"rules,omitempty"`
-}
-
-type AuthType string
-
-const (
-	BasicAuth AuthType = "basic-auth"
-)
-
-type Auth struct {
-	// +required
-	Type AuthType `json:"type"`
-	// +required
-	SecretRef v1.SecretReference `json:"secretRef"`
 }
 
 // +kubebuilder:object:root=true

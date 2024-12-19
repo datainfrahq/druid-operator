@@ -1265,6 +1265,29 @@ spec:
                         type: array
                     type: object
                 type: object
+              auth:
+                properties:
+                  secretRef:
+                    description: |-
+                      SecretReference represents a Secret Reference. It has enough information to retrieve secret
+                      in any namespace
+                    properties:
+                      name:
+                        description: name is unique within a namespace to reference
+                          a secret resource.
+                        type: string
+                      namespace:
+                        description: namespace defines the space within which the
+                          secret name must be unique.
+                        type: string
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  type:
+                    type: string
+                required:
+                - secretRef
+                - type
+                type: object
               common.runtime.properties:
                 description: CommonRuntimeProperties Content fo the `common.runtime.properties`
                   configuration file.
@@ -1478,6 +1501,11 @@ spec:
                 description: DisablePVCDeletionFinalizer Whether PVCs shall be deleted
                   on the deletion of the Druid cluster.
                 type: boolean
+              dynamicConfig:
+                description: Dynamic Configurations for Druid. Applied through the
+                  dynamic configuration API.
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
               env:
                 description: Env Environment variables for druid containers.
                 items:

@@ -106,9 +106,6 @@ spec:
             type: object
           status:
             properties:
-              compaction:
-                type: object
-                x-kubernetes-preserve-unknown-fields: true
               currentIngestionSpec.json:
                 description: |-
                   CurrentIngestionSpec is a string instead of RawExtension to maintain compatibility with existing
