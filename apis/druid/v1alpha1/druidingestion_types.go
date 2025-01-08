@@ -17,8 +17,10 @@ limitations under the License.
 package v1alpha1
 
 import (
+	druidapi "github.com/datainfrahq/druid-operator/pkg/druidapi"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type DruidIngestionMethod string
@@ -39,37 +41,39 @@ type DruidIngestionSpec struct {
 	// +required
 	Ingestion IngestionSpec `json:"ingestion"`
 	// +optional
-	Auth Auth `json:"auth"`
+	Auth druidapi.Auth `json:"auth"`
 }
 
 type IngestionSpec struct {
 	// +required
 	Type DruidIngestionMethod `json:"type"`
-	// +required
+	// +optional
+	// Spec should be passed in as a JSON string.
+	// Note: This field is planned for deprecation in favor of nativeSpec.
 	Spec string `json:"spec,omitempty"`
+	// +optional
+	// nativeSpec allows the ingestion specification to be defined in a native Kubernetes format.
+	// This is particularly useful for environment-specific configurations and will eventually
+	// replace the JSON-based Spec field.
+	// Note: Spec will be ignored if nativeSpec is provided.
+	NativeSpec runtime.RawExtension `json:"nativeSpec,omitempty"`
+	// +optional
+	Compaction runtime.RawExtension `json:"compaction,omitempty"`
+	// +optional
+	Rules []runtime.RawExtension `json:"rules,omitempty"`
 }
 
 type DruidIngestionStatus struct {
-	TaskId               string             `json:"taskId"`
-	Type                 string             `json:"type,omitempty"`
-	Status               v1.ConditionStatus `json:"status,omitempty"`
-	Reason               string             `json:"reason,omitempty"`
-	Message              string             `json:"message,omitempty"`
-	LastUpdateTime       metav1.Time        `json:"lastUpdateTime,omitempty"`
-	CurrentIngestionSpec string             `json:"currentIngestionSpec.json"`
-}
-
-type AuthType string
-
-const (
-	BasicAuth AuthType = "basic-auth"
-)
-
-type Auth struct {
-	// +required
-	Type AuthType `json:"type"`
-	// +required
-	SecretRef v1.SecretReference `json:"secretRef"`
+	TaskId         string             `json:"taskId"`
+	Type           string             `json:"type,omitempty"`
+	Status         v1.ConditionStatus `json:"status,omitempty"`
+	Reason         string             `json:"reason,omitempty"`
+	Message        string             `json:"message,omitempty"`
+	LastUpdateTime metav1.Time        `json:"lastUpdateTime,omitempty"`
+	// CurrentIngestionSpec is a string instead of RawExtension to maintain compatibility with existing
+	// IngestionSpecs that are stored as JSON strings.
+	CurrentIngestionSpec string                 `json:"currentIngestionSpec.json"`
+	CurrentRules         []runtime.RawExtension `json:"rules,omitempty"`
 }
 
 // +kubebuilder:object:root=true

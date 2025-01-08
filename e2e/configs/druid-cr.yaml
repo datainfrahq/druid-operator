@@ -121,7 +121,6 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: metadata.namespace
-
   nodes:
     brokers:
       # Optionally specify for running broker as Deployment
@@ -185,6 +184,26 @@ spec:
       extra.jvm.options: |-
         -Xmx800m
         -Xms800m
+      dynamicConfig:
+        millisToWaitBeforeDeleting: 900000
+        mergeBytesLimit: 524288000
+        mergeSegmentsLimit: 100
+        maxSegmentsToMove: 5
+        percentOfSegmentsToConsiderPerMove: 100
+        useBatchedSegmentSampler: true
+        replicantLifetime: 15
+        replicationThrottleLimit: 10
+        balancerComputeThreads: 1
+        emitBalancingStats: true
+        killDataSourceWhitelist: []
+        killPendingSegmentsSkipList: []
+        maxSegmentsInNodeLoadingQueue: 100
+        decommissioningNodes: []
+        decommissioningMaxPercentOfMaxSegmentsToMove: 70
+        pauseCoordination: false
+        replicateAfterLoadTimeout: false
+        maxNonPrimaryReplicantsToLoad: 2147483647
+        useRoundRobinSegmentAssignment: true
 
     historicals:
       nodeType: "historical"
@@ -249,6 +268,14 @@ spec:
         druid.indexer.fork.property.druid.processing.buffer.sizeBytes=25000000
         druid.indexer.fork.property.druid.processing.numMergeBuffers=2
         druid.indexer.fork.property.druid.processing.numThreads=1
+      dynamicConfig:
+        type: default
+        selectStrategy:
+          type: fillCapacityWithCategorySpec
+          workerCategorySpec:
+            categoryMap: {}
+            strong: true
+        autoScaler: null
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

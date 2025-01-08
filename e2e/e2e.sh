@@ -75,6 +75,19 @@ else
   echo "Supervisor task ID: $supervisorTaskId"
 fi
 
+# Running a test Kafka DruidIngestion resource and wait for the task to be submitted
+kubectl apply -f e2e/configs/kafka-ingestion-native.yaml -n ${NAMESPACE}
+sleep 30 # wait for the manager to submit the ingestion task
+
+# Verify the supervisor task has been created
+supervisorTaskId=`kubectl get druidingestion -n druid kafka-2 --template={{.status.taskId}}`
+if [ -z "$supervisorTaskId" ]; then
+  echo "Failed to get supervisor task ID"
+  exit 1
+else
+  echo "Supervisor task ID: $supervisorTaskId"
+fi
+
 # Delete old druid
 kubectl delete -f e2e/configs/druid-cr.yaml -n ${NAMESPACE}
 for d in $(kubectl get pods -n ${NAMESPACE} -l app=druid -l druid_cr=tiny-cluster -o name)

@@ -10,6 +10,21 @@ spec:
   druidCluster: tiny-cluster
   ingestion:
     type: kafka
+    compaction:
+      tuningConfig:
+        type: "kafka"
+        partitionsSpec:
+          type: "dynamic"
+      skipOffsetFromLatest: "PT0S"
+      granularitySpec:
+        segmentGranularity: "DAY"
+    rules:
+    - type: dropByPeriod
+      period: P1M
+      includeFuture: true
+    - type: broadcastByPeriod
+      period: P1M
+      includeFuture: true
     spec: |-
       {
         "type": "kafka",
