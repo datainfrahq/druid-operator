@@ -35,7 +35,7 @@ func updateDruidDynamicConfigs(
 		if err != nil {
 			emitEvent.EmitEventGeneric(
 				druid,
-				"GetRouterSvcUrlFailed",
+				string(druidGetRouterSvcUrlFailed),
 				fmt.Sprintf("Failed to get router service URL for %s", nodeType),
 				err,
 			)
@@ -50,7 +50,7 @@ func updateDruidDynamicConfigs(
 		if err != nil {
 			emitEvent.EmitEventGeneric(
 				druid,
-				"GetAuthCredsFailed",
+				string(druidGetAuthCredsFailed),
 				fmt.Sprintf("Failed to get authentication credentials for %s", nodeType),
 				err,
 			)
@@ -83,7 +83,7 @@ func updateDruidDynamicConfigs(
 		if err != nil {
 			emitEvent.EmitEventGeneric(
 				druid,
-				"FetchCurrentConfigsFailed",
+				string(druidFetchCurrentConfigsFailed),
 				fmt.Sprintf("Failed to fetch current %s dynamic configurations", nodeType),
 				err,
 			)
@@ -96,7 +96,7 @@ func updateDruidDynamicConfigs(
 			)
 			emitEvent.EmitEventGeneric(
 				druid,
-				"FetchCurrentConfigsFailed",
+				string(druidFetchCurrentConfigsFailed),
 				fmt.Sprintf("Failed to fetch current %s dynamic configurations", nodeType),
 				err,
 			)
@@ -116,7 +116,7 @@ func updateDruidDynamicConfigs(
 		if err != nil {
 			emitEvent.EmitEventGeneric(
 				druid,
-				"ConfigComparisonFailed",
+				string(druidConfigComparisonFailed),
 				fmt.Sprintf("Failed to compare %s configurations", nodeType),
 				err,
 			)
@@ -136,7 +136,7 @@ func updateDruidDynamicConfigs(
 		if err != nil {
 			emitEvent.EmitEventGeneric(
 				druid,
-				"UpdateConfigsFailed",
+				string(druidUpdateConfigsFailed),
 				fmt.Sprintf("Failed to update %s dynamic configurations", nodeType),
 				err,
 			)
@@ -148,7 +148,7 @@ func updateDruidDynamicConfigs(
 
 		emitEvent.EmitEventGeneric(
 			druid,
-			"ConfigsUpdated",
+			string(druidUpdateConfigsSuccess),
 			fmt.Sprintf("Successfully updated %s dynamic configurations", nodeType),
 			nil,
 		)
