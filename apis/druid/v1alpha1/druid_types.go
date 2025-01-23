@@ -3,12 +3,14 @@ package v1alpha1
 import (
 	"encoding/json"
 
+	druidapi "github.com/datainfrahq/druid-operator/pkg/druidapi"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalev2 "k8s.io/api/autoscaling/v2"
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // druid-operator deploys a druid cluster from given spec below, based on the spec it would create following
@@ -281,6 +283,13 @@ type DruidSpec struct {
 	// CoreSite Contents of `core-site.xml`.
 	// +optional
 	CoreSite string `json:"core-site.xml,omitempty"`
+
+	// Dynamic Configurations for Druid. Applied through the dynamic configuration API.
+	// +optional
+	DynamicConfig runtime.RawExtension `json:"dynamicConfig,omitempty"`
+
+	// +optional
+	Auth druidapi.Auth `json:"auth,omitempty"`
 }
 
 // DruidNodeSpec Specification of `Druid` Node type and its configurations.
@@ -481,6 +490,10 @@ type DruidNodeSpec struct {
 	// ServiceAccountName Kubernetes native `serviceAccountName` specification.
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
+	// Dynamic Configurations for Druid. Applied through the dynamic configuration API.
+	// +optional
+	DynamicConfig runtime.RawExtension `json:"dynamicConfig,omitempty"`
 }
 
 // ZookeeperSpec IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.
