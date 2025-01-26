@@ -11,6 +11,9 @@ NAMESPACE_DRUID_OPERATOR ?= "druid-operator-system"
 NAMESPACE_ZK_OPERATOR ?= "zk-operator"
 # NAMESPACE for zk operator e2e
 NAMESPACE_MINIO_OPERATOR ?= "minio-operator"
+# MinIO version to install. Specific version is set to avoid breaking changes
+# using latest version. This version is tested with the operator.
+MINIO_VERSION ?= "6.0.4"
 # NAMESPACE for druid app e2e
 NAMESPACE_DRUID ?= "druid"
 
@@ -116,9 +119,11 @@ helm-minio-install: ## Helm deploy minio operator and minio
 	--namespace ${NAMESPACE_MINIO_OPERATOR} \
 	--create-namespace \
 	 ${NAMESPACE_MINIO_OPERATOR} minio/operator \
+	--version ${MINIO_VERSION} \
 	-f e2e/configs/minio-operator-override.yaml
 	helm upgrade --install \
 	--namespace ${NAMESPACE_DRUID} \
+	--version ${MINIO_VERSION} \
 	--create-namespace \
   	${NAMESPACE_DRUID}-minio minio/tenant \
 	-f e2e/configs/minio-tenant-override.yaml
