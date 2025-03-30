@@ -129,7 +129,7 @@ func GetRouterSvcUrl(namespace, druidClusterName string, c client.Client) (strin
 		return "", errors.New("router svc discovery fail")
 	}
 
-	newName := "http://" + svcName + "." + namespace + ".svc.cluster.local:" + DruidRouterPort
+	newName := "http://" + svcName + "." + namespace + ":" + DruidRouterPort
 
 	return newName, nil
 }
