@@ -290,6 +290,14 @@ type DruidSpec struct {
 
 	// +optional
 	Auth druidapi.Auth `json:"auth,omitempty"`
+
+	// See v1.DNSPolicy for more details.
+	// +optional
+	DNSPolicy v1.DNSPolicy `json:"dnsPolicy,omitempty" protobuf:"bytes,6,opt,name=dnsPolicy,casttype=DNSPolicy"`
+
+	// See v1.PodDNSConfig for more details.
+	// +optional
+	DNSConfig *v1.PodDNSConfig `json:"dnsConfig,omitempty" protobuf:"bytes,26,opt,name=dnsConfig"`
 }
 
 // DruidNodeSpec Specification of `Druid` Node type and its configurations.
@@ -494,6 +502,14 @@ type DruidNodeSpec struct {
 	// Dynamic Configurations for Druid. Applied through the dynamic configuration API.
 	// +optional
 	DynamicConfig runtime.RawExtension `json:"dynamicConfig,omitempty"`
+
+	// See v1.DNSPolicy for more details.
+	// +optional
+	DNSPolicy v1.DNSPolicy `json:"dnsPolicy,omitempty" protobuf:"bytes,6,opt,name=dnsPolicy,casttype=DNSPolicy"`
+
+	// See v1.PodDNSConfig for more details.
+	// +optional
+	DNSConfig *v1.PodDNSConfig `json:"dnsConfig,omitempty" protobuf:"bytes,26,opt,name=dnsConfig"`
 }
 
 // ZookeeperSpec IGNORED (Future API): In order to make Druid dependency setup extensible from within Druid operator.
