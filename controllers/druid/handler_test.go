@@ -2,6 +2,7 @@ package druid
 
 import (
 	"io/ioutil"
+	"testing"
 
 	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo/v2"
@@ -212,4 +213,52 @@ func readAndUnmarshallResource(file string, res interface{}) error {
 		return err
 	}
 	return nil
+}
+
+// TestPodSpecDNSPolicyResolution verifies DNSPolicy resolution in makePodSpec.
+func TestPodSpecDNSPolicyResolution(t *testing.T) {
+	tests := []struct {
+		name     string
+		nodeDNS  string
+		specDNS  string
+		expected corev1.DNSPolicy
+	}{
+		{"Both empty", "", "", corev1.DNSPolicy("")},
+		{"Only spec provided", "", "ClusterFirst", corev1.DNSPolicy("ClusterFirst")},
+		{"Only node provided", "Default", "", corev1.DNSPolicy("Default")},
+		{"Both provided, node wins", "Default", "ClusterFirst", corev1.DNSPolicy("Default")},
+	}
+
+	for _, tc := range tests {
+		tc := tc // capture current test case
+		t.Run(tc.name, func(t *testing.T) {
+			m := &druidv1alpha1.Druid{
+				Spec: druidv1alpha1.DruidSpec{
+					DNSPolicy: corev1.DNSPolicy(tc.specDNS),
+				},
+			}
+			nodeSpec := &druidv1alpha1.DruidNodeSpec{
+				DNSPolicy: corev1.DNSPolicy(tc.nodeDNS),
+			}
+			podSpec := makePodSpec(nodeSpec, m, "unique", "dummySHA")
+			if podSpec.DNSPolicy != tc.expected {
+				t.Errorf("expected DNSPolicy %q, got %q", tc.expected, podSpec.DNSPolicy)
+			}
+		})
+	}
+}
+
+// TestPodSpecDNSPolicyYAML validates that the generated PodSpec DNSPolicy matches the expected value,
+// using the druid-test-cr.yaml as the single input file.
+func TestPodSpecDNSPolicyYAML(t *testing.T) {
+	m, err := readDruidClusterSpecFromFile("testdata/druid-test-cr.yaml")
+	if err != nil {
+		t.Fatalf("failed to read cluster spec: %v", err)
+	}
+	nodeSpec := m.Spec.Nodes["middlemanagers"]
+	podSpec := makePodSpec(&nodeSpec, m, "unique", "dummySHA")
+	expectedDNSPolicy := corev1.DNSPolicy("ClusterFirst")
+	if podSpec.DNSPolicy != expectedDNSPolicy {
+		t.Errorf("expected DNSPolicy %q, got %q", expectedDNSPolicy, podSpec.DNSPolicy)
+	}
 }

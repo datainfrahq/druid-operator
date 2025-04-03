@@ -355,3 +355,4 @@ spec:
         limits:
           memory: "3Gi"
           cpu: "4"
+      dnsPolicy: ClusterFirst
