@@ -121,7 +121,7 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: metadata.namespace
-  dnsPolicy: Default
+  dnsPolicy: ClusterFirst
   nodes:
     brokers:
       # Optionally specify for running broker as Deployment
