@@ -123,9 +123,9 @@ spec:
           fieldPath: metadata.namespace
   dnsPolicy: ClusterFirst
   dnsConfig:
-    Nameservers:
+    nameservers:
       - 10.0.0.53
-    Searches:
+    searches:
       - example.local
   nodes:
     brokers:
