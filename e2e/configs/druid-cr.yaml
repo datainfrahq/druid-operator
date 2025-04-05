@@ -122,6 +122,11 @@ spec:
         fieldRef:
           fieldPath: metadata.namespace
   dnsPolicy: ClusterFirst
+  dnsConfig:
+    Nameservers:
+      - 10.0.0.53
+    Searches:
+      - example.local
   nodes:
     brokers:
       # Optionally specify for running broker as Deployment

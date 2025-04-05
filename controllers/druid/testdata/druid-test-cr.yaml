@@ -356,3 +356,8 @@ spec:
           memory: "3Gi"
           cpu: "4"
       dnsPolicy: ClusterFirst
+      dnsConfig:
+        Nameservers:
+          - 10.0.0.53
+        Searches:
+          - example.local

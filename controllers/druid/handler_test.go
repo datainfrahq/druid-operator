@@ -2,6 +2,7 @@ package druid
 
 import (
 	"io/ioutil"
+	"reflect"
 	"testing"
 
 	"github.com/ghodss/yaml"
@@ -215,8 +216,96 @@ func readAndUnmarshallResource(file string, res interface{}) error {
 	return nil
 }
 
-// TestPodSpecDNSPolicyResolution verifies DNSPolicy resolution in makePodSpec.
-func TestPodSpecDNSPolicyResolution(t *testing.T) {
+func TestPodSpecDNSConfig(t *testing.T) {
+	tests := []struct {
+		name          string
+		nodeDNSConfig *corev1.PodDNSConfig
+		specDNSConfig *corev1.PodDNSConfig
+		expected      *corev1.PodDNSConfig
+	}{
+		{
+			name:          "Both nil",
+			nodeDNSConfig: nil,
+			specDNSConfig: nil,
+			expected:      nil,
+		},
+		{
+			name:          "Only spec provided",
+			nodeDNSConfig: nil,
+			specDNSConfig: &corev1.PodDNSConfig{
+				Nameservers: []string{"8.8.8.8"},
+				Searches:    []string{"example.com"},
+			},
+			expected: &corev1.PodDNSConfig{
+				Nameservers: []string{"8.8.8.8"},
+				Searches:    []string{"example.com"},
+			},
+		},
+		{
+			name: "Only node provided",
+			nodeDNSConfig: &corev1.PodDNSConfig{
+				Nameservers: []string{"1.1.1.1"},
+				Searches:    []string{"node.local"},
+			},
+			specDNSConfig: nil,
+			expected: &corev1.PodDNSConfig{
+				Nameservers: []string{"1.1.1.1"},
+				Searches:    []string{"node.local"},
+			},
+		},
+		{
+			name: "Both provided, node wins",
+			nodeDNSConfig: &corev1.PodDNSConfig{
+				Nameservers: []string{"1.1.1.1"},
+				Searches:    []string{"node.local"},
+			},
+			specDNSConfig: &corev1.PodDNSConfig{
+				Nameservers: []string{"8.8.8.8"},
+				Searches:    []string{"example.com"},
+			},
+			expected: &corev1.PodDNSConfig{
+				Nameservers: []string{"1.1.1.1"},
+				Searches:    []string{"node.local"},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			m := &druidv1alpha1.Druid{
+				Spec: druidv1alpha1.DruidSpec{
+					DNSConfig: tc.specDNSConfig,
+				},
+			}
+			nodeSpec := &druidv1alpha1.DruidNodeSpec{
+				DNSConfig: tc.nodeDNSConfig,
+			}
+			podSpec := makePodSpec(nodeSpec, m, "unique", "dummySHA")
+			if !reflect.DeepEqual(podSpec.DNSConfig, tc.expected) {
+				t.Errorf("expected DNSConfig %v, got %v", tc.expected, podSpec.DNSConfig)
+			}
+		})
+	}
+}
+
+func TestPodSpecDNSConfigYAML(t *testing.T) {
+	m, err := readDruidClusterSpecFromFile("testdata/druid-test-cr.yaml")
+	if err != nil {
+		t.Fatalf("failed to read cluster spec: %v", err)
+	}
+	nodeSpec := m.Spec.Nodes["middlemanagers"]
+	podSpec := makePodSpec(&nodeSpec, m, "unique", "dummySHA")
+	expectedDNSConfig := &corev1.PodDNSConfig{
+		Nameservers: []string{"10.0.0.53"},
+		Searches:    []string{"example.local"},
+	}
+	if !reflect.DeepEqual(podSpec.DNSConfig, expectedDNSConfig) {
+		t.Errorf("expected DNSConfig %v, got %v", expectedDNSConfig, podSpec.DNSConfig)
+	}
+}
+
+// TestPodSpecDNSPolicy verifies DNSPolicy resolution in makePodSpec.
+func TestPodSpecDNSPolicy(t *testing.T) {
 	tests := []struct {
 		name     string
 		nodeDNS  string
