@@ -907,6 +907,34 @@ string
 <p>CoreSite Contents of <code>core-site.xml</code>.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>dnsPolicy</code><br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#dnspolicy-v1-core">
+Kubernetes core/v1.DNSPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>See v1.DNSPolicy for more details.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsConfig</code><br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#poddnsconfig-v1-core">
+Kubernetes core/v1.PodDNSConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>See v1.PodDNSConfig for more details.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -1942,6 +1970,34 @@ Kubernetes autoscaling/v2.HorizontalPodAutoscalerSpec
 <p>Operator deploys the sidecar container based on these properties.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>dnsPolicy</code><br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#dnspolicy-v1-core">
+Kubernetes core/v1.DNSPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>See v1.DNSPolicy for more details.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsConfig</code><br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#poddnsconfig-v1-core">
+Kubernetes core/v1.PodDNSConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>See v1.PodDNSConfig for more details.</p>
+</td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -2624,6 +2680,34 @@ string
 <td>
 <em>(Optional)</em>
 <p>CoreSite Contents of <code>core-site.xml</code>.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsPolicy</code><br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#dnspolicy-v1-core">
+Kubernetes core/v1.DNSPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>See v1.DNSPolicy for more details.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>dnsConfig</code><br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#poddnsconfig-v1-core">
+Kubernetes core/v1.PodDNSConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>See v1.PodDNSConfig for more details.</p>
 </td>
 </tr>
 </tbody>
