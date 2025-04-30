@@ -2,6 +2,8 @@ package druid
 
 import (
 	"io/ioutil"
+	"reflect"
+	"testing"
 
 	"github.com/ghodss/yaml"
 	. "github.com/onsi/ginkgo/v2"
@@ -212,4 +214,140 @@ func readAndUnmarshallResource(file string, res interface{}) error {
 		return err
 	}
 	return nil
+}
+
+func TestPodSpecDNSConfig(t *testing.T) {
+	tests := []struct {
+		name          string
+		nodeDNSConfig *corev1.PodDNSConfig
+		specDNSConfig *corev1.PodDNSConfig
+		expected      *corev1.PodDNSConfig
+	}{
+		{
+			name:          "Both nil",
+			nodeDNSConfig: nil,
+			specDNSConfig: nil,
+			expected:      nil,
+		},
+		{
+			name:          "Only spec provided",
+			nodeDNSConfig: nil,
+			specDNSConfig: &corev1.PodDNSConfig{
+				Nameservers: []string{"8.8.8.8"},
+				Searches:    []string{"example.com"},
+			},
+			expected: &corev1.PodDNSConfig{
+				Nameservers: []string{"8.8.8.8"},
+				Searches:    []string{"example.com"},
+			},
+		},
+		{
+			name: "Only node provided",
+			nodeDNSConfig: &corev1.PodDNSConfig{
+				Nameservers: []string{"1.1.1.1"},
+				Searches:    []string{"node.local"},
+			},
+			specDNSConfig: nil,
+			expected: &corev1.PodDNSConfig{
+				Nameservers: []string{"1.1.1.1"},
+				Searches:    []string{"node.local"},
+			},
+		},
+		{
+			name: "Both provided, node wins",
+			nodeDNSConfig: &corev1.PodDNSConfig{
+				Nameservers: []string{"1.1.1.1"},
+				Searches:    []string{"node.local"},
+			},
+			specDNSConfig: &corev1.PodDNSConfig{
+				Nameservers: []string{"8.8.8.8"},
+				Searches:    []string{"example.com"},
+			},
+			expected: &corev1.PodDNSConfig{
+				Nameservers: []string{"1.1.1.1"},
+				Searches:    []string{"node.local"},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			m := &druidv1alpha1.Druid{
+				Spec: druidv1alpha1.DruidSpec{
+					DNSConfig: tc.specDNSConfig,
+				},
+			}
+			nodeSpec := &druidv1alpha1.DruidNodeSpec{
+				DNSConfig: tc.nodeDNSConfig,
+			}
+			podSpec := makePodSpec(nodeSpec, m, "unique", "dummySHA")
+			if !reflect.DeepEqual(podSpec.DNSConfig, tc.expected) {
+				t.Errorf("expected DNSConfig %v, got %v", tc.expected, podSpec.DNSConfig)
+			}
+		})
+	}
+}
+
+func TestPodSpecDNSConfigYAML(t *testing.T) {
+	m, err := readDruidClusterSpecFromFile("testdata/druid-test-cr.yaml")
+	if err != nil {
+		t.Fatalf("failed to read cluster spec: %v", err)
+	}
+	nodeSpec := m.Spec.Nodes["middlemanagers"]
+	podSpec := makePodSpec(&nodeSpec, m, "unique", "dummySHA")
+	expectedDNSConfig := &corev1.PodDNSConfig{
+		Nameservers: []string{"10.0.0.53"},
+		Searches:    []string{"example.local"},
+	}
+	if !reflect.DeepEqual(podSpec.DNSConfig, expectedDNSConfig) {
+		t.Errorf("expected DNSConfig %v, got %v", expectedDNSConfig, podSpec.DNSConfig)
+	}
+}
+
+// TestPodSpecDNSPolicy verifies DNSPolicy resolution in makePodSpec.
+func TestPodSpecDNSPolicy(t *testing.T) {
+	tests := []struct {
+		name     string
+		nodeDNS  string
+		specDNS  string
+		expected corev1.DNSPolicy
+	}{
+		{"Both empty", "", "", corev1.DNSPolicy("")},
+		{"Only spec provided", "", "ClusterFirst", corev1.DNSPolicy("ClusterFirst")},
+		{"Only node provided", "Default", "", corev1.DNSPolicy("Default")},
+		{"Both provided, node wins", "Default", "ClusterFirst", corev1.DNSPolicy("Default")},
+	}
+
+	for _, tc := range tests {
+		tc := tc // capture current test case
+		t.Run(tc.name, func(t *testing.T) {
+			m := &druidv1alpha1.Druid{
+				Spec: druidv1alpha1.DruidSpec{
+					DNSPolicy: corev1.DNSPolicy(tc.specDNS),
+				},
+			}
+			nodeSpec := &druidv1alpha1.DruidNodeSpec{
+				DNSPolicy: corev1.DNSPolicy(tc.nodeDNS),
+			}
+			podSpec := makePodSpec(nodeSpec, m, "unique", "dummySHA")
+			if podSpec.DNSPolicy != tc.expected {
+				t.Errorf("expected DNSPolicy %q, got %q", tc.expected, podSpec.DNSPolicy)
+			}
+		})
+	}
+}
+
+// TestPodSpecDNSPolicyYAML validates that the generated PodSpec DNSPolicy matches the expected value,
+// using the druid-test-cr.yaml as the single input file.
+func TestPodSpecDNSPolicyYAML(t *testing.T) {
+	m, err := readDruidClusterSpecFromFile("testdata/druid-test-cr.yaml")
+	if err != nil {
+		t.Fatalf("failed to read cluster spec: %v", err)
+	}
+	nodeSpec := m.Spec.Nodes["middlemanagers"]
+	podSpec := makePodSpec(&nodeSpec, m, "unique", "dummySHA")
+	expectedDNSPolicy := corev1.DNSPolicy("ClusterFirst")
+	if podSpec.DNSPolicy != expectedDNSPolicy {
+		t.Errorf("expected DNSPolicy %q, got %q", expectedDNSPolicy, podSpec.DNSPolicy)
+	}
 }
