@@ -253,92 +253,24 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		}
 	}
 
-	//update status and delete unwanted resources
-	updatedStatus := v1alpha1.DruidClusterStatus{}
+	// update status and delete unwanted resources - CONSOLIDATED APPROACH
+	cleanupResult, err := deleteAllUnusedResources(
+		ctx, sdk, m, ls,
+		statefulSetNames, deploymentNames, serviceNames, configMapNames,
+		podDisruptionBudgetNames, hpaNames, ingressNames, emitEvents,
+	)
+	if err != nil {
+		return err
+	}
 
-	updatedStatus.StatefulSets = deleteUnusedResources(ctx, sdk, m, statefulSetNames, ls,
-		func() objectList { return &appsv1.StatefulSetList{} },
-		func(listObj runtime.Object) []object {
-			items := listObj.(*appsv1.StatefulSetList).Items
-			result := make([]object, len(items))
-			for i := 0; i < len(items); i++ {
-				result[i] = &items[i]
-			}
-			return result
-		}, emitEvents)
-	sort.Strings(updatedStatus.StatefulSets)
+	// Log any individual cleanup errors but continue processing
+	for _, cleanupErr := range cleanupResult.Errors {
+		logger.Error(cleanupErr, "Resource cleanup error", "name", m.Name, "namespace", m.Namespace)
+		emitEvents.EmitEventGeneric(m, "ResourceCleanupError", "", cleanupErr)
+	}
 
-	updatedStatus.Deployments = deleteUnusedResources(ctx, sdk, m, deploymentNames, ls,
-		func() objectList { return &appsv1.DeploymentList{} },
-		func(listObj runtime.Object) []object {
-			items := listObj.(*appsv1.DeploymentList).Items
-			result := make([]object, len(items))
-			for i := 0; i < len(items); i++ {
-				result[i] = &items[i]
-			}
-			return result
-		}, emitEvents)
-	sort.Strings(updatedStatus.Deployments)
-
-	updatedStatus.HPAutoScalers = deleteUnusedResources(ctx, sdk, m, hpaNames, ls,
-		func() objectList { return &autoscalev2.HorizontalPodAutoscalerList{} },
-		func(listObj runtime.Object) []object {
-			items := listObj.(*autoscalev2.HorizontalPodAutoscalerList).Items
-			result := make([]object, len(items))
-			for i := 0; i < len(items); i++ {
-				result[i] = &items[i]
-			}
-			return result
-		}, emitEvents)
-	sort.Strings(updatedStatus.HPAutoScalers)
-
-	updatedStatus.Ingress = deleteUnusedResources(ctx, sdk, m, ingressNames, ls,
-		func() objectList { return &networkingv1.IngressList{} },
-		func(listObj runtime.Object) []object {
-			items := listObj.(*networkingv1.IngressList).Items
-			result := make([]object, len(items))
-			for i := 0; i < len(items); i++ {
-				result[i] = &items[i]
-			}
-			return result
-		}, emitEvents)
-	sort.Strings(updatedStatus.Ingress)
-
-	updatedStatus.PodDisruptionBudgets = deleteUnusedResources(ctx, sdk, m, podDisruptionBudgetNames, ls,
-		func() objectList { return &policyv1.PodDisruptionBudgetList{} },
-		func(listObj runtime.Object) []object {
-			items := listObj.(*policyv1.PodDisruptionBudgetList).Items
-			result := make([]object, len(items))
-			for i := 0; i < len(items); i++ {
-				result[i] = &items[i]
-			}
-			return result
-		}, emitEvents)
-	sort.Strings(updatedStatus.PodDisruptionBudgets)
-
-	updatedStatus.Services = deleteUnusedResources(ctx, sdk, m, serviceNames, ls,
-		func() objectList { return &v1.ServiceList{} },
-		func(listObj runtime.Object) []object {
-			items := listObj.(*v1.ServiceList).Items
-			result := make([]object, len(items))
-			for i := 0; i < len(items); i++ {
-				result[i] = &items[i]
-			}
-			return result
-		}, emitEvents)
-	sort.Strings(updatedStatus.Services)
-
-	updatedStatus.ConfigMaps = deleteUnusedResources(ctx, sdk, m, configMapNames, ls,
-		func() objectList { return &v1.ConfigMapList{} },
-		func(listObj runtime.Object) []object {
-			items := listObj.(*v1.ConfigMapList).Items
-			result := make([]object, len(items))
-			for i := 0; i < len(items); i++ {
-				result[i] = &items[i]
-			}
-			return result
-		}, emitEvents)
-	sort.Strings(updatedStatus.ConfigMaps)
+	// Use the consolidated status
+	updatedStatus := *cleanupResult.Status
 
 	podList, _ := readers.List(ctx, sdk, m, makeLabelsForDruid(m), emitEvents, func() objectList { return &v1.PodList{} }, func(listObj runtime.Object) []object {
 		items := listObj.(*v1.PodList).Items
