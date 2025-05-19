@@ -3,6 +3,7 @@ package druid
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sort"
 	"sync"
 
@@ -12,24 +13,22 @@ import (
 	v1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ResourceConfig defines configuration for each resource type cleanup
-type ResourceConfig struct {
-	Name             string
-	ExpectedNames    map[string]bool
-	EmptyListObjFn   func() objectList
-	ItemsExtractorFn func(obj runtime.Object) []object
-}
+// Constants for resource type names to avoid repetition
+const (
+	ResourceTypeStatefulSets         = "StatefulSets"
+	ResourceTypeDeployments          = "Deployments"
+	ResourceTypeServices             = "Services"
+	ResourceTypeConfigMaps           = "ConfigMaps"
+	ResourceTypeHPAutoScalers        = "HPAutoScalers"
+	ResourceTypeIngress              = "Ingress"
+	ResourceTypePodDisruptionBudgets = "PodDisruptionBudgets"
+)
 
-// ResourceCleanupResult holds the result of cleaning up a specific resource type
-type ResourceCleanupResult struct {
-	ResourceType  string
-	SurvivorNames []string
-	Error         error
-}
+// ResourceExpectations - Simple map of resource types to expected names
+type ResourceExpectations map[string]map[string]bool
 
 // ConsolidatedResourceCleanupResult holds all cleanup results
 type ConsolidatedResourceCleanupResult struct {
@@ -37,186 +36,181 @@ type ConsolidatedResourceCleanupResult struct {
 	Errors []error
 }
 
-// deleteAllUnusedResources consolidates all resource cleanup operations into parallel execution
+// ResourceTypeConfig holds the configuration for each resource type
+type ResourceTypeConfig struct {
+	Name       string
+	CreateList func() client.ObjectList
+}
+
+// deleteAllUnusedResources - THE SIMPLEST, CLEANEST VERSION
 func deleteAllUnusedResources(
 	ctx context.Context,
 	sdk client.Client,
 	drd *v1alpha1.Druid,
 	selectorLabels map[string]string,
-	statefulSetNames map[string]bool,
-	deploymentNames map[string]bool,
-	serviceNames map[string]bool,
-	configMapNames map[string]bool,
-	podDisruptionBudgetNames map[string]bool,
-	hpaNames map[string]bool,
-	ingressNames map[string]bool,
+	expectedResources ResourceExpectations,
 	emitEvents EventEmitter,
 ) (*ConsolidatedResourceCleanupResult, error) {
 
-	// Define all resource types to clean up
-	resourceConfigs := []ResourceConfig{
-		{
-			Name:           "StatefulSets",
-			ExpectedNames:  statefulSetNames,
-			EmptyListObjFn: func() objectList { return &appsv1.StatefulSetList{} },
-			ItemsExtractorFn: func(listObj runtime.Object) []object {
-				items := listObj.(*appsv1.StatefulSetList).Items
-				result := make([]object, len(items))
-				for i := 0; i < len(items); i++ {
-					result[i] = &items[i]
-				}
-				return result
-			},
-		},
-		{
-			Name:           "Deployments",
-			ExpectedNames:  deploymentNames,
-			EmptyListObjFn: func() objectList { return &appsv1.DeploymentList{} },
-			ItemsExtractorFn: func(listObj runtime.Object) []object {
-				items := listObj.(*appsv1.DeploymentList).Items
-				result := make([]object, len(items))
-				for i := 0; i < len(items); i++ {
-					result[i] = &items[i]
-				}
-				return result
-			},
-		},
-		{
-			Name:           "Services",
-			ExpectedNames:  serviceNames,
-			EmptyListObjFn: func() objectList { return &v1.ServiceList{} },
-			ItemsExtractorFn: func(listObj runtime.Object) []object {
-				items := listObj.(*v1.ServiceList).Items
-				result := make([]object, len(items))
-				for i := 0; i < len(items); i++ {
-					result[i] = &items[i]
-				}
-				return result
-			},
-		},
-		{
-			Name:           "ConfigMaps",
-			ExpectedNames:  configMapNames,
-			EmptyListObjFn: func() objectList { return &v1.ConfigMapList{} },
-			ItemsExtractorFn: func(listObj runtime.Object) []object {
-				items := listObj.(*v1.ConfigMapList).Items
-				result := make([]object, len(items))
-				for i := 0; i < len(items); i++ {
-					result[i] = &items[i]
-				}
-				return result
-			},
-		},
-		{
-			Name:           "HPAutoScalers",
-			ExpectedNames:  hpaNames,
-			EmptyListObjFn: func() objectList { return &autoscalev2.HorizontalPodAutoscalerList{} },
-			ItemsExtractorFn: func(listObj runtime.Object) []object {
-				items := listObj.(*autoscalev2.HorizontalPodAutoscalerList).Items
-				result := make([]object, len(items))
-				for i := 0; i < len(items); i++ {
-					result[i] = &items[i]
-				}
-				return result
-			},
-		},
-		{
-			Name:           "Ingress",
-			ExpectedNames:  ingressNames,
-			EmptyListObjFn: func() objectList { return &networkingv1.IngressList{} },
-			ItemsExtractorFn: func(listObj runtime.Object) []object {
-				items := listObj.(*networkingv1.IngressList).Items
-				result := make([]object, len(items))
-				for i := 0; i < len(items); i++ {
-					result[i] = &items[i]
-				}
-				return result
-			},
-		},
-		{
-			Name:           "PodDisruptionBudgets",
-			ExpectedNames:  podDisruptionBudgetNames,
-			EmptyListObjFn: func() objectList { return &policyv1.PodDisruptionBudgetList{} },
-			ItemsExtractorFn: func(listObj runtime.Object) []object {
-				items := listObj.(*policyv1.PodDisruptionBudgetList).Items
-				result := make([]object, len(items))
-				for i := 0; i < len(items); i++ {
-					result[i] = &items[i]
-				}
-				return result
-			},
-		},
+	// Define all resource types with proper type safety - NO MORE REPETITION!
+	resourceTypes := map[string]ResourceTypeConfig{
+		ResourceTypeStatefulSets:         {ResourceTypeStatefulSets, func() client.ObjectList { return &appsv1.StatefulSetList{} }},
+		ResourceTypeDeployments:          {ResourceTypeDeployments, func() client.ObjectList { return &appsv1.DeploymentList{} }},
+		ResourceTypeServices:             {ResourceTypeServices, func() client.ObjectList { return &v1.ServiceList{} }},
+		ResourceTypeConfigMaps:           {ResourceTypeConfigMaps, func() client.ObjectList { return &v1.ConfigMapList{} }},
+		ResourceTypeHPAutoScalers:        {ResourceTypeHPAutoScalers, func() client.ObjectList { return &autoscalev2.HorizontalPodAutoscalerList{} }},
+		ResourceTypeIngress:              {ResourceTypeIngress, func() client.ObjectList { return &networkingv1.IngressList{} }},
+		ResourceTypePodDisruptionBudgets: {ResourceTypePodDisruptionBudgets, func() client.ObjectList { return &policyv1.PodDisruptionBudgetList{} }},
 	}
 
-	// Channel to collect results from parallel goroutines
-	resultChan := make(chan ResourceCleanupResult, len(resourceConfigs))
+	status := &v1alpha1.DruidClusterStatus{}
+	resultChan := make(chan struct {
+		resourceType string
+		survivors    []string
+		err          error
+	}, len(resourceTypes))
 	var wg sync.WaitGroup
 
-	// Launch parallel cleanup operations
-	for _, config := range resourceConfigs {
+	// Process all resource types in parallel
+	for resourceType, config := range resourceTypes {
 		wg.Add(1)
-		go func(cfg ResourceConfig) {
+		go func(resType string, cfg ResourceTypeConfig) {
 			defer wg.Done()
 
-			// Call the existing deleteUnusedResources function for this resource type
-			survivors := deleteUnusedResources(
-				ctx, sdk, drd, cfg.ExpectedNames, selectorLabels,
-				cfg.EmptyListObjFn, cfg.ItemsExtractorFn, emitEvents,
+			// Get expected names, default to empty if not provided
+			expectedNames := expectedResources[resType]
+			if expectedNames == nil {
+				expectedNames = make(map[string]bool)
+			}
+
+			// Generic cleanup
+			survivors, err := cleanupSingleResourceType(
+				ctx, sdk, drd, cfg, expectedNames, selectorLabels, emitEvents,
 			)
 
-			// Send result to channel
-			resultChan <- ResourceCleanupResult{
-				ResourceType:  cfg.Name,
-				SurvivorNames: survivors,
-				Error:         nil, // deleteUnusedResources doesn't return errors currently
-			}
-		}(config)
+			resultChan <- struct {
+				resourceType string
+				survivors    []string
+				err          error
+			}{resType, survivors, err}
+		}(resourceType, config)
 	}
 
-	// Wait for all goroutines to complete
+	// Wait and collect results
 	wg.Wait()
 	close(resultChan)
 
-	// Collect all results
-	status := &v1alpha1.DruidClusterStatus{}
 	var errors []error
-
 	for result := range resultChan {
-		if result.Error != nil {
-			errors = append(errors, fmt.Errorf("failed to cleanup %s: %w", result.ResourceType, result.Error))
+		if result.err != nil {
+			errors = append(errors, result.err)
 			continue
 		}
 
-		// Assign results to appropriate status fields
-		switch result.ResourceType {
-		case "StatefulSets":
-			status.StatefulSets = result.SurvivorNames
-		case "Deployments":
-			status.Deployments = result.SurvivorNames
-		case "Services":
-			status.Services = result.SurvivorNames
-		case "ConfigMaps":
-			status.ConfigMaps = result.SurvivorNames
-		case "HPAutoScalers":
-			status.HPAutoScalers = result.SurvivorNames
-		case "Ingress":
-			status.Ingress = result.SurvivorNames
-		case "PodDisruptionBudgets":
-			status.PodDisruptionBudgets = result.SurvivorNames
+		sort.Strings(result.survivors)
+
+		// Update status fields
+		switch result.resourceType {
+		case ResourceTypeStatefulSets:
+			status.StatefulSets = result.survivors
+		case ResourceTypeDeployments:
+			status.Deployments = result.survivors
+		case ResourceTypeServices:
+			status.Services = result.survivors
+		case ResourceTypeConfigMaps:
+			status.ConfigMaps = result.survivors
+		case ResourceTypeHPAutoScalers:
+			status.HPAutoScalers = result.survivors
+		case ResourceTypeIngress:
+			status.Ingress = result.survivors
+		case ResourceTypePodDisruptionBudgets:
+			status.PodDisruptionBudgets = result.survivors
 		}
 	}
-
-	// Sort all result slices for consistency (matching original behavior)
-	sort.Strings(status.StatefulSets)
-	sort.Strings(status.Deployments)
-	sort.Strings(status.Services)
-	sort.Strings(status.ConfigMaps)
-	sort.Strings(status.HPAutoScalers)
-	sort.Strings(status.Ingress)
-	sort.Strings(status.PodDisruptionBudgets)
 
 	return &ConsolidatedResourceCleanupResult{
 		Status: status,
 		Errors: errors,
 	}, nil
+}
+
+// Generic cleanup for any resource type
+func cleanupSingleResourceType(
+	ctx context.Context,
+	sdk client.Client,
+	drd *v1alpha1.Druid,
+	config ResourceTypeConfig,
+	expectedNames map[string]bool,
+	selectorLabels map[string]string,
+	emitEvents EventEmitter,
+) ([]string, error) {
+
+	// Create list object with proper type safety
+	listObj := config.CreateList()
+
+	// List resources
+	listOpts := []client.ListOption{
+		client.InNamespace(drd.Namespace),
+		client.MatchingLabels(selectorLabels),
+	}
+
+	if err := sdk.List(ctx, listObj, listOpts...); err != nil {
+		return nil, fmt.Errorf("failed to list %s: %w", config.Name, err)
+	}
+
+	// Extract items using reflection (still needed to be generic across types)
+	items := extractItemsFromList(listObj)
+	survivorNames := make([]string, 0, len(expectedNames))
+
+	for _, item := range items {
+		itemMeta := item.(client.Object)
+		name := itemMeta.GetName()
+
+		if !expectedNames[name] {
+			// Delete unexpected resource
+			if err := writers.Delete(ctx, sdk, drd, item.(object), emitEvents, &client.DeleteOptions{}); err != nil {
+				survivorNames = append(survivorNames, name) // Failed to delete, so it's a survivor
+			}
+		} else {
+			// Keep expected resource
+			survivorNames = append(survivorNames, name)
+		}
+	}
+
+	return survivorNames, nil
+}
+
+// Extract items from any Kubernetes list object using reflection
+func extractItemsFromList(listObj client.ObjectList) []interface{} {
+	// Use reflection to get the Items field from any list type
+	listValue := reflect.ValueOf(listObj).Elem()
+	itemsField := listValue.FieldByName("Items")
+
+	if !itemsField.IsValid() {
+		return nil
+	}
+
+	items := make([]interface{}, itemsField.Len())
+	for i := 0; i < itemsField.Len(); i++ {
+		// Get pointer to the item
+		itemValue := itemsField.Index(i)
+		items[i] = itemValue.Addr().Interface()
+	}
+	return items
+}
+
+// Helper to build ResourceExpectations from existing variables
+func BuildResourceExpectations(
+	statefulSetNames, deploymentNames, serviceNames, configMapNames,
+	podDisruptionBudgetNames, hpaNames, ingressNames map[string]bool,
+) ResourceExpectations {
+	return ResourceExpectations{
+		ResourceTypeStatefulSets:         statefulSetNames,
+		ResourceTypeDeployments:          deploymentNames,
+		ResourceTypeServices:             serviceNames,
+		ResourceTypeConfigMaps:           configMapNames,
+		ResourceTypePodDisruptionBudgets: podDisruptionBudgetNames,
+		ResourceTypeHPAutoScalers:        hpaNames,
+		ResourceTypeIngress:              ingressNames,
+	}
 }

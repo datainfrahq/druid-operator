@@ -253,20 +253,16 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 		}
 	}
 
-	// update status and delete unwanted resources - CONSOLIDATED APPROACH
-	cleanupResult, err := deleteAllUnusedResources(
-		ctx, sdk, m, ls,
+	expectedResources := BuildResourceExpectations(
 		statefulSetNames, deploymentNames, serviceNames, configMapNames,
-		podDisruptionBudgetNames, hpaNames, ingressNames, emitEvents,
+		podDisruptionBudgetNames, hpaNames, ingressNames,
+	)
+
+	cleanupResult, err := deleteAllUnusedResources(
+		ctx, sdk, m, ls, expectedResources, emitEvents,
 	)
 	if err != nil {
 		return err
-	}
-
-	// Log any individual cleanup errors but continue processing
-	for _, cleanupErr := range cleanupResult.Errors {
-		logger.Error(cleanupErr, "Resource cleanup error", "name", m.Name, "namespace", m.Namespace)
-		emitEvents.EmitEventGeneric(m, "ResourceCleanupError", "", cleanupErr)
 	}
 
 	// Use the consolidated status
