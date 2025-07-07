@@ -55,7 +55,7 @@
 | kubernetes <= 1.20 | :x:| :x: | :x: | :x: | :x: | :x: | :x: | :x: |
 | kubernetes == 1.21 | :white_check_mark:| :x: | :x: | :x: | :x: | :x: | :x: | :x: |
 | kubernetes >= 1.22 and <= 1.25 | :white_check_mark: | :white_check_mark: | :white_check_mark: |  :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| kubernetes > 1.25 and <= 1.30.1 | :x: | :x: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| kubernetes > 1.25 and <= 1.33.1 | :x: | :x: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 
 ### Contributors
 
