@@ -44,10 +44,11 @@ spec:
   services:
     - spec:
         type: ClusterIP
-        clusterIP: None
+#        clusterIP: None
   commonConfigMountPath: "/opt/druid/conf/druid/cluster/_common"
   jvm.options: |-
     -server
+    -Djava.net.preferIPv4Stack=true
     -XX:MaxDirectMemorySize=10240g
     -Duser.timezone=UTC
     -Dfile.encoding=UTF-8
@@ -136,7 +137,7 @@ spec:
             type: ClusterIP
             clusterIP: None
       nodeConfigMountPath: "/opt/druid/conf/druid/cluster/query/broker"
-      replicas: s
+      replicas: 1
       runtime.properties: |
         druid.service=druid/broker
         # HTTP server threads
@@ -145,6 +146,7 @@ spec:
         # Processing threads and buffers
         druid.processing.buffer.sizeBytes=25000000
         druid.sql.enable=true
+        druid.host=druid-tiny-cluster-brokers
       extra.jvm.options: |-
         -Xmx512m
         -Xms512m
@@ -173,6 +175,7 @@ spec:
         druid.indexer.runner.namespace: druid
         druid.indexer.runner.type: k8s
         druid.indexer.task.encapsulatedTask: true
+        druid.host=druid-tiny-cluster-coordinators
       extra.jvm.options: |-
         -Xmx800m
         -Xms800m
@@ -239,6 +242,7 @@ spec:
         # Segment storage
         druid.segmentCache.locations=[{"path":"/druid/data/segments","maxSize":1000000000}]
         druid.server.maxSize=1000000000
+        druid.host=druid-tiny-cluster-hot
       extra.jvm.options: |-
         -Xmx512m
         -Xms512m
@@ -305,6 +309,7 @@ spec:
         # Segment storage
         druid.segmentCache.locations=[{"path":"/druid/data/segments","maxSize":2000000000}]
         druid.server.maxSize=2000000000
+        druid.host=druid-tiny-cluster-cold
       extra.jvm.options: |-
         -Xmx512m
         -Xms512m
@@ -331,6 +336,7 @@ spec:
         druid.router.coordinatorServiceName=druid/coordinator
         # Management proxy to coordinator / overlord: required for unified web console.
         druid.router.managementProxy.enabled=true
+        druid.host=druid-tiny-cluster-routers
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
