@@ -31,7 +31,7 @@ func updateDruidDynamicConfigs(
 
 		dynamicConfig := nodeConfig.DynamicConfig.Raw
 
-		svcName, err := druidapi.GetRouterSvcUrl(druid.Namespace, druid.Name, client)
+		svcName, err := druidapi.GetRouterSvcUrl(ctx, druid.Namespace, druid.Name, client)
 		if err != nil {
 			emitEvent.EmitEventGeneric(
 				druid,
