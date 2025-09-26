@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/datainfrahq/druid-operator/apis/druid/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -178,25 +179,41 @@ func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.D
 
 		}
 
+		// Get the volume claim template name for this index
+		volumeClaimTemplateName := nodeSpec.VolumeClaimTemplates[i].Name
+
 		// In case size dont match, patch the pvc with the desiredsize from druid CR
-		for p := range pvcSize {
-			pSize, _ := pvcSize[p].AsInt64()
+		for p := range pvcList {
+			pvcObj := pvcList[p].(*v1.PersistentVolumeClaim)
+
+			// Extract the volume template name from PVC name
+			// PVC name format: {volumeClaimTemplateName}-{statefulSetName}-{ordinal}
+			stsName := sts.(*appsv1.StatefulSet).Name
+			expectedPrefix := fmt.Sprintf("%s-%s-", volumeClaimTemplateName, stsName)
+
+			// Skip if this PVC doesn't match the current volume claim template
+			if !strings.HasPrefix(pvcObj.Name, expectedPrefix) {
+				continue
+			}
+
+			pvcQuantity := pvcObj.Spec.Resources.Requests[v1.ResourceStorage]
+			pSize, _ := pvcQuantity.AsInt64()
 
 			// Log PVC comparison details
-			pvcObj := pvcList[p].(*v1.PersistentVolumeClaim)
 			fmt.Println("\nPVC Volume Expansion Debug - PVC comparison")
 			fmt.Println("PVC:", pvcObj.Name)
+			fmt.Println("VolumeClaimTemplate:", volumeClaimTemplateName)
 			fmt.Println("desiredSize (AsInt64):", desiredSize)
 			fmt.Println("desiredSize (String):", desVolumeClaimTemplateSize[i].String())
 			fmt.Println("pvcSize (AsInt64):", pSize)
-			fmt.Println("pvcSize (String):", pvcSize[p].String())
-			
+			fmt.Println("pvcSize (String):", pvcQuantity.String())
+
 			specStorage := "nil"
 			if reqStorage, exists := pvcObj.Spec.Resources.Requests[v1.ResourceStorage]; exists {
 				specStorage = reqStorage.String()
 			}
 			fmt.Println("PVC spec.resources.requests.storage:", specStorage)
-			
+
 			statusStorage := "nil"
 			if pvcObj.Status.Capacity != nil {
 				if cap, exists := pvcObj.Status.Capacity[v1.ResourceStorage]; exists {
@@ -209,19 +226,19 @@ func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.D
 			if desiredSize != pSize {
 				fmt.Println("\nPVC Volume Expansion Debug - Attempting to patch PVC")
 				fmt.Println("PVC:", pvcObj.Name)
-				fmt.Println("from size:", pvcSize[p].String())
+				fmt.Println("from size:", pvcQuantity.String())
 				fmt.Println("to size:", desVolumeClaimTemplateSize[i].String())
 
 				// use deepcopy
-				patch := client.MergeFrom(pvcList[p].(*v1.PersistentVolumeClaim).DeepCopy())
-				pvcList[p].(*v1.PersistentVolumeClaim).Spec.Resources.Requests[v1.ResourceStorage] = desVolumeClaimTemplateSize[i]
-				if err := writers.Patch(ctx, sdk, drd, pvcList[p].(*v1.PersistentVolumeClaim), false, patch, emitEvent); err != nil {
+				patch := client.MergeFrom(pvcObj.DeepCopy())
+				pvcObj.Spec.Resources.Requests[v1.ResourceStorage] = desVolumeClaimTemplateSize[i]
+				if err := writers.Patch(ctx, sdk, drd, pvcObj, false, patch, emitEvent); err != nil {
 					fmt.Println("\nPVC Volume Expansion Debug - Patch failed")
 					fmt.Println("PVC:", pvcObj.Name)
 					fmt.Println("error:", err.Error())
 					return err
 				} else {
-					msg := fmt.Sprintf("[PVC:%s] successfully Patched with [Size:%s]", pvcList[p].(*v1.PersistentVolumeClaim).Name, desVolumeClaimTemplateSize[i].String())
+					msg := fmt.Sprintf("[PVC:%s] successfully Patched with [Size:%s]", pvcObj.Name, desVolumeClaimTemplateSize[i].String())
 					logger.Info(msg, "name", drd.Name, "namespace", drd.Namespace)
 				}
 			}
