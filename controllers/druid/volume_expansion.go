@@ -124,13 +124,6 @@ func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.D
 
 	desVolumeClaimTemplateSize, currVolumeClaimTemplateSize, pvcSize := getVolumeClaimTemplateSizes(sts, nodeSpec, pvcList)
 
-	// Log the sizes for debugging
-	fmt.Println("PVC Volume Expansion Debug - Size Arrays")
-	fmt.Println("StatefulSet:", sts.(*appsv1.StatefulSet).Name)
-	fmt.Println("desVolumeClaimTemplateSize count:", len(desVolumeClaimTemplateSize))
-	fmt.Println("currVolumeClaimTemplateSize count:", len(currVolumeClaimTemplateSize))
-	fmt.Println("pvcSize count:", len(pvcSize))
-
 	// current number of PVC can't be less than desired number of pvc
 	if len(pvcSize) < len(desVolumeClaimTemplateSize) {
 		return nil
@@ -145,15 +138,6 @@ func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.D
 
 		desiredSize, _ := desVolumeClaimTemplateSize[i].AsInt64()
 		currentSize, _ := currVolumeClaimTemplateSize[i].AsInt64()
-
-		// Log the raw quantity values for debugging
-		fmt.Println("\nPVC Volume Expansion Debug - Comparing sizes")
-		fmt.Println("StatefulSet:", sts.(*appsv1.StatefulSet).Name)
-		fmt.Println("VolumeClaimTemplate index:", i)
-		fmt.Println("desiredSize (AsInt64):", desiredSize)
-		fmt.Println("desiredSize (String):", desVolumeClaimTemplateSize[i].String())
-		fmt.Println("currentSize (AsInt64):", currentSize)
-		fmt.Println("currentSize (String):", currVolumeClaimTemplateSize[i].String())
 
 		if desiredSize < currentSize {
 			e := fmt.Errorf("Request for Shrinking of sts pvc size [sts:%s] in [namespace:%s] is not Supported", sts.(*appsv1.StatefulSet).Name, sts.(*appsv1.StatefulSet).Namespace)
@@ -199,43 +183,11 @@ func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.D
 			pvcQuantity := pvcObj.Spec.Resources.Requests[v1.ResourceStorage]
 			pSize, _ := pvcQuantity.AsInt64()
 
-			// Log PVC comparison details
-			fmt.Println("\nPVC Volume Expansion Debug - PVC comparison")
-			fmt.Println("PVC:", pvcObj.Name)
-			fmt.Println("VolumeClaimTemplate:", volumeClaimTemplateName)
-			fmt.Println("desiredSize (AsInt64):", desiredSize)
-			fmt.Println("desiredSize (String):", desVolumeClaimTemplateSize[i].String())
-			fmt.Println("pvcSize (AsInt64):", pSize)
-			fmt.Println("pvcSize (String):", pvcQuantity.String())
-
-			specStorage := "nil"
-			if reqStorage, exists := pvcObj.Spec.Resources.Requests[v1.ResourceStorage]; exists {
-				specStorage = reqStorage.String()
-			}
-			fmt.Println("PVC spec.resources.requests.storage:", specStorage)
-
-			statusStorage := "nil"
-			if pvcObj.Status.Capacity != nil {
-				if cap, exists := pvcObj.Status.Capacity[v1.ResourceStorage]; exists {
-					statusStorage = cap.String()
-				}
-			}
-			fmt.Println("PVC status.capacity.storage:", statusStorage)
-			fmt.Println("sizes equal?:", desiredSize == pSize)
-
 			if desiredSize != pSize {
-				fmt.Println("\nPVC Volume Expansion Debug - Attempting to patch PVC")
-				fmt.Println("PVC:", pvcObj.Name)
-				fmt.Println("from size:", pvcQuantity.String())
-				fmt.Println("to size:", desVolumeClaimTemplateSize[i].String())
-
 				// use deepcopy
 				patch := client.MergeFrom(pvcObj.DeepCopy())
 				pvcObj.Spec.Resources.Requests[v1.ResourceStorage] = desVolumeClaimTemplateSize[i]
 				if err := writers.Patch(ctx, sdk, drd, pvcObj, false, patch, emitEvent); err != nil {
-					fmt.Println("\nPVC Volume Expansion Debug - Patch failed")
-					fmt.Println("PVC:", pvcObj.Name)
-					fmt.Println("error:", err.Error())
 					return err
 				} else {
 					msg := fmt.Sprintf("[PVC:%s] successfully Patched with [Size:%s]", pvcObj.Name, desVolumeClaimTemplateSize[i].String())
