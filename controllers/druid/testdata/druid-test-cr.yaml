@@ -355,9 +355,3 @@ spec:
         limits:
           memory: "3Gi"
           cpu: "4"
-      dnsPolicy: ClusterFirst
-      dnsConfig:
-        nameservers:
-          - 10.0.0.53
-        searches:
-          - example.local

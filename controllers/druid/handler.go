@@ -1122,8 +1122,6 @@ func makePodSpec(nodeSpec *v1alpha1.DruidNodeSpec, m *v1alpha1.Druid, nodeSpecUn
 		SecurityContext:               firstNonNilValue(nodeSpec.PodSecurityContext, m.Spec.PodSecurityContext).(*v1.PodSecurityContext),
 		ServiceAccountName:            firstNonEmptyStr(nodeSpec.ServiceAccountName, m.Spec.ServiceAccount),
 		PriorityClassName:             firstNonEmptyStr(nodeSpec.PriorityClassName, m.Spec.PriorityClassName),
-		DNSPolicy:                     v1.DNSPolicy(firstNonEmptyStr(string(nodeSpec.DNSPolicy), string(m.Spec.DNSPolicy))),
-		DNSConfig:                     firstNonNilValue(nodeSpec.DNSConfig, m.Spec.DNSConfig).(*v1.PodDNSConfig),
 	}
 
 	addAdditionalContainers(m, nodeSpec, &spec)

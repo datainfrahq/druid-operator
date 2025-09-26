@@ -173,6 +173,56 @@ Kubernetes core/v1.ResourceRequirements
 </table>
 </div>
 </div>
+<h3 id="druid.apache.org/v1alpha1.Auth">Auth
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#druid.apache.org/v1alpha1.DruidIngestionSpec">DruidIngestionSpec</a>)
+</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>type</code><br>
+<em>
+<a href="#druid.apache.org/v1alpha1.AuthType">
+AuthType
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>secretRef</code><br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#secretreference-v1-core">
+Kubernetes core/v1.SecretReference
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h3 id="druid.apache.org/v1alpha1.AuthType">AuthType
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#druid.apache.org/v1alpha1.Auth">Auth</a>)
+</p>
 <h3 id="druid.apache.org/v1alpha1.DeepStorageSpec">DeepStorageSpec
 </h3>
 <p>
@@ -857,57 +907,6 @@ string
 <p>CoreSite Contents of <code>core-site.xml</code>.</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>dynamicConfig</code><br>
-<em>
-k8s.io/apimachinery/pkg/runtime.RawExtension
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Dynamic Configurations for Druid. Applied through the dynamic configuration API.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>auth</code><br>
-<em>
-github.com/datainfrahq/druid-operator/pkg/druidapi.Auth
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-</td>
-</tr>
-<tr>
-<td>
-<code>dnsPolicy</code><br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#dnspolicy-v1-core">
-Kubernetes core/v1.DNSPolicy
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>See v1.DNSPolicy for more details.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>dnsConfig</code><br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#poddnsconfig-v1-core">
-Kubernetes core/v1.PodDNSConfig
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>See v1.PodDNSConfig for more details.</p>
-</td>
-</tr>
 </table>
 </td>
 </tr>
@@ -1129,7 +1128,9 @@ IngestionSpec
 <td>
 <code>auth</code><br>
 <em>
-github.com/datainfrahq/druid-operator/pkg/druidapi.Auth
+<a href="#druid.apache.org/v1alpha1.Auth">
+Auth
+</a>
 </em>
 </td>
 <td>
@@ -1214,7 +1215,9 @@ IngestionSpec
 <td>
 <code>auth</code><br>
 <em>
-github.com/datainfrahq/druid-operator/pkg/druidapi.Auth
+<a href="#druid.apache.org/v1alpha1.Auth">
+Auth
+</a>
 </em>
 </td>
 <td>
@@ -1310,18 +1313,6 @@ Kubernetes meta/v1.Time
 <code>currentIngestionSpec.json</code><br>
 <em>
 string
-</em>
-</td>
-<td>
-<p>CurrentIngestionSpec is a string instead of RawExtension to maintain compatibility with existing
-IngestionSpecs that are stored as JSON strings.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>rules</code><br>
-<em>
-[]k8s.io/apimachinery/pkg/runtime.RawExtension
 </em>
 </td>
 <td>
@@ -1949,58 +1940,6 @@ Kubernetes autoscaling/v2.HorizontalPodAutoscalerSpec
 <td>
 <em>(Optional)</em>
 <p>Operator deploys the sidecar container based on these properties.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>serviceAccountName</code><br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ServiceAccountName Kubernetes native <code>serviceAccountName</code> specification.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>dynamicConfig</code><br>
-<em>
-k8s.io/apimachinery/pkg/runtime.RawExtension
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Dynamic Configurations for Druid. Applied through the dynamic configuration API.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>dnsPolicy</code><br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#dnspolicy-v1-core">
-Kubernetes core/v1.DNSPolicy
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>See v1.DNSPolicy for more details.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>dnsConfig</code><br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#poddnsconfig-v1-core">
-Kubernetes core/v1.PodDNSConfig
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>See v1.PodDNSConfig for more details.</p>
 </td>
 </tr>
 </tbody>
@@ -2687,57 +2626,6 @@ string
 <p>CoreSite Contents of <code>core-site.xml</code>.</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>dynamicConfig</code><br>
-<em>
-k8s.io/apimachinery/pkg/runtime.RawExtension
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Dynamic Configurations for Druid. Applied through the dynamic configuration API.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>auth</code><br>
-<em>
-github.com/datainfrahq/druid-operator/pkg/druidapi.Auth
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-</td>
-</tr>
-<tr>
-<td>
-<code>dnsPolicy</code><br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#dnspolicy-v1-core">
-Kubernetes core/v1.DNSPolicy
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>See v1.DNSPolicy for more details.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>dnsConfig</code><br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#poddnsconfig-v1-core">
-Kubernetes core/v1.PodDNSConfig
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>See v1.PodDNSConfig for more details.</p>
-</td>
-</tr>
 </tbody>
 </table>
 </div>
@@ -2778,50 +2666,10 @@ string
 </em>
 </td>
 <td>
-<em>(Optional)</em>
-<p>Spec should be passed in as a JSON string.
-Note: This field is planned for deprecation in favor of nativeSpec.</p>
 <br/>
 <br/>
 <table>
 </table>
-</td>
-</tr>
-<tr>
-<td>
-<code>nativeSpec</code><br>
-<em>
-k8s.io/apimachinery/pkg/runtime.RawExtension
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>nativeSpec allows the ingestion specification to be defined in a native Kubernetes format.
-This is particularly useful for environment-specific configurations and will eventually
-replace the JSON-based Spec field.
-Note: Spec will be ignored if nativeSpec is provided.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>compaction</code><br>
-<em>
-k8s.io/apimachinery/pkg/runtime.RawExtension
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-</td>
-</tr>
-<tr>
-<td>
-<code>rules</code><br>
-<em>
-[]k8s.io/apimachinery/pkg/runtime.RawExtension
-</em>
-</td>
-<td>
-<em>(Optional)</em>
 </td>
 </tr>
 </tbody>

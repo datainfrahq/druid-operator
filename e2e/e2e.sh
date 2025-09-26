@@ -75,7 +75,7 @@ else
   echo "Supervisor task ID: $supervisorTaskId"
 fi
 
-# Running a test Kafka DruidIngestion resource using nativeSpec and wait for the task to be submitted
+# Running a test Kafka DruidIngestion resource and wait for the task to be submitted
 kubectl apply -f e2e/configs/kafka-ingestion-native.yaml -n ${NAMESPACE}
 sleep 30 # wait for the manager to submit the ingestion task
 

@@ -53,36 +53,6 @@ func TestIncludesJson(t *testing.T) {
 			expectError:   false,
 		},
 		{
-			// This covers a case where a user may use the JSON body from the cURL example
-			// in Druid documentation (https://druid.apache.org/docs/latest/api-reference/dynamic-configuration-api),
-			// which includes extra fields that are not supported by Druid anymore.
-			name:        "Incorrect coordinator dynamic config",
-			currentJson: `{"millisToWaitBeforeDeleting":900000,"mergeBytesLimit":524288000,"mergeSegmentsLimit":100,"maxSegmentsToMove":5,"replicantLifetime":15,"replicationThrottleLimit":10,"balancerComputeThreads":1,"killDataSourceWhitelist":[],"killTaskSlotRatio":0.1,"maxKillTaskSlots":2147483647,"killPendingSegmentsSkipList":[],"maxSegmentsInNodeLoadingQueue":100,"decommissioningNodes":[],"pauseCoordination":false,"replicateAfterLoadTimeout":false,"useRoundRobinSegmentAssignment":true,"smartSegmentLoading":true,"debugDimensions":null}`,
-			desiredJson: `{
-			"millisToWaitBeforeDeleting": 900000,
-			"mergeBytesLimit": 524288000,
-			"mergeSegmentsLimit": 100,
-			"maxSegmentsToMove": 5,
-			"percentOfSegmentsToConsiderPerMove": 100,
-			"useBatchedSegmentSampler": false,
-			"replicantLifetime": 15,
-			"replicationThrottleLimit": 10,
-			"balancerComputeThreads": 1,
-			"emitBalancingStats": false,
-			"killDataSourceWhitelist": [],
-			"killAllDataSources": true,
-			"killPendingSegmentsSkipList": [],
-			"maxSegmentsInNodeLoadingQueue": 100,
-			"decommissioningNodes": [],
-			"decommissioningMaxPercentOfMaxSegmentsToMove": 70,
-			"pauseCoordination": false,
-			"replicateAfterLoadTimeout": false,
-			"maxNonPrimaryReplicantsToLoad": 2147483647
-			}`,
-			expectedEqual: false,
-			expectError:   false,
-		},
-		{
 			name: "Subset match with nested maps",
 			currentJson: `{
                 "key1": "value1",

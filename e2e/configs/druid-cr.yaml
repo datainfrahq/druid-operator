@@ -121,12 +121,6 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: metadata.namespace
-  dnsPolicy: ClusterFirst
-  dnsConfig:
-    nameservers:
-      - 10.0.0.53
-    searches:
-      - example.local
   nodes:
     brokers:
       # Optionally specify for running broker as Deployment
@@ -195,15 +189,20 @@ spec:
         mergeBytesLimit: 524288000
         mergeSegmentsLimit: 100
         maxSegmentsToMove: 5
+        percentOfSegmentsToConsiderPerMove: 100
+        useBatchedSegmentSampler: true
         replicantLifetime: 15
         replicationThrottleLimit: 10
         balancerComputeThreads: 1
+        emitBalancingStats: true
         killDataSourceWhitelist: []
         killPendingSegmentsSkipList: []
         maxSegmentsInNodeLoadingQueue: 100
         decommissioningNodes: []
+        decommissioningMaxPercentOfMaxSegmentsToMove: 70
         pauseCoordination: false
         replicateAfterLoadTimeout: false
+        maxNonPrimaryReplicantsToLoad: 2147483647
         useRoundRobinSegmentAssignment: true
 
     historicals:

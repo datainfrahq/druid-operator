@@ -47,10 +47,6 @@ spec:
             properties:
               auth:
                 properties:
-                  passwordKey:
-                    description: PasswordKey specifies the key within the Kubernetes
-                      secret that contains the password for authentication.
-                    type: string
                   secretRef:
                     description: |-
                       SecretReference represents a Secret Reference. It has enough information to retrieve secret
@@ -67,10 +63,6 @@ spec:
                     type: object
                     x-kubernetes-map-type: atomic
                   type:
-                    type: string
-                  usernameKey:
-                    description: UsernameKey specifies the key within the Kubernetes
-                      secret that contains the username for authentication.
                     type: string
                 required:
                 - secretRef

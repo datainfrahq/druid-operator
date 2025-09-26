@@ -50,12 +50,12 @@
 
 ### Kubernetes version compatibility
 
-| druid-operator | 0.0.9 | v1.0.0 | v1.1.0 | v1.2.2 | v1.2.3 | v1.2.4 | v1.2.5 | v1.3.0 |
-| :------------- | :-------------: | :-----: | :---: | :---: | :---: | :---: | :---: | :---: |
-| kubernetes <= 1.20 | :x:| :x: | :x: | :x: | :x: | :x: | :x: | :x: |
-| kubernetes == 1.21 | :white_check_mark:| :x: | :x: | :x: | :x: | :x: | :x: | :x: |
-| kubernetes >= 1.22 and <= 1.25 | :white_check_mark: | :white_check_mark: | :white_check_mark: |  :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| kubernetes > 1.25 and <= 1.33.1 | :x: | :x: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| druid-operator | 0.0.9 | v1.0.0 | v1.1.0 | v1.2.2 | v1.2.3 |
+| :------------- | :-------------: | :-----: | :---: | :---: | :---: |
+| kubernetes <= 1.20 | :x:| :x: | :x: | :x: | :x: |
+| kubernetes == 1.21 | :white_check_mark:| :x: | :x: | :x: | :x: |
+| kubernetes >= 1.22 and <= 1.25 | :white_check_mark: | :white_check_mark: | :white_check_mark: |  :white_check_mark: | :white_check_mark: |
+| kubernetes > 1.25 and <= 1.29.1 | :x: | :x: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 
 ### Contributors
 

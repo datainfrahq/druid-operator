@@ -30,12 +30,6 @@ type Auth struct {
 	Type AuthType `json:"type"`
 	// +required
 	SecretRef v1.SecretReference `json:"secretRef"`
-
-	// UsernameKey specifies the key within the Kubernetes secret that contains the username for authentication.
-	UsernameKey string `json:"usernameKey,omitempty"`
-
-	// PasswordKey specifies the key within the Kubernetes secret that contains the password for authentication.
-	PasswordKey string `json:"passwordKey,omitempty"`
 }
 
 // GetAuthCreds retrieves basic authentication credentials from a Kubernetes secret.
@@ -48,23 +42,12 @@ type Auth struct {
 //
 // Returns:
 //
-//	BasicAuth: The basic authentication credentials, or an error if authentication retrieval fails.
+//	BasicAuth: The basic authentication credentials.
 func GetAuthCreds(
 	ctx context.Context,
 	c client.Client,
 	auth Auth,
 ) (internalhttp.BasicAuth, error) {
-	userNameKey := OperatorUserName
-	passwordKey := OperatorPassword
-
-	if auth.UsernameKey != "" {
-		userNameKey = auth.UsernameKey
-	}
-
-	if auth.PasswordKey != "" {
-		passwordKey = auth.PasswordKey
-	}
-
 	// Check if the mentioned secret exists
 	if auth != (Auth{}) {
 		secret := v1.Secret{}
@@ -74,18 +57,9 @@ func GetAuthCreds(
 		}, &secret); err != nil {
 			return internalhttp.BasicAuth{}, err
 		}
-
-		if _, ok := secret.Data[userNameKey]; !ok {
-			return internalhttp.BasicAuth{}, fmt.Errorf("username key %q not found in secret %s/%s", userNameKey, auth.SecretRef.Namespace, auth.SecretRef.Name)
-		}
-
-		if _, ok := secret.Data[passwordKey]; !ok {
-			return internalhttp.BasicAuth{}, fmt.Errorf("password key %q not found in secret %s/%s", passwordKey, auth.SecretRef.Namespace, auth.SecretRef.Name)
-		}
-
 		creds := internalhttp.BasicAuth{
-			UserName: string(secret.Data[userNameKey]),
-			Password: string(secret.Data[passwordKey]),
+			UserName: string(secret.Data[OperatorUserName]),
+			Password: string(secret.Data[OperatorPassword]),
 		}
 
 		return creds, nil
@@ -155,7 +129,7 @@ func GetRouterSvcUrl(namespace, druidClusterName string, c client.Client) (strin
 		return "", errors.New("router svc discovery fail")
 	}
 
-	newName := "http://" + svcName + "." + namespace + ":" + DruidRouterPort
+	newName := "http://" + svcName + "." + namespace + ".svc.cluster.local:" + DruidRouterPort
 
 	return newName, nil
 }
