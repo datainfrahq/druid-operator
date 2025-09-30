@@ -1496,6 +1496,12 @@ spec:
                 description: DeleteOrphanPvc Orphaned (unmounted PVCs) shall be cleaned
                   up by the operator.
                 type: boolean
+              disablePVCAnnotationUpdate:
+                default: false
+                description: |-
+                  DisablePVCAnnotationUpdate When set to true, operator will not patch PVC annotations when VolumeClaimTemplate annotations are updated.
+                  When disabled (false), updating VolumeClaimTemplate annotations will patch existing PVCs and recreate the StatefulSet.
+                type: boolean
               disablePVCDeletionFinalizer:
                 default: false
                 description: DisablePVCDeletionFinalizer Whether PVCs shall be deleted

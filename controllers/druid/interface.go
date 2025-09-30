@@ -49,6 +49,11 @@ const (
 	druidConfigComparisonFailed    druidEventReason = "DruidAPIConfigComparisonFailed"
 	druidUpdateConfigsFailed       druidEventReason = "DruidAPIUpdateConfigsFailed"
 	druidUpdateConfigsSuccess      druidEventReason = "DruidAPIUpdateConfigsSuccess"
+
+	// PVC Annotation Update Events
+	druidPvcAnnotationChangeDetected druidEventReason = "DruidOperatorPvcAnnotationChangeDetected"
+	druidPvcAnnotationsUpdated       druidEventReason = "DruidOperatorPvcAnnotationsUpdated"
+	druidStsOrphanedForAnnotations   druidEventReason = "DruidOperatorStsOrphanedForAnnotations"
 )
 
 // Reader Interface

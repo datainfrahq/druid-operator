@@ -165,6 +165,20 @@ func deployDruidCluster(ctx context.Context, sdk client.Client, m *v1alpha1.Drui
 				}
 			}
 
+			// Handle VolumeClaimTemplate annotation updates (enabled by default unless disabled)
+			// If StatefulSet was deleted for annotation updates, skip creation in this reconcile to avoid race condition
+			if m.Generation > 1 {
+				deleted, err := patchStatefulSetVolumeClaimTemplateAnnotations(ctx, sdk, m, &nodeSpec, emitEvents, nodeSpecUniqueStr)
+				if err != nil {
+					return err
+				}
+				if deleted {
+					// StatefulSet was deleted, skip creation in this reconcile loop
+					// It will be created in the next reconcile with updated annotations
+					continue
+				}
+			}
+
 			// Create/Update StatefulSet
 			if stsCreateUpdateStatus, err := sdkCreateOrUpdateAsNeeded(ctx, sdk,
 				func() (object, error) {
