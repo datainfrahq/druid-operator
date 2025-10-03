@@ -142,6 +142,9 @@ spec:
       volumeClaimTemplates:
        - metadata:
            name: data-volume
+           annotations:
+             backup.kubernetes.io/enabled: "true"
+             volume.kubernetes.io/tier: "performance"
          spec:
            accessModes:
            - ReadWriteOnce
@@ -149,6 +152,7 @@ spec:
              requests:
                storage: 2Gi
            storageClassName: standard
+           volumeAttributesClassName: fast-ssd-class
       runtime.properties: |
         druid.service=druid/broker
         # HTTP server threads
@@ -214,6 +218,20 @@ spec:
             clusterIP: None
       nodeConfigMountPath: "/opt/druid/conf/druid/cluster/data/historical"
       replicas: 1
+      volumeClaimTemplates:
+       - metadata:
+           name: segment-cache
+           annotations:
+             backup.kubernetes.io/enabled: "true"
+             volume.kubernetes.io/tier: "performance"
+         spec:
+           accessModes:
+           - ReadWriteOnce
+           resources:
+             requests:
+               storage: 5Gi
+           storageClassName: standard
+           volumeAttributesClassName: fast-ssd-class
       runtime.properties: |
         druid.service=druid/historical
         druid.processing.buffer.sizeBytes=25000000

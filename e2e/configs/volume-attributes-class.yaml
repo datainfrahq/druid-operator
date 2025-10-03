@@ -1,0 +1,10 @@
+apiVersion: storage.k8s.io/v1
+kind: VolumeAttributesClass
+metadata:
+  name: fast-ssd-class
+driverName: example.io/fast-ssd
+parameters:
+  provisioned-iops: "10000"
+  provisioned-throughput: "100MiB/s"
+  encryption: "true"
+  replica-count: "3"

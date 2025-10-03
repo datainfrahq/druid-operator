@@ -23,7 +23,12 @@ func (m *mockEventEmitter) EmitEventOnCreate(obj, createObj object, err error)  
 func (m *mockEventEmitter) EmitEventOnPatch(obj, patchObj object, err error)                        {}
 func (m *mockEventEmitter) EmitEventOnList(obj object, listObj objectList, err error)               {}
 
-func TestDetectAnnotationChanges(t *testing.T) {
+// Helper function to create string pointers
+func stringPtr(s string) *string {
+	return &s
+}
+
+func TestDetectVolumeClaimTemplateChanges(t *testing.T) {
 	tests := []struct {
 		name               string
 		currentStatefulSet *appsv1.StatefulSet
@@ -127,13 +132,81 @@ func TestDetectAnnotationChanges(t *testing.T) {
 			expectChanges: false,
 			expectDetails: "",
 		},
+		{
+			name: "Detect volumeAttributeClassName changes",
+			currentStatefulSet: &appsv1.StatefulSet{
+				Spec: appsv1.StatefulSetSpec{
+					VolumeClaimTemplates: []v1.PersistentVolumeClaim{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "segment-cache",
+							},
+							Spec: v1.PersistentVolumeClaimSpec{
+								VolumeAttributesClassName: stringPtr("old-class"),
+							},
+						},
+					},
+				},
+			},
+			nodeSpec: &v1alpha1.DruidNodeSpec{
+				VolumeClaimTemplates: []v1.PersistentVolumeClaim{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "segment-cache",
+						},
+						Spec: v1.PersistentVolumeClaimSpec{
+							VolumeAttributesClassName: stringPtr("new-class"),
+						},
+					},
+				},
+			},
+			expectChanges: true,
+			expectDetails: "VCT segment-cache: volumeAttributeClassName changed from 'old-class' to 'new-class'",
+		},
+		{
+			name: "Detect both annotation and volumeAttributeClassName changes",
+			currentStatefulSet: &appsv1.StatefulSet{
+				Spec: appsv1.StatefulSetSpec{
+					VolumeClaimTemplates: []v1.PersistentVolumeClaim{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "segment-cache",
+								Annotations: map[string]string{
+									"backup": "disabled",
+								},
+							},
+							Spec: v1.PersistentVolumeClaimSpec{
+								VolumeAttributesClassName: stringPtr("standard"),
+							},
+						},
+					},
+				},
+			},
+			nodeSpec: &v1alpha1.DruidNodeSpec{
+				VolumeClaimTemplates: []v1.PersistentVolumeClaim{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "segment-cache",
+							Annotations: map[string]string{
+								"backup": "enabled",
+							},
+						},
+						Spec: v1.PersistentVolumeClaimSpec{
+							VolumeAttributesClassName: stringPtr("premium"),
+						},
+					},
+				},
+			},
+			expectChanges: true,
+			expectDetails: "VCT segment-cache: annotations changed; VCT segment-cache: volumeAttributeClassName changed from 'standard' to 'premium'",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			hasChanges, details := detectAnnotationChanges(tt.currentStatefulSet, tt.nodeSpec)
-			assert.Equal(t, tt.expectChanges, hasChanges)
-			assert.Equal(t, tt.expectDetails, details)
+			changes := detectVolumeClaimTemplateChanges(tt.currentStatefulSet, tt.nodeSpec)
+			assert.Equal(t, tt.expectChanges, changes.HasChanges)
+			assert.Equal(t, tt.expectDetails, changes.Details)
 		})
 	}
 }
@@ -185,7 +258,7 @@ func TestPatchStatefulSetVolumeClaimTemplateAnnotationsDisabled(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: v1alpha1.DruidSpec{
-			DisablePVCAnnotationUpdate: true, // Feature disabled
+			DisablePVCUpdates: true, // Feature disabled
 		},
 	}
 
@@ -197,7 +270,7 @@ func TestPatchStatefulSetVolumeClaimTemplateAnnotationsDisabled(t *testing.T) {
 	emitter := &mockEventEmitter{}
 
 	// Test should return immediately when feature is disabled
-	deleted, err := patchStatefulSetVolumeClaimTemplateAnnotations(ctx, nil, druid, nodeSpec, emitter, "test")
+	deleted, err := patchStatefulSetVolumeClaimTemplates(ctx, nil, druid, nodeSpec, emitter, "test")
 	assert.NoError(t, err)
 	assert.False(t, deleted) // Should not delete when disabled
 }
