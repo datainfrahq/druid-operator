@@ -8,6 +8,7 @@
 - [Force Delete of Sts Pods](#force-delete-of-sts-pods)
 - [Horizontal Scaling of Druid Pods](#horizontal-scaling-of-druid-pods)
 - [Volume Expansion of Druid Pods Running As StatefulSets](#volume-expansion-of-druid-pods-running-as-statefulsets)
+- [PVC Annotation Updates for StatefulSets](#pvc-annotation-updates-for-statefulsets)
 - [Add Additional Containers to Druid Pods](#add-additional-containers-to-druid-pods)
 - [Default Yet Configurable Probes](#default-yet-configurable-probes)
 
@@ -95,8 +96,79 @@ in the druid CR, only then will it perform expansion.
 This feature is disabled by default. To enable it set `scalePvcSts: true` in the Druid CR.
 By default, this feature is disabled.
 ```
-IMPORTANT: Shrinkage of pvc's isnt supported - desiredSize cannot be less than currentSize as well as counts. 
+IMPORTANT: Shrinkage of pvc's isnt supported - desiredSize cannot be less than currentSize as well as counts.
 ```
+
+## PVC Annotation Updates for StatefulSets
+
+The Druid operator supports updating annotations on PersistentVolumeClaims (PVCs) that are managed by StatefulSets. This feature is useful for scenarios such as:
+- Adding backup policies to existing PVCs
+- Updating storage tier annotations
+- Adding monitoring or compliance labels
+- Modifying cloud provider-specific annotations (e.g., AWS EBS volume tags)
+
+### How It Works
+
+When you update the annotations in `volumeClaimTemplates` within the Druid CR, the operator will:
+1. Detect the annotation changes in the VolumeClaimTemplates
+2. Delete the StatefulSet with `cascade=orphan` (preserving pods and PVCs)
+3. Patch existing PVCs with the new annotations
+4. Recreate the StatefulSet with the updated VolumeClaimTemplate specifications
+
+This process ensures no downtime as the pods continue running throughout the update.
+
+### Configuration
+
+This feature is **enabled by default**. To disable it, set `disablePVCAnnotationUpdate: true` in the Druid CR:
+
+```yaml
+apiVersion: druid.apache.org/v1alpha1
+kind: Druid
+metadata:
+  name: tiny-cluster
+spec:
+  # Disable PVC annotation updates (default is false - enabled)
+  disablePVCAnnotationUpdate: false
+
+  nodes:
+    historicals:
+      nodeType: historical
+      druid.port: 8088
+      kind: StatefulSet
+      replicas: 1
+      volumeClaimTemplates:
+        - metadata:
+            name: data-volume
+            annotations:
+              # These annotations will be applied to the PVCs
+              volume.beta.kubernetes.io/storage-class: "fast-ssd"
+              backup.velero.io/backup-volumes: "data-volume"
+              custom.annotation/tier: "hot"
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 10Gi
+            storageClassName: standard
+```
+
+### Important Notes
+
+- This feature only applies to StatefulSets (not Deployments)
+- The operator will wait for all StatefulSets to be ready before performing the update
+- Changes are applied using Kubernetes' orphan deletion strategy to avoid pod disruption
+- The StatefulSet will be unavailable briefly during recreation, but pods continue serving traffic
+- PVC annotations can only be added or updated, not removed (due to Kubernetes limitations)
+
+### Comparison with Volume Expansion
+
+| Feature | Volume Expansion | PVC Annotation Updates |
+|---------|-----------------|------------------------|
+| Default State | Disabled (`scalePvcSts: false`) | Enabled (`disablePVCAnnotationUpdate: false`) |
+| What Changes | PVC storage size | PVC annotations |
+| StatefulSet Deletion | Yes (orphan) | Yes (orphan) |
+| Pod Disruption | No | No |
+| Rollback Support | No (size can't shrink) | Yes (update annotations again) |
 
 ## Add Additional Containers to Druid Pods
 The operator supports adding additional containers to run along with the druid pods. This helps support co-located, 
