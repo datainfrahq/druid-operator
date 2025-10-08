@@ -49,7 +49,6 @@ func patchStatefulSetVolumeClaimTemplates(ctx context.Context, sdk client.Client
 
 	// Check for VolumeClaimTemplate changes
 	changes := detectVolumeClaimTemplateChanges(statefulSet, nodeSpec)
-	fmt.Println(changes)
 	if !changes.HasChanges {
 		return false, nil
 	}
@@ -101,7 +100,6 @@ func detectVolumeClaimTemplateChanges(sts *appsv1.StatefulSet, nodeSpec *v1alpha
 		VolumeAttributeClassChanges: make(map[string]bool),
 	}
 
-	fmt.Println(sts.Name)
 	var changeDetails []string
 
 	// Create maps of current VCT configuration

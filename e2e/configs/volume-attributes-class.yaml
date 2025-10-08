@@ -1,10 +1,9 @@
-apiVersion: storage.k8s.io/v1
+apiVersion: storage.k8s.io/v1beta1
 kind: VolumeAttributesClass
 metadata:
-  name: fast-ssd-class
-driverName: example.io/fast-ssd
+  name: gp3-fast
+driverName: ebs.csi.aws.com
 parameters:
-  provisioned-iops: "10000"
-  provisioned-throughput: "100MiB/s"
-  encryption: "true"
-  replica-count: "3"
+  type: gp3
+  iops: "4000"
+  throughput: "200"
