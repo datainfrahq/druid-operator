@@ -1,0 +1,9 @@
+apiVersion: storage.k8s.io/v1beta1
+kind: VolumeAttributesClass
+metadata:
+  name: gp3-fast
+driverName: ebs.csi.aws.com
+parameters:
+  type: gp3
+  iops: "4000"
+  throughput: "200"

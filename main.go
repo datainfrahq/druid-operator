@@ -25,7 +25,10 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -70,14 +73,18 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Scheme: scheme,
+		Metrics: server.Options{
+			BindAddress: metricsAddr,
+		},
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port: 9443,
+		}),
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "e6946145.apache.org",
-		Namespace:              os.Getenv("WATCH_NAMESPACE"),
-		NewCache:               watchNamespaceCache(),
+		//Namespace:              os.Getenv("WATCH_NAMESPACE"),
+		NewCache: watchNamespaceCache(),
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
@@ -124,16 +131,19 @@ func main() {
 }
 
 func watchNamespaceCache() cache.NewCacheFunc {
-	var managerWatchCache cache.NewCacheFunc
 	ns := strings.Split(watchNamespace, ",")
 
-	if len(ns) > 1 {
-		for i := range ns {
-			ns[i] = strings.TrimSpace(ns[i])
+	if len(ns) > 0 && watchNamespace != "" {
+		return func(config *rest.Config, opts cache.Options) (cache.Cache, error) {
+			opts.DefaultNamespaces = make(map[string]cache.Config)
+			for _, namespace := range ns {
+				namespace = strings.TrimSpace(namespace)
+				if namespace != "" {
+					opts.DefaultNamespaces[namespace] = cache.Config{}
+				}
+			}
+			return cache.New(config, opts)
 		}
-		managerWatchCache = cache.MultiNamespacedCacheBuilder(ns)
-		return managerWatchCache
 	}
-	managerWatchCache = (cache.NewCacheFunc)(nil)
-	return managerWatchCache
+	return nil
 }

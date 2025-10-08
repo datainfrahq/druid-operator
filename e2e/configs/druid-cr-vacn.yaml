@@ -3,7 +3,7 @@ kind: "Druid"
 metadata:
   name: tiny-cluster
 spec:
-  image: apache/druid:25.0.0
+  image: apache/druid:32.0.0
   # Optionally specify image for all nodes. Can be specify on nodes also
   # imagePullSecrets:
   # - name: tutu
@@ -151,8 +151,8 @@ spec:
            resources:
              requests:
                storage: 2Gi
-           storageClassName: standard
-           volumeAttributesClassName: fast-ssd-class
+           storageClassName: gp3
+           volumeAttributesClassName: gp3-high-perf
       runtime.properties: |
         druid.service=druid/broker
         # HTTP server threads
@@ -230,8 +230,8 @@ spec:
            resources:
              requests:
                storage: 5Gi
-           storageClassName: standard
-           volumeAttributesClassName: fast-ssd-class
+           storageClassName: gp3
+           volumeAttributesClassName: gp3-high-perf
       runtime.properties: |
         druid.service=druid/historical
         druid.processing.buffer.sizeBytes=25000000
