@@ -60,10 +60,8 @@ spec:
 
     # Metadata Store
     druid.metadata.storage.type=derby
-    druid.metadata.storage.connector.connectURI=jdbc:derby://localhost:1527/druid/data/derbydb/metadata.db;create=true
-    druid.metadata.storage.connector.host=localhost
-    druid.metadata.storage.connector.port=1527
     druid.metadata.storage.connector.createTables=true
+    # Other settings are set via environment variables
 
     # Deep Storage
     druid.storage.type=local
@@ -96,6 +94,15 @@ spec:
         path: /tmp/druid/deepstorage
         type: DirectoryOrCreate
   env:
+    - name: druid_metadata_storage_type
+      value: derby
+    - name: druid_metadata_storage_connector_connectURI
+      value: jdbc:derby://localhost:1527/druid/data/derbydb/metadata.db;create=true
+    - name: druid_metadata_storage_connector_host
+      value: localhost
+    - name: druid_metadata_storage_connector_port
+      value: "1527"
+    # Other env vars
     - name: POD_NAME
       valueFrom:
         fieldRef:
@@ -186,7 +193,7 @@ spec:
       extra.jvm.options: |-
         -Xmx512M
         -Xms512M
-          
+
     routers:
       nodeType: "router"
       druid.port: 8088
@@ -206,7 +213,7 @@ spec:
         druid.router.coordinatorServiceName=druid/coordinator
 
         # Management proxy to coordinator / overlord: required for unified web console.
-        druid.router.managementProxy.enabled=true       
+        druid.router.managementProxy.enabled=true
       extra.jvm.options: |-
         -Xmx512M
         -Xms512M

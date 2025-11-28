@@ -36,7 +36,7 @@
           requests:
             cpu: 1
             memory: 1Gi
-      runtime.properties: 
+      runtime.properties:
           druid.plaintextPort=8083
           druid.service=druid/historical/hot
     cold:
@@ -73,7 +73,7 @@
         requests:
           cpu: 1
           memory: 1Gi
-      runtime.properties: 
+      runtime.properties:
         druid.plaintextPort=8083
         druid.service=druid/historical/cold
 ...
@@ -264,3 +264,83 @@ spec:
         druid.metadata.storage.connector.password={ "type": "environment", "variable": "METADATA_STORAGE_PASSWORD" }
 ...
 ```
+
+## Configuration via Environment Variables (Recommended for sensitive data)
+
+Standard Druid Docker images allow you to convert any environment variable starting with `druid_` into a configuration property (replacing `_` with `.`). This is often more reliable than the JSON replacement method found in `runtime.properties` and allows you to securely inject any configuration using Kubernetes Secrets.
+
+**Note:** If you define a configuration here via `env`, ensure you remove it from your `runtime.properties` or `common.runtime.properties` to avoid conflicts.
+
+### Example: Securely Injecting Secrets and Druid Properties
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: prod-druid
+  namespace: druid
+type: Opaque
+stringData:
+  # Sensitive values
+  AWS_ACCESS_KEY_ID: "AKIA..."
+  AWS_SECRET_ACCESS_KEY: "SECRET..."
+  # You can map full property values here
+  druid.metadata.storage.connector.password: "db-password"
+  druid.metadata.storage.connector.connectURI: "jdbc:postgresql://..."
+---
+apiVersion: druid.apache.org/v1alpha1
+kind: Druid
+metadata:
+  name: druid
+spec:
+  env:
+    # 1. Standard Env Vars
+    - name: AWS_REGION
+      value: "nyc3"
+
+    # 2. Loading Secrets
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: prod-druid
+          key: AWS_ACCESS_KEY_ID
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: prod-druid
+          key: AWS_SECRET_ACCESS_KEY
+
+    # 3. Mapping Secrets directly to Druid Properties
+    # The Docker entrypoint converts 'druid_x_y' -> 'druid.x.y'
+
+    # Maps to: druid.metadata.storage.connector.password
+    - name: druid_metadata_storage_connector_password
+      valueFrom:
+        secretKeyRef:
+          name: prod-druid
+          key: druid.metadata.storage.connector.password
+
+    # Maps to: druid.metadata.storage.connector.connectURI
+    - name: druid_metadata_storage_connector_connectURI
+      valueFrom:
+        secretKeyRef:
+          name: prod-druid
+          key: druid.metadata.storage.connector.connectURI
+
+  nodes:
+    coordinators:
+      nodeType: "coordinator"
+      # ...
+      runtime.properties: |
+        druid.service=druid/coordinator
+        # Note: AWS Keys and Metadata configs are NOT listed here
+        # because they are injected via the 'env' section above.
+        druid.metadata.storage.type=postgresql
+        druid.metadata.storage.connector.user=druid
+```
+
+### Notes
+
+- **Environment variable expansion** (using `env` and `envFrom`) can be used for any Druid configuration property, not just passwords. This is the recommended approach for sensitive data and for properties that may change between environments.
+- The JSON replacement method (`{ "type": "environment", "variable": "METADATA_STORAGE_PASSWORD" }`) is only supported for certain password fields in `runtime.properties` and is not as flexible as environment variable expansion.
+- If you use both methods for the same property, the environment variable will take precedence, but it's best to avoid duplication to prevent confusion.
