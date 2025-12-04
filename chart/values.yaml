@@ -99,3 +99,6 @@ affinity:
 crd:
   enabled: true
   keep: true
+
+extraArgs: {}
+  #- -zap-devel=false
