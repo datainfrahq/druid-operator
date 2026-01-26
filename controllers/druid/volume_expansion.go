@@ -134,11 +134,12 @@ func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.D
 		// Validate Request, shrinking of pvc not supported
 		// desired size cant be less than current size
 		// in that case re-create sts/pvc which is a user execute manual step
+		//
+		// Use Cmp() instead of AsInt64() because AsInt64() fails for quantities
+		// with non-integer values like "2.2Ti" which are stored as milli-units.
+		desiredVsCurrent := desVolumeClaimTemplateSize[i].Cmp(currVolumeClaimTemplateSize[i])
 
-		desiredSize, _ := desVolumeClaimTemplateSize[i].AsInt64()
-		currentSize, _ := currVolumeClaimTemplateSize[i].AsInt64()
-
-		if desiredSize < currentSize {
+		if desiredVsCurrent < 0 {
 			e := fmt.Errorf("Request for Shrinking of sts pvc size [sts:%s] in [namespace:%s] is not Supported", sts.(*appsv1.StatefulSet).Name, sts.(*appsv1.StatefulSet).Namespace)
 			logger.Error(e, e.Error(), "name", drd.Name, "namespace", drd.Namespace)
 			emitEvent.EmitEventGeneric(drd, "DruidOperatorPvcReSizeFail", "", err)
@@ -147,7 +148,7 @@ func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.D
 
 		// In case size dont match and dessize > currsize, delete the sts using casacde=false / propagation policy set to orphan
 		// The operator on next reconcile shall create the sts with latest changes
-		if desiredSize != currentSize {
+		if desiredVsCurrent != 0 {
 			msg := fmt.Sprintf("Detected Change in VolumeClaimTemplate Sizes for Statefuleset [%s] in Namespace [%s], desVolumeClaimTemplateSize: [%s], currVolumeClaimTemplateSize: [%s]\n, deleteing STS [%s] with casacde=false]", sts.(*appsv1.StatefulSet).Name, sts.(*appsv1.StatefulSet).Namespace, desVolumeClaimTemplateSize[i].String(), currVolumeClaimTemplateSize[i].String(), sts.(*appsv1.StatefulSet).Name)
 			logger.Info(msg)
 			emitEvent.EmitEventGeneric(drd, "DruidOperatorPvcReSizeDetected", msg, nil)
@@ -164,8 +165,7 @@ func scalePVCForSts(ctx context.Context, sdk client.Client, nodeSpec *v1alpha1.D
 
 		// In case size dont match, patch the pvc with the desiredsize from druid CR
 		for p := range pvcSize {
-			pSize, _ := pvcSize[p].AsInt64()
-			if desiredSize != pSize {
+			if desVolumeClaimTemplateSize[i].Cmp(pvcSize[p]) != 0 {
 				// use deepcopy
 				patch := client.MergeFrom(pvcList[p].(*v1.PersistentVolumeClaim).DeepCopy())
 				pvcList[p].(*v1.PersistentVolumeClaim).Spec.Resources.Requests[v1.ResourceStorage] = desVolumeClaimTemplateSize[i]
