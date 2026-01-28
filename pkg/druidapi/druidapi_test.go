@@ -2,12 +2,13 @@ package druidapi
 
 import (
 	"context"
+	"testing"
+
 	internalhttp "github.com/datainfrahq/druid-operator/pkg/http"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
 )
 
 func TestGetAuthCreds(t *testing.T) {
@@ -160,6 +161,173 @@ func TestMakePath(t *testing.T) {
 			actual := MakePath(tt.baseURL, tt.componentType, tt.apiType, tt.additionalPaths...)
 			if actual != tt.expected {
 				t.Errorf("makePath() = %v, expected %v", actual, tt.expected)
+			}
+		})
+	}
+}
+
+func TestParseProperties(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected map[string]string
+	}{
+		{
+			name:     "empty string",
+			input:    "",
+			expected: map[string]string{},
+		},
+		{
+			name: "simple properties",
+			input: `druid.host=localhost
+druid.port=8082`,
+			expected: map[string]string{
+				"druid.host": "localhost",
+				"druid.port": "8082",
+			},
+		},
+		{
+			name: "properties with comments and empty lines",
+			input: `# This is a comment
+druid.host=localhost
+
+druid.port=8082
+# Another comment
+druid.service=druid/broker`,
+			expected: map[string]string{
+				"druid.host":    "localhost",
+				"druid.port":    "8082",
+				"druid.service": "druid/broker",
+			},
+		},
+		{
+			name: "properties with spaces",
+			input: `druid.host = localhost
+druid.port= 8082
+druid.service =druid/broker`,
+			expected: map[string]string{
+				"druid.host":    "localhost",
+				"druid.port":    "8082",
+				"druid.service": "druid/broker",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseProperties(tt.input)
+
+			if len(result) != len(tt.expected) {
+				t.Errorf("expected %d properties, got %d", len(tt.expected), len(result))
+			}
+
+			for key, expectedValue := range tt.expected {
+				if actualValue, exists := result[key]; !exists {
+					t.Errorf("expected key %s not found", key)
+				} else if actualValue != expectedValue {
+					t.Errorf("for key %s, expected %s, got %s", key, expectedValue, actualValue)
+				}
+			}
+		})
+	}
+}
+
+func TestInferRouterConnectionFromConfig(t *testing.T) {
+	tests := []struct {
+		name         string
+		commonConfig string
+		routerConfig string
+		expected     RouterConnectionInfo
+	}{
+		{
+			name:         "default configuration",
+			commonConfig: "",
+			routerConfig: "",
+			expected: RouterConnectionInfo{
+				Protocol: "http",
+				Port:     "8088",
+			},
+		},
+		{
+			name: "HTTP with custom port in common config",
+			commonConfig: `druid.enablePlaintextPort=true
+druid.plaintextPort=9090`,
+			routerConfig: "",
+			expected: RouterConnectionInfo{
+				Protocol: "http",
+				Port:     "9090",
+			},
+		},
+		{
+			name: "HTTPS enabled in common config",
+			commonConfig: `druid.enableTlsPort=true
+druid.tlsPort=8443`,
+			routerConfig: "",
+			expected: RouterConnectionInfo{
+				Protocol: "https",
+				Port:     "8443",
+			},
+		},
+		{
+			name: "HTTPS enabled without specific TLS port",
+			commonConfig: `druid.enableTlsPort=true
+druid.port=8283`,
+			routerConfig: "",
+			expected: RouterConnectionInfo{
+				Protocol: "https",
+				Port:     "8283",
+			},
+		},
+		{
+			name: "router config overrides common config",
+			commonConfig: `druid.enableTlsPort=false
+druid.plaintextPort=8088`,
+			routerConfig: `druid.enableTlsPort=true
+druid.tlsPort=8443`,
+			expected: RouterConnectionInfo{
+				Protocol: "https",
+				Port:     "8443",
+			},
+		},
+		{
+			name: "plaintext disabled, TLS enabled",
+			commonConfig: `druid.enablePlaintextPort=false
+druid.enableTlsPort=true
+druid.tlsPort=8443`,
+			routerConfig: "",
+			expected: RouterConnectionInfo{
+				Protocol: "https",
+				Port:     "8443",
+			},
+		},
+		{
+			name: "complex configuration with router override",
+			commonConfig: `# Common configuration
+druid.host=localhost
+druid.enableTlsPort=false
+druid.plaintextPort=8088`,
+			routerConfig: `# Router specific configuration
+druid.service=druid/router
+druid.enableTlsPort=true
+druid.tlsPort=8443
+druid.router.http.numConnections=50`,
+			expected: RouterConnectionInfo{
+				Protocol: "https",
+				Port:     "8443",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := InferRouterConnectionFromConfig(tt.commonConfig, tt.routerConfig)
+
+			if result.Protocol != tt.expected.Protocol {
+				t.Errorf("expected protocol %s, got %s", tt.expected.Protocol, result.Protocol)
+			}
+
+			if result.Port != tt.expected.Port {
+				t.Errorf("expected port %s, got %s", tt.expected.Port, result.Port)
 			}
 		})
 	}
