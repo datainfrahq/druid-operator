@@ -24,6 +24,11 @@ kube_rbac_proxy:
     repository: gcr.io/kubebuilder/kube-rbac-proxy
     pullPolicy: IfNotPresent
     tag: "v0.13.1"
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
 
 imagePullSecrets: []
 nameOverride: ""
