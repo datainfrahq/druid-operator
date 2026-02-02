@@ -155,7 +155,13 @@ func GetRouterSvcUrl(namespace, druidClusterName string, c client.Client) (strin
 		return "", errors.New("router svc discovery fail")
 	}
 
-	newName := "http://" + svcName + "." + namespace + ":" + DruidRouterPort
+	// Get port from service spec, fallback to default DruidRouterPort
+	port := DruidRouterPort
+	if len(svcList.Items[0].Spec.Ports) > 0 {
+		port = fmt.Sprintf("%d", svcList.Items[0].Spec.Ports[0].Port)
+	}
+
+	newName := "http://" + svcName + "." + namespace + ":" + port
 
 	return newName, nil
 }
