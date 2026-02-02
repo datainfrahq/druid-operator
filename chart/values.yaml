@@ -100,5 +100,8 @@ crd:
   enabled: true
   keep: true
 
+# Disable the DruidIngestion controller if the CRD is not installed
+disableIngestionController: false
+
 extraArgs: {}
   #- -zap-devel=false
