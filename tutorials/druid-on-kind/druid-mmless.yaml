@@ -37,8 +37,6 @@ spec:
     fsGroup: 0
     runAsUser: 0
     runAsGroup: 0
-  containerSecurityContext:
-    privileged: true
   services:
     - spec:
         type: ClusterIP
