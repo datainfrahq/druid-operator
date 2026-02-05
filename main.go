@@ -56,11 +56,14 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var disableIngestionController bool
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(&disableIngestionController, "disable-ingestion-controller", false,
+		"Disable the DruidIngestion controller. Use this if the DruidIngestion CRD is not installed.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -100,9 +103,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (druidingestioncontrollers.NewDruidIngestionReconciler(mgr)).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "DruidIngestion")
-		os.Exit(1)
+	if !disableIngestionController {
+		if err = (druidingestioncontrollers.NewDruidIngestionReconciler(mgr)).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "DruidIngestion")
+			os.Exit(1)
+		}
+	} else {
+		setupLog.Info("DruidIngestion controller is disabled")
 	}
 
 	//+kubebuilder:scaffold:builder
