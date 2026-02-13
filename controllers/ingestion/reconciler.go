@@ -494,6 +494,15 @@ func (r *DruidIngestionReconciler) CreateOrUpdate(
 					v1.EventTypeNormal,
 					fmt.Sprintf("Resp [%s], Result [%s]", string(respUpdateSpec.ResponseBody), result),
 					DruidIngestionControllerPatchStatusSuccess)
+			} else {
+				// Non-200 response - log error and record event
+				build.Recorder.GenericEvent(
+					di,
+					v1.EventTypeWarning,
+					fmt.Sprintf("Failed to update spec, StatusCode [%d], Resp [%s]", respUpdateSpec.StatusCode, string(respUpdateSpec.ResponseBody)),
+					DruidIngestionControllerUpdateFail,
+				)
+				return controllerutil.OperationResultNone, fmt.Errorf("failed to update ingestion spec, status code: %d, response: %s", respUpdateSpec.StatusCode, string(respUpdateSpec.ResponseBody))
 			}
 
 		}
