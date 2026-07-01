@@ -30,6 +30,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  {{- if hasKey .Values "revisionHistoryLimit" }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit | int }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "druid-operator.selectorLabels" . | nindent 6 }}

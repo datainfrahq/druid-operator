@@ -31,6 +31,8 @@ env:
 
 replicaCount: 1
 
+revisionHistoryLimit: 10 # Number of old ReplicaSets to retain for rollback
+
 image:
   repository: datainfrahq/druid-operator
   pullPolicy: IfNotPresent
