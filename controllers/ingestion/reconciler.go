@@ -64,7 +64,7 @@ func (r *DruidIngestionReconciler) do(ctx context.Context, di *v1alpha1.DruidIng
 		return err
 	}
 
-	svcName, err := druidapi.GetRouterSvcUrl(di.Namespace, di.Spec.DruidClusterName, r.Client)
+	svcName, err := druidapi.GetRouterSvcUrl(ctx, di.Namespace, di.Spec.DruidClusterName, r.Client)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (r *DruidIngestionReconciler) do(ctx context.Context, di *v1alpha1.DruidIng
 	} else {
 		if controllerutil.ContainsFinalizer(di, DruidIngestionControllerFinalizer) {
 			// our finalizer is present, so lets handle any external dependency
-			svcName, err := druidapi.GetRouterSvcUrl(di.Namespace, di.Spec.DruidClusterName, r.Client)
+			svcName, err := druidapi.GetRouterSvcUrl(ctx, di.Namespace, di.Spec.DruidClusterName, r.Client)
 			if err != nil {
 				return err
 			}
