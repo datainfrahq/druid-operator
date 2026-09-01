@@ -1,10 +1,11 @@
-# NOTICE
-:warning: This Repository Is Archived
-This repository (datainfrahq/druid-operator) is archived as of September 2026 and no longer accepts commits, issues, or PRs.
+# ⚠️ This Repository Is Archived
 
-Existing releases and Docker images stay available as-is — nothing is being deleted or removed.
-Need something installable today? Use deep-bi/druid-operator — an actively maintained fork with regular tagged releases and newer features.
-Looking for the official upstream? The codebase has been donated to the Apache Software Foundation: apache/druid-operator. As of this notice it does not yet have a tagged release.
+This repository (`datainfrahq/druid-operator`) is archived as of September 2026 and no longer accepts commits, issues, or PRs.
+
+- **Existing releases and Docker images stay available as-is** — nothing is being deleted or removed.
+- **Need something installable today?** Use **[deep-bi/druid-operator](https://github.com/deep-bi/druid-operator)** — an actively maintained fork with regular tagged releases and newer features.
+- **Looking for the official upstream?** The codebase has been donated to the Apache Software Foundation: **[apache/druid-operator](https://github.com/apache/druid-operator)**. As of this notice it does not yet have a tagged release.
+
 Thanks to everyone who used and contributed to this project.
 
 <!--
